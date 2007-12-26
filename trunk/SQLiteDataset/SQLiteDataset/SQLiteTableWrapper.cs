@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.Text;
 using System.Data;
@@ -10,9 +10,9 @@ namespace Softlynx.SQLiteDataset
 {
    
     /// <summary>
-    /// Класс-обертка для представления в качестве таблицы базы SQLite экземпляра DataTable
+    /// РљР»Р°СЃСЃ-РѕР±РµСЂС‚РєР° РґР»СЏ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёСЏ РІ РєР°С‡РµСЃС‚РІРµ С‚Р°Р±Р»РёС†С‹ Р±Р°Р·С‹ SQLite СЌРєР·РµРјРїР»СЏСЂР° DataTable
     /// </summary>
-    public class SQLiteTableWrapper : Component
+    internal class SQLiteTableWrapper : Component
     {
         internal DataTable table = null;
         internal Container columns = new Container();

@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.Text;
 using System.Data;
@@ -8,9 +8,9 @@ using System.ComponentModel;
 namespace Softlynx.SQLiteDataset
 {
     /// <summary>
-    /// Класс-обертка для представления колонки в базы SQLite
+    /// РљР»Р°СЃСЃ-РѕР±РµСЂС‚РєР° РґР»СЏ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёСЏ РєРѕР»РѕРЅРєРё РІ Р±Р°Р·С‹ SQLite
     /// </summary>
-    public class SQLiteColumnWrapper : Component
+    internal class SQLiteColumnWrapper : Component
     {
         internal DataColumn column = null;
 

@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.Text;
 using System.Data;
@@ -17,12 +17,12 @@ namespace Softlynx.SQLiteDataset
         protected DbConnection connection = null;
         
         /// <summary>
-        /// Связывает экземпляр DataSet с базой SQLite.
-        /// Структура базы данных создается автоматически по схеме DataSet.
-        /// При этом все изменения в экземпляре SourceDataSet (вставка, правка, удаление) мгновенно отражаются в базе SQLite.
+        /// РЎРІСЏР·С‹РІР°РµС‚ СЌРєР·РµРјРїР»СЏСЂ DataSet СЃ Р±Р°Р·РѕР№ SQLite.
+        /// РЎС‚СЂСѓРєС‚СѓСЂР° Р±Р°Р·С‹ РґР°РЅРЅС‹С… СЃРѕР·РґР°РµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїРѕ СЃС…РµРјРµ DataSet.
+        /// РџСЂРё СЌС‚РѕРј РІСЃРµ РёР·РјРµРЅРµРЅРёСЏ РІ СЌРєР·РµРјРїР»СЏСЂРµ SourceDataSet (РІСЃС‚Р°РІРєР°, РїСЂР°РІРєР°, СѓРґР°Р»РµРЅРёРµ) РјРіРЅРѕРІРµРЅРЅРѕ РѕС‚СЂР°Р¶Р°СЋС‚СЃСЏ РІ Р±Р°Р·Рµ SQLite.
         /// </summary>
-        /// <param name="SourceDataSet">Ссылка на экземпляр объекта DataSet</param>
-        /// <param name="Connection">Строка одключения к базе SQLite</param>
+        /// <param name="SourceDataSet">РЎСЃС‹Р»РєР° РЅР° СЌРєР·РµРјРїР»СЏСЂ РѕР±СЉРµРєС‚Р° DataSet</param>
+        /// <param name="Connection">РЎС‚СЂРѕРєР° РѕРґРєР»СЋС‡РµРЅРёСЏ Рє Р±Р°Р·Рµ SQLite</param>
         public void AttachDataset(DataSet SourceDataset,DbConnection Connection)
         {
             if (dataset != null) throw new Exception("Dataset already attaced.");
@@ -110,22 +110,22 @@ namespace Softlynx.SQLiteDataset
         }
 
         /// <summary>
-        /// Заполняет таблицу Table данными из базы SQLite. 
-        /// Запрос исключает строки с признаком удаление isdeleted=1. 
-        /// Сортировка отсутсвует.
+        /// Р—Р°РїРѕР»РЅСЏРµС‚ С‚Р°Р±Р»РёС†Сѓ Table РґР°РЅРЅС‹РјРё РёР· Р±Р°Р·С‹ SQLite. 
+        /// Р—Р°РїСЂРѕСЃ РёСЃРєР»СЋС‡Р°РµС‚ СЃС‚СЂРѕРєРё СЃ РїСЂРёР·РЅР°РєРѕРј СѓРґР°Р»РµРЅРёРµ isdeleted=1. 
+        /// РЎРѕСЂС‚РёСЂРѕРІРєР° РѕС‚СЃСѓС‚СЃРІСѓРµС‚.
         /// </summary>
-        /// <param name="Table">Таблицу которую следует заполнить.</param>
+        /// <param name="Table">РўР°Р±Р»РёС†Сѓ РєРѕС‚РѕСЂСѓСЋ СЃР»РµРґСѓРµС‚ Р·Р°РїРѕР»РЅРёС‚СЊ.</param>
         public void Fill(DataTable Table)
         {
             Fill(Table, "isdeleted=0", null, string.Empty);
         }
 
         /// <summary>
-        /// Заполняет таблицу Table данными из базы SQLite. 
-        /// Запрос исключает строки с признаком удаление isdeleted=1. 
+        /// Р—Р°РїРѕР»РЅСЏРµС‚ С‚Р°Р±Р»РёС†Сѓ Table РґР°РЅРЅС‹РјРё РёР· Р±Р°Р·С‹ SQLite. 
+        /// Р—Р°РїСЂРѕСЃ РёСЃРєР»СЋС‡Р°РµС‚ СЃС‚СЂРѕРєРё СЃ РїСЂРёР·РЅР°РєРѕРј СѓРґР°Р»РµРЅРёРµ isdeleted=1. 
         /// </summary>
-        /// <param name="Table">Таблицу которую следует заполнить.</param>
-        /// <param name="Table">Порядок сортировки в запросе (неесколько полей указываются ерез запятую).</param>
+        /// <param name="Table">РўР°Р±Р»РёС†Сѓ РєРѕС‚РѕСЂСѓСЋ СЃР»РµРґСѓРµС‚ Р·Р°РїРѕР»РЅРёС‚СЊ.</param>
+        /// <param name="Table">РџРѕСЂСЏРґРѕРє СЃРѕСЂС‚РёСЂРѕРІРєРё РІ Р·Р°РїСЂРѕСЃРµ (РЅРµРµСЃРєРѕР»СЊРєРѕ РїРѕР»РµР№ СѓРєР°Р·С‹РІР°СЋС‚СЃСЏ РµСЂРµР· Р·Р°РїСЏС‚СѓСЋ).</param>
         public void Fill(DataTable Table, string orderby)
         {
             Fill(Table, "isdeleted=0", null, orderby);
