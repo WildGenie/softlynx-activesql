@@ -12,9 +12,82 @@ namespace Softlynx.SQLiteDataset
 {
     public class SQLiteDatasetWrapper:Component
     {
-        protected DataSet dataset = null;
+
+        private DbConnection lastconnecton;
+        private DataSet lastdataset;
+
+        /// <summary>
+        /// Подлючение к базе данных. Допускается только SQLite.
+        /// </summary>
+        public DbConnection SQLiteConnection
+        {
+            get { return lastconnecton; }
+            set
+            {
+                lastconnecton = value;
+                CheckAttch();
+            }
+        }
+        /// <summary>
+        /// DataSet который будет отображен в базу данных
+        /// </summary>
+        public DataSet LinkedDataSet
+        {
+            get { return lastdataset; }
+            set
+            {
+                lastdataset = value;
+                CheckAttch();
+            }
+        }
+
+        private bool autoPopulateData = false;
+
+        /// <summary>
+        /// Определяет, нужно ли автоматически заполнять из базы данных все таблцы dataset
+        /// </summary>
+        public bool AutoPopulateData
+        {
+            get { return autoPopulateData; }
+            set { 
+                autoPopulateData = value;
+                CheckAttch();
+        }
+        }
+
+        private bool active;
+        
+        /// <summary>
+        /// Признак активного состояния компонента
+        /// </summary>
+        public bool Active
+        {
+            get { return active; }
+            set { 
+
+                active = value;
+                CheckAttch();
+            }
+        }
+
+        private void CheckAttch()
+        {
+            if (lastconnecton != null)
+                if (active) lastconnecton.Open(); 
+                else lastconnecton.Close();
+            if (!active) ClearLastState();
+            if (
+                (lastconnecton != null) &&
+                (lastdataset != null) &&
+                active
+                )
+                AttachDataset(lastdataset, lastconnecton);
+        }
+
+	
+
+
         protected Container tables = new Container();
-        protected DbConnection connection = null;
         
         /// <summary>
         /// Связывает экземпляр DataSet с базой SQLite.
@@ -23,33 +96,69 @@ namespace Softlynx.SQLiteDataset
         /// </summary>
         /// <param name="SourceDataSet">Ссылка на экземпляр объекта DataSet</param>
         /// <param name="Connection">Строка одключения к базе SQLite</param>
-        public void AttachDataset(DataSet SourceDataset,DbConnection Connection)
+        public void AttachDataset(DataSet dataset,DbConnection connection)
         {
-            if (dataset != null) throw new Exception("Dataset already attaced.");
-            dataset = SourceDataset;
-            connection = Connection;
-            
-            string SqlInitScript = String.Empty;
+            if (!(connection is SQLiteConnection)) {
+                throw new Exception("Only SQLite connection supported.");
+            };
+            lastdataset = dataset;
+            lastconnecton = connection;
 
-            foreach (DataTable table in dataset.Tables)
-            {
-                table.RowChanged += new DataRowChangeEventHandler(table_RowChanged);
-                table.RowDeleting += new DataRowChangeEventHandler(table_RowChanged);
-                
-                SQLiteTableWrapper wrapper = new SQLiteTableWrapper();
-                wrapper.AttachTable(table);
-                tables.Add(wrapper, table.TableName);
-                SqlInitScript += string.Format("{0}\n", wrapper.CreateTableStatement());
-            }
+            ClearLastState();
+
+       
             using (DbCommand cmd = connection.CreateCommand())
             {
                 using (DbTransaction transaction = connection.BeginTransaction())
                 {
-                    cmd.CommandText = SqlInitScript;
-                    cmd.ExecuteNonQuery();
-                    transaction.Commit();
+                    try
+                    {
+                        foreach (DataTable table in dataset.Tables)
+                        {
+                            table.TableNewRow +=new DataTableNewRowEventHandler(table_TableNewRow);
+                            table.RowChanged += new DataRowChangeEventHandler(table_RowChanged);
+                            table.RowDeleting += new DataRowChangeEventHandler(table_RowChanged);
+                            SQLiteTableWrapper wrapper = new SQLiteTableWrapper();
+                            wrapper.AttachTable(table, connection);
+                            tables.Add(wrapper, table.TableName);
+                            wrapper.ReflectTableCreation();
+                        }
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                    
                 };
             };
+            if (AutoPopulateData) PopulateDataSet(dataset);
+        }
+
+        private void ClearLastState()
+        {
+            while (tables.Components.Count > 0)
+            {
+                tables.Remove(tables.Components[0]);
+            }
+        }
+
+
+        /// <summary>
+        /// Заполняет весь датасет знаениями из связанной базы данных
+        /// </summary>
+        public void PopulateDataSet(DataSet dataset)
+        {
+        foreach (DataTable table in dataset.Tables) {
+            Fill(table);
+        };
+        }
+
+        void table_TableNewRow(object sender, DataTableNewRowEventArgs e)
+        {
+            SQLiteTableWrapper wrapper = MapTableWrapper(e.Row.Table); 
+            wrapper.SetNewRowValues(e.Row);
         }
 
         void table_RowChanged(object sender, DataRowChangeEventArgs e)
@@ -68,45 +177,22 @@ namespace Softlynx.SQLiteDataset
 
         }
 
-        private void CheckWrapper(SQLiteTableWrapper wrapper, DataTable Table)
-        {
-            if (wrapper == null) throw new Exception("Can't find wrapper for table " + Table.TableName);
-        }
-
-        public void Fill(DataTable Table, string filter, object[] filter_params, string orderby)
+        private SQLiteTableWrapper MapTableWrapper(DataTable Table)
         {
             SQLiteTableWrapper wrapper = tables.Components[Table.TableName] as SQLiteTableWrapper;
-            CheckWrapper(wrapper, Table);
-            using (DbTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadUncommitted))
-            {
+            if (wrapper == null) throw new Exception(
+                String.Format(
+                "Can't find wrapper for table {0}",
+                Table.TableName
+                ));
+            return wrapper;
+        }
 
-                using (DbCommand cmd = connection.CreateCommand())
-                {
-                    cmd.CommandText = wrapper.FillCommand(filter, orderby);
-                    cmd.Prepare();
-                    int i = 0;
-                    foreach (DbParameter param in cmd.Parameters)
-                    {
-                        param.Value = filter_params[i++];
-                    }
-                    Table.BeginLoadData();
-                    using (DbDataReader reader = cmd.ExecuteReader())
-                    {
 
-                        try
-                        {
-                            Table.Load(reader, LoadOption.OverwriteChanges);
-                        }
-                        finally
-                        {
-                             reader.Close();
-                             transaction.Commit();
-                        };
-                    }
-                    Table.EndLoadData();
-                }
-                
-            }
+        public void Fill(DataTable Table, string filter, FillCmdParameter[] filter_params, string orderby)
+        {
+            SQLiteTableWrapper wrapper = MapTableWrapper(Table);
+            wrapper.FillCommand(Table, filter, filter_params, orderby);
         }
 
         /// <summary>
@@ -135,39 +221,14 @@ namespace Softlynx.SQLiteDataset
 
         internal void InsertOrUpdateRow(DataRow row)
         {
-            SQLiteTableWrapper wrapper = tables.Components[row.Table.TableName] as SQLiteTableWrapper;
-            CheckWrapper(wrapper,row.Table);
-            using (DbCommand cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = wrapper.UpdateCommand();
-                foreach (DataColumn col in wrapper.table.Columns) {
-                    cmd.Parameters.Add(new SQLiteParameter(
-                        String.Format("@{0}",col.ColumnName),
-                        row[col.ColumnName, DataRowVersion.Current]));
-                };
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-            }
+            SQLiteTableWrapper wrapper = MapTableWrapper(row.Table); 
+            wrapper.ReflectRowModification(row);
         }
 
         internal void MarkRowDeleted(DataRow row)
         {
-            SQLiteTableWrapper wrapper = tables.Components[row.Table.TableName] as SQLiteTableWrapper;
-            CheckWrapper(wrapper, row.Table);
-
-            using (DbCommand cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = wrapper.DeleteCommand();
-
-                foreach (DataColumn col in wrapper.table.PrimaryKey)
-                {
-                    cmd.Parameters.Add(new SQLiteParameter(
-                        String.Format("@{0}", col.ColumnName),
-                        row[col.ColumnName, DataRowVersion.Original]));
-                };
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-            }
+            SQLiteTableWrapper wrapper = MapTableWrapper(row.Table); 
+            wrapper.ReflectRowDeletion(row);
         }
 
     }

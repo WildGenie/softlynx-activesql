@@ -362,7 +362,6 @@ namespace SQLDataSetTester {
                                 this.columnid}, true));
                 this.columnid.AllowDBNull = false;
                 this.columnid.Unique = true;
-                this.columnname.DefaultValue = ((string)("\"asdda\""));
             }
             
             [System.Diagnostics.DebuggerNonUserCodeAttribute()]
