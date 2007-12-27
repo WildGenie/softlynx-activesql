@@ -13,8 +13,9 @@ namespace SQLDataSetTester
 {
     public partial class Form1 : Form
     {
-        SQLiteDatasetWrapper wrapper = new SQLiteDatasetWrapper();
-        SQLiteConnection db = new SQLiteConnection();
+        
+        // SQLiteDatasetWrapper wrapper = new SQLiteDatasetWrapper();
+        // SQLiteConnection db = new SQLiteConnection();
         public Form1()
         {
             InitializeComponent();
@@ -22,16 +23,36 @@ namespace SQLDataSetTester
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            /*
             DbConnectionStringBuilder builder = new DbConnectionStringBuilder();
             builder.Add("Data Source", @"c:\temp.db3");
             db.ConnectionString = builder.ConnectionString;
             db.Open();
-
             wrapper.AttachDataset(exampleDataSet1,db);
             wrapper.Fill(exampleDataSet1.DataTable1);
-
             exampleDataSet1.DataTable1.AddDataTable1Row(Guid.NewGuid(), "kjhkjhlk", DateTime.Now).Delete(); ;
+            */
+        }
 
+        private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            try
+            {
+
+                exampleDataSet1.DataTable1.Rows[e.RowIndex].SetColumnError(e.ColumnIndex, e.Exception.Message);
+                exampleDataSet1.DataTable1.Rows[e.RowIndex].RowError = e.Exception.Message;
+            }
+            catch { };
+            e.Cancel = true;
+        }
+
+        private void dataGridView1_RowValidated(object sender, DataGridViewCellEventArgs e)
+        {
+            try
+            {
+                exampleDataSet1.DataTable1.Rows[e.RowIndex].ClearErrors();
+            }
+            catch { };
         }
     }
 }
