@@ -52,6 +52,7 @@ namespace SQLDataSetTester
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.sqLiteConnection1 = new System.Data.SQLite.SQLiteConnection();
             this.sqLiteDatasetWrapper1 = new Softlynx.SQLiteDataset.SQLiteDatasetWrapper();
+            this.sqLiteConnection2 = new System.Data.SQLite.SQLiteConnection();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.exampleDataSet1)).BeginInit();
@@ -82,7 +83,7 @@ namespace SQLDataSetTester
             this.idDataGridViewTextBoxColumn.DataPropertyName = "id";
             this.idDataGridViewTextBoxColumn.HeaderText = "id";
             this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
-            this.idDataGridViewTextBoxColumn.Width = 209;
+            this.idDataGridViewTextBoxColumn.Width = 212;
             // 
             // nameDataGridViewTextBoxColumn
             // 
@@ -240,6 +241,7 @@ namespace SQLDataSetTester
             // sqLiteConnection1
             // 
             this.sqLiteConnection1.ConnectionString = "data source=C:\\temp1.db3;datetimeformat=Ticks";
+            this.sqLiteConnection1.DefaultTimeout = 30;
             // 
             // sqLiteDatasetWrapper1
             // 
@@ -247,6 +249,11 @@ namespace SQLDataSetTester
             this.sqLiteDatasetWrapper1.AutoPopulateData = true;
             this.sqLiteDatasetWrapper1.LinkedDataSet = this.exampleDataSet1;
             this.sqLiteDatasetWrapper1.SQLiteConnection = this.sqLiteConnection1;
+            // 
+            // sqLiteConnection2
+            // 
+            this.sqLiteConnection2.ConnectionString = "data source=C:\\temp1-replica.db3;datetimeformat=Ticks";
+            this.sqLiteConnection2.DefaultTimeout = 30;
             // 
             // Form1
             // 
@@ -293,6 +300,7 @@ namespace SQLDataSetTester
         private System.Windows.Forms.DataGridViewTextBoxColumn createdDataGridViewTextBoxColumn;
         private Softlynx.SQLiteDataset.SQLiteDatasetWrapper sqLiteDatasetWrapper1;
         private System.Data.SQLite.SQLiteConnection sqLiteConnection1;
+        private System.Data.SQLite.SQLiteConnection sqLiteConnection2;
     }
 }
 
