@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using Softlynx.SQLiteDataset;
+using Softlynx.SQLiteReplicator;
 using System.Data.SQLite;
 
 namespace SQLDataSetTester
@@ -32,6 +33,11 @@ namespace SQLDataSetTester
             wrapper.Fill(exampleDataSet1.DataTable1);
             exampleDataSet1.DataTable1.AddDataTable1Row(Guid.NewGuid(), "kjhkjhlk", DateTime.Now).Delete(); ;
             */
+            SQLiteReplicator repl = new SQLiteReplicator();
+            repl.MasterDB = sqLiteConnection1;
+            repl.ReplicaLog = sqLiteConnection2;
+            repl.Open();
+
         }
 
         private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
