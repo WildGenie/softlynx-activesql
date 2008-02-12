@@ -169,6 +169,12 @@ namespace Softlynx.SQLiteDataset
                 e.Row.AcceptChanges();
             }
 
+            if (e.Action == DataRowAction.Change)
+            {
+                InsertOrUpdateRow(e.Row);
+                e.Row.AcceptChanges();
+            }
+
             if (e.Action == DataRowAction.Delete)
             {
                 MarkRowDeleted(e.Row);
