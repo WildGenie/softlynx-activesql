@@ -52,7 +52,6 @@ namespace SQLDataSetTester
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.sqLiteConnection1 = new System.Data.SQLite.SQLiteConnection();
             this.sqLiteDatasetWrapper1 = new Softlynx.SQLiteDataset.SQLiteDatasetWrapper();
-            this.sqLiteConnection2 = new System.Data.SQLite.SQLiteConnection();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.exampleDataSet1)).BeginInit();
@@ -83,7 +82,7 @@ namespace SQLDataSetTester
             this.idDataGridViewTextBoxColumn.DataPropertyName = "id";
             this.idDataGridViewTextBoxColumn.HeaderText = "id";
             this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
-            this.idDataGridViewTextBoxColumn.Width = 212;
+            this.idDataGridViewTextBoxColumn.Width = 40;
             // 
             // nameDataGridViewTextBoxColumn
             // 
@@ -104,7 +103,6 @@ namespace SQLDataSetTester
             // 
             this.bindingSource1.DataMember = "DataTable1";
             this.bindingSource1.DataSource = this.exampleDataSet1;
-            this.bindingSource1.Position = 0;
             // 
             // exampleDataSet1
             // 
@@ -197,7 +195,7 @@ namespace SQLDataSetTester
             this.bindingNavigatorPositionItem.AutoSize = false;
             this.bindingNavigatorPositionItem.Name = "bindingNavigatorPositionItem";
             this.bindingNavigatorPositionItem.Size = new System.Drawing.Size(50, 21);
-            this.bindingNavigatorPositionItem.Text = "1";
+            this.bindingNavigatorPositionItem.Text = "0";
             this.bindingNavigatorPositionItem.ToolTipText = "Current position";
             // 
             // bindingNavigatorSeparator1
@@ -245,15 +243,10 @@ namespace SQLDataSetTester
             // 
             // sqLiteDatasetWrapper1
             // 
-            this.sqLiteDatasetWrapper1.Active = true;
+            this.sqLiteDatasetWrapper1.Active = false;
             this.sqLiteDatasetWrapper1.AutoPopulateData = true;
             this.sqLiteDatasetWrapper1.LinkedDataSet = this.exampleDataSet1;
             this.sqLiteDatasetWrapper1.SQLiteConnection = this.sqLiteConnection1;
-            // 
-            // sqLiteConnection2
-            // 
-            this.sqLiteConnection2.ConnectionString = "data source=C:\\temp1-replica.db3;datetimeformat=Ticks";
-            this.sqLiteConnection2.DefaultTimeout = 30;
             // 
             // Form1
             // 
@@ -300,7 +293,6 @@ namespace SQLDataSetTester
         private System.Windows.Forms.DataGridViewTextBoxColumn createdDataGridViewTextBoxColumn;
         private Softlynx.SQLiteDataset.SQLiteDatasetWrapper sqLiteDatasetWrapper1;
         private System.Data.SQLite.SQLiteConnection sqLiteConnection1;
-        private System.Data.SQLite.SQLiteConnection sqLiteConnection2;
     }
 }
 

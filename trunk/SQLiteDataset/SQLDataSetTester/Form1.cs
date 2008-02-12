@@ -33,11 +33,17 @@ namespace SQLDataSetTester
             wrapper.Fill(exampleDataSet1.DataTable1);
             exampleDataSet1.DataTable1.AddDataTable1Row(Guid.NewGuid(), "kjhkjhlk", DateTime.Now).Delete(); ;
             */
+            
+            //System.IO.File.Delete(SQLiteReplicator.ConnectionFileName(sqLiteConnection1));
+            sqLiteConnection1.Open();
+            sqLiteDatasetWrapper1.AttachDataset(exampleDataSet1,sqLiteConnection1);
+            //sqLiteDatasetWrapper1.Active = true;
+
             SQLiteReplicator repl = new SQLiteReplicator();
             repl.MasterDB = sqLiteConnection1;
-            repl.ReplicaLog = sqLiteConnection2;
-            repl.Open();
-
+            repl.CreateTableReplicaLogSchema("DataTable1");
+            //repl.Open();
+            
         }
 
         private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
