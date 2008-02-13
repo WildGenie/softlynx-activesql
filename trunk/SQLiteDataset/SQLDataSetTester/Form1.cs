@@ -14,6 +14,7 @@ namespace SQLDataSetTester
 {
     public partial class Form1 : Form
     {
+        SQLiteReplicator repl = new SQLiteReplicator();
         
         // SQLiteDatasetWrapper wrapper = new SQLiteDatasetWrapper();
         // SQLiteConnection db = new SQLiteConnection();
@@ -39,7 +40,7 @@ namespace SQLDataSetTester
             sqLiteDatasetWrapper1.AttachDataset(exampleDataSet1,sqLiteConnection1);
             //sqLiteDatasetWrapper1.Active = true;
 
-            SQLiteReplicator repl = new SQLiteReplicator();
+            
             repl.MasterDB = sqLiteConnection1;
             repl.CreateTableReplicaLogSchema("DataTable1");
             //repl.Open();
@@ -65,6 +66,12 @@ namespace SQLDataSetTester
                 exampleDataSet1.DataTable1.Rows[e.RowIndex].ClearErrors();
             }
             catch { };
+        }
+
+        private void toolStripButton1_Click(object sender, EventArgs e)
+        {
+            ReplicaPortion rp = new ReplicaPortion();
+            rp.RequestLog(repl, 0);
         }
     }
 }

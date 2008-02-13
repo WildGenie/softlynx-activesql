@@ -51,6 +51,7 @@ namespace SQLDataSetTester
             this.toolStripSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.sqLiteConnection1 = new System.Data.SQLite.SQLiteConnection();
+            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.sqLiteDatasetWrapper1 = new Softlynx.SQLiteDataset.SQLiteDatasetWrapper();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
@@ -129,6 +130,7 @@ namespace SQLDataSetTester
             this.bindingNavigatorAddNewItem,
             this.bindingNavigatorDeleteItem,
             this.toolStripSeparator,
+            this.toolStripButton1,
             this.toolStripSeparator1});
             this.bindingNavigator1.Location = new System.Drawing.Point(0, 298);
             this.bindingNavigator1.MoveFirstItem = this.bindingNavigatorMoveFirstItem;
@@ -238,8 +240,18 @@ namespace SQLDataSetTester
             // 
             // sqLiteConnection1
             // 
-            this.sqLiteConnection1.ConnectionString = "data source=C:\\temp1.db3;datetimeformat=Ticks";
+            this.sqLiteConnection1.ConnectionString = "data source=C:\\temp1.db3";
             this.sqLiteConnection1.DefaultTimeout = 30;
+            // 
+            // toolStripButton1
+            // 
+            this.toolStripButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton1.Image")));
+            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton1.Name = "toolStripButton1";
+            this.toolStripButton1.Size = new System.Drawing.Size(23, 22);
+            this.toolStripButton1.Text = "toolStripButton1";
+            this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
             // 
             // sqLiteDatasetWrapper1
             // 
@@ -293,6 +305,7 @@ namespace SQLDataSetTester
         private System.Windows.Forms.DataGridViewTextBoxColumn createdDataGridViewTextBoxColumn;
         private Softlynx.SQLiteDataset.SQLiteDatasetWrapper sqLiteDatasetWrapper1;
         private System.Data.SQLite.SQLiteConnection sqLiteConnection1;
+        private System.Windows.Forms.ToolStripButton toolStripButton1;
     }
 }
 
