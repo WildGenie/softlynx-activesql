@@ -27,18 +27,44 @@ namespace Softlynx.SQLiteDataset
     internal class SQLiteTableWrapper : Component
     {
         internal Container columns = new Container();
-        private DbCommand ModifyCmd = null;
+        private DbCommand InsertCmd = null;
+        private DbCommand UpdateCmd = null;
         private DbCommand DeleteCmd = null;
         private DbCommand FillCmd = null;
         private DbCommand CreateCmd = null;
         private string FillCmdBase = String.Empty;
 
-        private string UpdateCommandText(DataTable table)
+        private string InsertCommandText(DataTable table)
         {
             return String.Format("INSERT INTO {0}({1}) values ({2})",
                 table.TableName,
                 ColumnsList(table.Columns),
                 ColumnsList(table.Columns, "@")
+                );
+        }
+
+
+        private string UpdateCommandText(DataTable table)
+        {
+            string pkeycolumns = string.Empty;
+            string keyvalpairs = string.Empty;
+            foreach (DataColumn dc in table.Columns)
+            {
+                if (keyvalpairs != String.Empty) keyvalpairs += ",";
+                keyvalpairs += String.Format("{0}=@{0}", dc.ColumnName);
+            };
+
+            foreach (DataColumn dc in table.PrimaryKey)
+            {
+                if (pkeycolumns != String.Empty) pkeycolumns += ",";
+                pkeycolumns = String.Format("{0}=@{0}", dc.ColumnName);
+            };
+            if (pkeycolumns == String.Empty) throw new Exception("Can't update record until primary key defined");
+
+            return String.Format("UPDATE {0} set {1} where ({2})",
+                table.TableName,
+                keyvalpairs,
+                pkeycolumns
                 );
         }
 
@@ -51,7 +77,8 @@ namespace Softlynx.SQLiteDataset
                 pkeycolumns = String.Format("{0}=@{0}", dc.ColumnName);
             };
             if (pkeycolumns == String.Empty) throw new Exception("Can't mark record as deleted until primary key defined");
-            return String.Format("UPDATE {0} SET isdeleted=1 where ({1})",
+//            return String.Format("UPDATE {0} SET isdeleted=1 where ({1})",
+            return String.Format("DELETE FROM {0} where ({1})",
                 table.TableName,
                 pkeycolumns
                 );
@@ -60,11 +87,14 @@ namespace Softlynx.SQLiteDataset
         private String CreateTableStatement(DataTable table)
         {
             String s = String.Format("CREATE TABLE IF NOT EXISTS {0} (\n", table.TableName);
+            String cols = String.Empty;
             foreach (DataColumn col in table.Columns)
             {
-                s += String.Format("{0},\n", SQLiteColumnWrapper.CreateColumnStatement(col));
+                if (cols!=String.Empty) cols+=",\n";
+                cols += String.Format("{0}", SQLiteColumnWrapper.CreateColumnStatement(col));
             }
-            s += String.Format("isdeleted flag default 0");
+            s+=cols;
+//            s += String.Format("isdeleted flag default 0");
             if (table.PrimaryKey.Length > 0)
             {
                 s += String.Format(",\nPRIMARY KEY ({0}) ON CONFLICT REPLACE",
@@ -72,7 +102,7 @@ namespace Softlynx.SQLiteDataset
                     );
             }
             s += String.Format("\n);\n");
-            s += String.Format("CREATE INDEX IF NOT EXISTS {0}_DELETED_IDX on {0}(isdeleted);\n", table.TableName);
+            //s += String.Format("CREATE INDEX IF NOT EXISTS {0}_DELETED_IDX on {0}(isdeleted);\n", table.TableName);
             return s;
         }
 
@@ -85,19 +115,34 @@ namespace Softlynx.SQLiteDataset
                 columns.Add(wrapper,column.ColumnName);
             }
 
-            ModifyCmd = connection.CreateCommand();
-            ModifyCmd.CommandText = UpdateCommandText(table);
+            InsertCmd = connection.CreateCommand();
+            InsertCmd.CommandText = InsertCommandText(table);
 
             foreach (DataColumn col in table.Columns)
             {
-                ModifyCmd.Parameters.Add(
+                InsertCmd.Parameters.Add(
                     new SQLiteParameter(
                     String.Format("@{0}",col.ColumnName),
                     SQLiteColumnWrapper.GetColumnDataType(col),
                     col.ColumnName
                     ));
             };
-            ModifyCmd.Prepare();
+            InsertCmd.Prepare();
+
+            UpdateCmd = connection.CreateCommand();
+            UpdateCmd.CommandText = UpdateCommandText(table);
+
+            foreach (DataColumn col in table.Columns)
+            {
+                UpdateCmd.Parameters.Add(
+                    new SQLiteParameter(
+                    String.Format("@{0}", col.ColumnName),
+                    SQLiteColumnWrapper.GetColumnDataType(col),
+                    col.ColumnName
+                    ));
+            };
+            UpdateCmd.Prepare();
+
 
             DeleteCmd = connection.CreateCommand();
             DeleteCmd.CommandText = DeleteCommandText(table);
@@ -119,13 +164,22 @@ namespace Softlynx.SQLiteDataset
             CreateCmd.Prepare();
         }
 
-        public void ReflectRowModification(DataRow row)
+        public void ReflectRowInsert(DataRow row)
         {
-            foreach (DbParameter param in ModifyCmd.Parameters)
+            foreach (DbParameter param in InsertCmd.Parameters)
             {
                 param.Value = row[param.SourceColumn, DataRowVersion.Current];
             }
-            ModifyCmd.ExecuteNonQuery();
+            InsertCmd.ExecuteNonQuery();
+        }
+
+        public void ReflectRowUpdate(DataRow row)
+        {
+            foreach (DbParameter param in UpdateCmd.Parameters)
+            {
+                param.Value = row[param.SourceColumn, DataRowVersion.Current];
+            }
+            UpdateCmd.ExecuteNonQuery();
         }
 
         public void ReflectRowDeletion(DataRow row)

@@ -35,13 +35,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Replication\ReplicaPortion.cs" />
+    <Compile Include="Replication\ReplicaRecord.cs" />
     <Compile Include="SQLiteColumnWrapper.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="SQLiteDatasetWrapper.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="SQLiteReplicator.cs">
+    <Compile Include="Replication\SQLiteReplicator.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="SQLiteTableWrapper.cs">
