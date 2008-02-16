@@ -163,21 +163,23 @@ namespace Softlynx.SQLiteDataset
 
         void table_RowChanged(object sender, DataRowChangeEventArgs e)
         {
+            SQLiteTableWrapper wrapper = MapTableWrapper(e.Row.Table); 
+
             if (e.Action == DataRowAction.Add)
             {
-                InsertOrUpdateRow(e.Row);
+                wrapper.ReflectRowInsert(e.Row);
                 e.Row.AcceptChanges();
             }
 
             if (e.Action == DataRowAction.Change)
             {
-                InsertOrUpdateRow(e.Row);
+                wrapper.ReflectRowUpdate(e.Row);
                 e.Row.AcceptChanges();
             }
 
             if (e.Action == DataRowAction.Delete)
             {
-                MarkRowDeleted(e.Row);
+                wrapper.ReflectRowDeletion(e.Row);
                 e.Row.AcceptChanges();
             }
 
@@ -209,7 +211,8 @@ namespace Softlynx.SQLiteDataset
         /// <param name="Table">Таблицу которую следует заполнить.</param>
         public void Fill(DataTable Table)
         {
-            Fill(Table, "isdeleted=0", null, string.Empty);
+            Fill(Table,String.Empty, null, string.Empty);
+            //Fill(Table, "isdeleted=0", null, string.Empty);
         }
 
         /// <summary>
@@ -220,21 +223,8 @@ namespace Softlynx.SQLiteDataset
         /// <param name="Table">Порядок сортировки в запросе (неесколько полей указываются ерез запятую).</param>
         public void Fill(DataTable Table, string orderby)
         {
-            Fill(Table, "isdeleted=0", null, orderby);
-        }
-
-
-
-        internal void InsertOrUpdateRow(DataRow row)
-        {
-            SQLiteTableWrapper wrapper = MapTableWrapper(row.Table); 
-            wrapper.ReflectRowModification(row);
-        }
-
-        internal void MarkRowDeleted(DataRow row)
-        {
-            SQLiteTableWrapper wrapper = MapTableWrapper(row.Table); 
-            wrapper.ReflectRowDeletion(row);
+            Fill(Table, String.Empty, null, orderby);
+            //Fill(Table, "isdeleted=0", null, orderby);
         }
 
     }

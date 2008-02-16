@@ -6,15 +6,15 @@ using System.Data.Common;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using Softlynx.SQLiteDataset;
-using Softlynx.SQLiteReplicator;
+using Softlynx.SQLiteDataset.Replication;
 using System.Data.SQLite;
 
 namespace SQLDataSetTester
 {
     public partial class Form1 : Form
     {
-        SQLiteReplicator repl = new SQLiteReplicator();
+        SQLiteReplicator repl1 = new SQLiteReplicator();
+        SQLiteReplicator repl2 = new SQLiteReplicator();
         
         // SQLiteDatasetWrapper wrapper = new SQLiteDatasetWrapper();
         // SQLiteConnection db = new SQLiteConnection();
@@ -25,6 +25,7 @@ namespace SQLDataSetTester
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            SQLiteFunction.RegisterFunction(typeof(SQLiteGudHelper));
             /*
             DbConnectionStringBuilder builder = new DbConnectionStringBuilder();
             builder.Add("Data Source", @"c:\temp.db3");
@@ -37,12 +38,21 @@ namespace SQLDataSetTester
             
             //System.IO.File.Delete(SQLiteReplicator.ConnectionFileName(sqLiteConnection1));
             sqLiteConnection1.Open();
+
             sqLiteDatasetWrapper1.AttachDataset(exampleDataSet1,sqLiteConnection1);
+
+            sqLiteConnection2.Open();
+            sqLiteDatasetWrapper2.AttachDataset(exampleDataSet2, sqLiteConnection2);
+
             //sqLiteDatasetWrapper1.Active = true;
 
             
-            repl.MasterDB = sqLiteConnection1;
-            repl.CreateTableReplicaLogSchema("DataTable1");
+            repl1.MasterDB = sqLiteConnection1;
+            repl1.CreateTableReplicaLogSchema("DataTable1");
+
+            repl2.MasterDB = sqLiteConnection2;
+            repl2.CreateTableReplicaLogSchema("DataTable1");
+
             //repl.Open();
             
         }
@@ -70,8 +80,30 @@ namespace SQLDataSetTester
 
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
-            ReplicaPortion rp = new ReplicaPortion();
-            rp.RequestLog(repl, 0);
+            Int64 last_id = 0;
+            byte[] buffer=repl1.BuildLocalReplicaBuffer(ref last_id);
+            repl2.ApplyReplicaBuffer(buffer);
+
+            /*
+            
+            last_id = 0;
+            buffer = repl2.BuildLocalReplicaBuffer(ref last_id);
+            repl1.ApplyReplicaBuffer(buffer);
+             */
+
+            sqLiteDatasetWrapper2.PopulateDataSet(exampleDataSet2);
+
         }
+
+        private void toolStripButton8_Click(object sender, EventArgs e)
+        {
+            Int64 last_id = 0;
+            byte[] buffer = repl2.BuildLocalReplicaBuffer(ref last_id);
+            repl1.ApplyReplicaBuffer(buffer);
+
+            sqLiteDatasetWrapper1.PopulateDataSet(exampleDataSet1);
+
+        }
+
     }
 }
