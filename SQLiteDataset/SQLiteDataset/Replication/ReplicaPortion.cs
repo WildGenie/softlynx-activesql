@@ -65,19 +65,19 @@ namespace Softlynx.SQLiteDataset.Replication
             }
         }
 
-        public void ApplyLog(SQLiteReplicator replicator)
+        public int ApplyLog(SQLiteReplicator replicator)
         {
-            if (ReplicaSet.Count <= 0) return;
+            if (ReplicaSet.Count <= 0) return 0;
+            int apc = 0;
             using (DbTransaction transaction = replicator.MasterDB.BeginTransaction(System.Data.IsolationLevel.Snapshot))
             {
                 foreach (ReplicaRecord rr in ReplicaSet)
                 {
-                    rr.Apply(replicator);
+                    apc+=rr.Apply(replicator)?1:0;
                 }
                 transaction.Commit();
             }
-
-
+            return apc;
         }
     }
 }
