@@ -115,7 +115,7 @@ namespace Softlynx.SQLiteDataset.Replication
             /*
             0:          seqno INTEGER PRIMARY KEY AUTOINCREMENT,
             1:          table_name text,
-            2:          record_rowid INTEGER, -- идентификатор строки таблицы в локальной БД
+            2:          record_rowguid GUID,  -- глобальный ункальный идентификатор изменяемой  записи
             3:          action INTEGER,
             4:          author GUID, -- идентификатор автора изменений, если NULL то это мы сами
             5:          stamp INTEGER default CURRENT_TIMESTAMP,
@@ -125,7 +125,6 @@ namespace Softlynx.SQLiteDataset.Replication
             SeqNo = reader.GetInt64(0);
             TableName = reader.GetString(1);
             RowGuid=reader.GetGuid(2);
-            //replicator.MapRowIDToRowGuid(TableName, LocalRowID, out rowguid);
             Action = reader.GetString(3)[0];
             if (!reader.IsDBNull(4))
                 Author = reader.GetGuid(4);
@@ -173,16 +172,11 @@ namespace Softlynx.SQLiteDataset.Replication
         }
 
 
-        internal void Apply(SQLiteReplicator replicator)
+        internal bool Apply(SQLiteReplicator replicator)
         {
-            if (replicator.IsReplicaExists(ReplicaGuid)) return;
+            if (replicator.IsReplicaExists(ReplicaGuid)) return false;
 
             replicator.LastIDs.Clear();
-
-            String _TableName=String.Empty;
-            Object _rowid=null;
-
-            replicator.MapRowGuidToRowID(RowGuid, out _TableName, out _rowid);
 
             String[] columns=replicator.GetTableColumnNames(TableName);
             
@@ -206,9 +200,6 @@ namespace Softlynx.SQLiteDataset.Replication
 insert into {0}({1}) values({2});
 ", TableName, names, values);
                     cmd.ExecuteNonQuery();
-
-                    //replicator.SetRowIDToRowGuidMapping(RowGuid, TableName, replicator.LastIDs[TableName]);
-
                 }
 
                 if (Action == 'U')
@@ -234,14 +225,14 @@ update {0} set {1} where id=@rowguid
                                         cmd.CommandText = String.Format(@"
 delete from {0} where id=@rowguid
 ", TableName);
-                    cmd.Parameters.Add(new SQLiteParameter("@rowid",RowGuid));
+                                        cmd.Parameters.Add(new SQLiteParameter("@rowguid", RowGuid));
                     cmd.ExecuteNonQuery();
                 }
             }
 
              replicator.FixReplicaLog((long)replicator.LastIDs["replica_log"], Stamp, Author, ReplicaGuid);
 
-
+             return true;
         }
 
     }

@@ -9,29 +9,20 @@ using System.Data.SqlClient;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.IO;
+using System.Xml;
+using System.Xml.Serialization;
+
 
 namespace Softlynx.SQLiteDataset.Replication
 {
 
-    [SQLiteFunction(Name = "create_guid", Arguments = 0, FuncType = FunctionType.Scalar)]
-    public class SQLiteGudHelper: SQLiteFunction
-    {
-        public override object Invoke(object[] args)
-        {
-            return Guid.NewGuid().ToString();// ToByteArray();
-        }
-    }
-
-    public class SQLiteReplicator : Component
+   public class SQLiteReplicator : Component
     {
         internal Hashtable LastIDs= new Hashtable();
         private Hashtable TableColumns = new Hashtable();
         private DbConnection master=null;
         private string replica_filename = string.Empty;
         private Guid cached_guid = Guid.Empty;
-        DbCommand MapRowGuidToRowID_cmd = null;
-        DbCommand MapRowIDToRowGuid_cmd = null;
-        DbCommand SetRowIDToRowGuidMapping_cmd = null;
         DbCommand CheckReplicaExists_cmd = null;
         DbCommand FixReplicaLog_cmd = null;
 
@@ -129,62 +120,6 @@ public void Open()
             }
         }
 
-        internal void SetRowIDToRowGuidMapping(Guid RowGuid, string TableName, Object RowID)
-        {
-            SetRowIDToRowGuidMapping_cmd.Parameters[0].Value = TableName;
-            SetRowIDToRowGuidMapping_cmd.Parameters[1].Value = RowID;
-            SetRowIDToRowGuidMapping_cmd.Parameters[2].Value = RowGuid;
-            SetRowIDToRowGuidMapping_cmd.ExecuteNonQuery();
-
-        }
-
-        /// <summary>
-        /// Возвращает, и при необходимости создает соотвествие между
-        /// (TableName,RowID)-> RowGuid в служебной таблице replica_rowid_guid_relation
-        /// </summary>
-        /// <param name="TableName">Имя таблицы</param>
-        /// <param name="RowID">Значение RowID в таблице TableName</param>
-        /// <param name="RowGuid">Глобальный уникальный идентификатор строки</param>
-        internal void MapRowIDToRowGuid(string TableName, Object RowID, out Guid RowGuid)
-        {
-            RowGuid = Guid.Empty;
-        
-            MapRowIDToRowGuid_cmd.Parameters[0].Value = TableName;
-            MapRowIDToRowGuid_cmd.Parameters[1].Value = RowID;
-            using (DbDataReader reader = MapRowIDToRowGuid_cmd.ExecuteReader())
-            {
-                if (reader.Read()) RowGuid = reader.GetGuid(0);
-                else
-                {
-                    RowGuid = Guid.NewGuid();
-                    SetRowIDToRowGuidMapping(RowGuid, TableName, RowID);
-                }
-                    reader.Close();
-            }
-            
-        }
-        /// <summary>
-        /// По заданному RowGuid возвращает имя таблицы и значение rowid в ней.
-        /// </summary>
-        /// <param name="RowGuid">Глобальный уникальный идентификатор строки</param>
-        /// <param name="TableName">Возвращаемое имя таблицы</param>
-        /// <param name="RowID">Значене rowid для найденой строки в таблице TableName</param>
-        internal void MapRowGuidToRowID(Guid RowGuid, out string TableName, out Object RowID)
-        {
-            TableName = String.Empty;
-            RowID = null;
-            MapRowGuidToRowID_cmd.Parameters[0].Value = RowGuid;
-
-            using (DbDataReader reader = MapRowGuidToRowID_cmd.ExecuteReader())
-            {
-                if (reader.Read())
-                {
-                    TableName = reader.GetString(0);
-                    RowID = reader.GetValue(1);
-                };
-                reader.Close();
-            }
-        }
 
         internal bool IsReplicaExists(Guid ReplicaGuid)
         {
@@ -225,41 +160,6 @@ public void Open()
 
             (MasterDB as SQLiteConnection).Update += new SQLiteUpdateEventHandler(SQLiteReplicator_Update);
 
-
-            MapRowIDToRowGuid_cmd = master.CreateCommand();
-            MapRowIDToRowGuid_cmd.CommandText = @"
-select record_rowguid 
-    from replica_rowid_guid_relation
-    where 
-        table_name=@table_name
-            and
-        record_rowid=@record_rowid
-";
-            MapRowIDToRowGuid_cmd.Parameters.Add(new SQLiteParameter("@table_name"));
-            MapRowIDToRowGuid_cmd.Parameters.Add(new SQLiteParameter("@record_rowid"));
-            MapRowIDToRowGuid_cmd.Prepare();
-
-            MapRowGuidToRowID_cmd = master.CreateCommand();
-            MapRowGuidToRowID_cmd.CommandText = @"
-select table_name,record_rowid 
-    from replica_rowid_guid_relation
-    where 
-        record_rowguid=@record_rowguid;
-";
-            MapRowGuidToRowID_cmd.Parameters.Add(new SQLiteParameter("@record_rowguid"));
-            MapRowGuidToRowID_cmd.Prepare();
-
-            SetRowIDToRowGuidMapping_cmd = master.CreateCommand();
-
-            SetRowIDToRowGuidMapping_cmd.CommandText = @"
-insert or replace into replica_rowid_guid_relation(table_name,record_rowid,record_rowguid) 
-values (@table_name,@record_rowid,@record_rowguid)
-";
-            SetRowIDToRowGuidMapping_cmd.Parameters.Add(new SQLiteParameter("@table_name"));
-            SetRowIDToRowGuidMapping_cmd.Parameters.Add(new SQLiteParameter("@record_rowid"));
-            SetRowIDToRowGuidMapping_cmd.Parameters.Add(new SQLiteParameter("@record_rowguid"));
-            SetRowIDToRowGuidMapping_cmd.Prepare();
-
             CheckReplicaExists_cmd = master.CreateCommand();
             CheckReplicaExists_cmd.CommandText = @"
 select 1 from replica_log where replica_guid=@replica_guid
@@ -293,15 +193,6 @@ replicaid INTEGER,
 lastsync DATETIME 
 );
 
--- таблицы replica_rowid_guid_relation связывает между собой 
--- синтетический ROWGUID и фактический ROWID в конкретной таблице
-create table IF NOT EXISTS replica_rowid_guid_relation ( 
-record_rowguid GUID PRIMARY KEY,    -- уникальный номер записи
-record_rowid ROWID,              -- значение соотвествующего ROWID
-table_name     TEXT                -- имя таблицы
-);
-create index IF NOT EXISTS replica_rowid_guid_relation_table_name on replica_rowid_guid_relation(table_name);
-create index IF NOT EXISTS replica_rowid_guid_relation_record_rowid on replica_rowid_guid_relation(record_rowid);
 
 -- таблица хранит данные по проводимым изменениям, первоначально заполняется триггером автоматически
 drop table if exists replica_log;
@@ -321,19 +212,7 @@ create index IF NOT EXISTS replica_log_replica_guid on replica_log(replica_guid)
 create index IF NOT EXISTS replica_log_replica_table_name on replica_log(table_name);
 create index IF NOT EXISTS replica_log_replica_record_rowid on replica_log(record_rowguid);
 
--- временная таблица ключ-значение досупная только в рамках текущего соединения
-create temp table vars(
-name text primary key,
-value object
-);
 
--- Триггер для записи ID инициатора изменений
--- create temp trigger before_replica_log_insert AFTER INSERT on replica_log
--- BEGIN
--- update replica_log
--- SET author=(select value from vars where name='CurrentAuthorID' limit 1) 
--- where seqno=new.seqno and author isnull;
--- END;
 ";        
                 cmd.ExecuteNonQuery();
 
@@ -355,10 +234,12 @@ create table if not exists replica_changes_on_{0} as
     select 0 as seqnoref,* from {0} limit 0;
 
 create index if not exists replica_changes_on_{0}_seqnoref on replica_changes_on_{0}(seqnoref);
+create index if not exists replica_changes_on_{0}_id on replica_changes_on_{0}(id);
 
 DROP TRIGGER IF EXISTS when_insert_{0}; -- comment it on producion
 DROP TRIGGER IF EXISTS when_update_{0}; -- comment it on producion
 DROP TRIGGER IF EXISTS when_delete_{0}; -- comment it on producion
+DROP TRIGGER IF EXISTS when_delete_{0}_replica_log; -- comment it on producion
 
 create trigger if not exists when_insert_{0} AFTER INSERT on {0}
 BEGIN
@@ -369,14 +250,21 @@ END;
 
 create trigger if not exists when_update_{0} AFTER UPDATE on {0}
 BEGIN
+delete from replica_log where record_rowguid=OLD.id and action='U';
 insert into replica_log(table_name,record_rowguid,action) values ('{0}',OLD.id,'U');
 insert into replica_changes_on_{0} select last_insert_rowid() as seqnoref,* from {0} where rowid=OLD.rowid;
 END;  
 
 create trigger if not exists when_delete_{0} AFTER DELETE on {0}
 BEGIN
+delete from replica_log where record_rowguid=OLD.id and action='U';
 insert into replica_log(table_name,record_rowguid,action) values ('{0}',OLD.ID,'D');
 END;  
+
+create trigger if not exists when_delete_{0}_replica_log BEFORE DELETE on replica_log
+BEGIN
+delete from replica_changes_on_{0} where seqnoref=old.seqno;
+END;
 
 ", TableName);
 
@@ -413,14 +301,18 @@ END;
         /// Применяет к текущей БД данный по репликации в бефере ReplicaBuffer
         /// </summary>
         /// <param name="ReplicaBuffer">Сериализованный бинарно объект ReplicaPortion</param>
-        public void ApplyReplicaBuffer(byte[] ReplicaBuffer)
+        public int ApplyReplicaBuffer(byte[] ReplicaBuffer)
         {
+            if (ReplicaBuffer == null) return 0;
+            int apc = 0;
             IFormatter formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+            //IFormatter formatter = new System.Xml.Serialization. XmlSerializer();
             using (MemoryStream strm = new MemoryStream(ReplicaBuffer))
             {
                 ReplicaPortion rp = (ReplicaPortion)formatter.Deserialize(strm);
-                rp.ApplyLog(this);
+                apc+=rp.ApplyLog(this);
             }
+            return apc;
         }
 
         /// <summary>

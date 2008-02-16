@@ -25,7 +25,6 @@ namespace SQLDataSetTester
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            SQLiteFunction.RegisterFunction(typeof(SQLiteGudHelper));
             /*
             DbConnectionStringBuilder builder = new DbConnectionStringBuilder();
             builder.Add("Data Source", @"c:\temp.db3");
