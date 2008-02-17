@@ -3,11 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Data.SQLite;
-using System.Data.Sql;
 using System.Data.Common;
-using System.Data.SqlClient;
 using System.ComponentModel;
-using System.Runtime.Serialization;
 using System.IO;
 
 namespace Softlynx.SQLiteDataset.Replication

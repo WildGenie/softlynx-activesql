@@ -26,7 +26,7 @@ namespace Softlynx.SQLiteDataset
     /// </summary>
     internal class SQLiteTableWrapper : Component
     {
-        internal Container columns = new Container();
+        internal Hashtable columns = new Hashtable();
         private DbCommand InsertCmd = null;
         private DbCommand UpdateCmd = null;
         private DbCommand DeleteCmd = null;
@@ -112,7 +112,7 @@ namespace Softlynx.SQLiteDataset
             {
                 SQLiteColumnWrapper wrapper=new SQLiteColumnWrapper();
                 wrapper.AttachColumn(column);
-                columns.Add(wrapper,column.ColumnName);
+                columns[column.ColumnName]=wrapper;
             }
 
             InsertCmd = connection.CreateCommand();
@@ -267,7 +267,7 @@ namespace Softlynx.SQLiteDataset
 
         private SQLiteColumnWrapper MapColumnWrapper(DataColumn Column)
         {
-            SQLiteColumnWrapper wrapper = columns.Components[Column.ColumnName] as SQLiteColumnWrapper;
+            SQLiteColumnWrapper wrapper = columns[Column.ColumnName] as SQLiteColumnWrapper;
             if (wrapper == null) throw new Exception(
                 String.Format(
                 "Can't find wrapper for table {0} column {1}",

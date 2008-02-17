@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Data;
-using System.Data.Sql;
 using System.Data.Common;
 using System.Collections;
 using System.ComponentModel;
@@ -87,7 +86,7 @@ namespace Softlynx.SQLiteDataset
 	
 
 
-        protected Container tables = new Container();
+        protected Hashtable tables = new Hashtable();
         
         /// <summary>
         /// Связывает экземпляр DataSet с базой SQLite.
@@ -120,7 +119,7 @@ namespace Softlynx.SQLiteDataset
                             table.RowDeleting += new DataRowChangeEventHandler(table_RowChanged);
                             SQLiteTableWrapper wrapper = new SQLiteTableWrapper();
                             wrapper.AttachTable(table, connection);
-                            tables.Add(wrapper, table.TableName);
+                            tables[table.TableName]=wrapper;
                             wrapper.ReflectTableCreation();
                         }
                         transaction.Commit();
@@ -138,10 +137,7 @@ namespace Softlynx.SQLiteDataset
 
         private void ClearLastState()
         {
-            while (tables.Components.Count > 0)
-            {
-                tables.Remove(tables.Components[0]);
-            }
+            tables.Clear();
         }
 
 
@@ -187,7 +183,7 @@ namespace Softlynx.SQLiteDataset
 
         private SQLiteTableWrapper MapTableWrapper(DataTable Table)
         {
-            SQLiteTableWrapper wrapper = tables.Components[Table.TableName] as SQLiteTableWrapper;
+            SQLiteTableWrapper wrapper = tables[Table.TableName] as SQLiteTableWrapper;
             if (wrapper == null) throw new Exception(
                 String.Format(
                 "Can't find wrapper for table {0}",
