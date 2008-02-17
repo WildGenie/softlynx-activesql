@@ -6,6 +6,8 @@ using System.Data.SQLite;
 using System.Data.Common;
 using System.ComponentModel;
 using System.IO;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace Softlynx.SQLiteDataset.Replication
 {
@@ -16,17 +18,19 @@ namespace Softlynx.SQLiteDataset.Replication
     public class ReplicaPortion
     {
         ArrayList replicaset = new ArrayList();
-
-        public ArrayList ReplicaSet
+        
+        [XmlArray]
+        public ReplicaRecord[] ReplicaSet
         {
-            get { return replicaset; }
-            set { replicaset = value; }
+            get { return (ReplicaRecord[])replicaset.ToArray(typeof(ReplicaRecord)); }
+            set { replicaset.Clear();replicaset.AddRange(value); }
         }
 
 
         /// <summary>
         /// Задает максималный размер количества реплик в ReplicaSet
         /// </summary>
+        [XmlIgnore]
         public int MaxPortionSize = 100;
 
         /// <summary>
@@ -64,7 +68,7 @@ namespace Softlynx.SQLiteDataset.Replication
 
         public int ApplyLog(SQLiteReplicator replicator)
         {
-            if (ReplicaSet.Count <= 0) return 0;
+            if (ReplicaSet.Length <= 0) return 0;
             int apc = 0;
             using (DbTransaction transaction = replicator.MasterDB.BeginTransaction(System.Data.IsolationLevel.Snapshot))
             {

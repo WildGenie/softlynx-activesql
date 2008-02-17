@@ -7,6 +7,8 @@ using System.Data.SQLite;
 using System.Data.Common;
 using System.ComponentModel;
 using System.IO;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace Softlynx.SQLiteDataset.Replication
 {
@@ -14,7 +16,8 @@ namespace Softlynx.SQLiteDataset.Replication
     /// Описание одной записи репликации
     /// </summary>
     [Serializable]
-    class ReplicaRecord
+    [XmlInclude(typeof(System.DBNull))]
+    public class ReplicaRecord
     {
 
         Int64 seqno = 0;
@@ -30,6 +33,7 @@ namespace Softlynx.SQLiteDataset.Replication
         /// Массив полей отдельно взятой записи
         /// null если не Insert или Update
         /// </summary>
+        [XmlArray]
         public Object[] Fields
         {
             get { return fields; }
@@ -39,6 +43,7 @@ namespace Softlynx.SQLiteDataset.Replication
         /// <summary>
         /// Тип реплики Insert/Update/Delete
         /// </summary>
+        [XmlAttribute]
         public char Action
         {
             get { return action; }
@@ -48,6 +53,7 @@ namespace Softlynx.SQLiteDataset.Replication
         /// <summary>
         /// Имя таблицы по к которой относится данная запись
         /// </summary>
+        [XmlAttribute]
         public string TableName
         {
             get { return tablename; }
@@ -57,6 +63,7 @@ namespace Softlynx.SQLiteDataset.Replication
         /// <summary>
         /// Уникальный идентификатор строки в таблице
         /// </summary>
+        [XmlAttribute]
         public Int64 SeqNo
         {
             get { return seqno; }
@@ -66,6 +73,7 @@ namespace Softlynx.SQLiteDataset.Replication
         /// Уникальный идентификатор автора реплики.
         /// Служит для выявления авторства и предотвращения цикличности распространения данных.
         /// </summary>
+        [XmlAttribute]
         public Guid Author
         {
             get { return author; }
@@ -75,6 +83,7 @@ namespace Softlynx.SQLiteDataset.Replication
         /// <summary>
         /// Время создания записи о реплике
         /// </summary>
+        [XmlAttribute]
         public DateTime Stamp
         {
             get { return stamp; }
@@ -85,6 +94,7 @@ namespace Softlynx.SQLiteDataset.Replication
         /// Уникальный идентификатор модифицируемой строки.
         /// Назначается при первой репликации.
         /// </summary>
+        [XmlAttribute]
         public Guid RowGuid
         {
             get { return rowguid; }
@@ -95,11 +105,20 @@ namespace Softlynx.SQLiteDataset.Replication
         /// Уникальный идентификатор реплика строки.
         /// Назначается при первой репликации.
         /// </summary>
+        [XmlAttribute]
         public Guid ReplicaGuid
         {
             get { return replicaguid; }
             set { replicaguid = value; }
         }
+
+        /// <summary>
+        /// Пустой конструктор для сериализации
+        /// </summary>
+        public ReplicaRecord()
+        {
+        }
+
         /// <summary>
         /// По текущей строке в reader таблицы replica_log создает объект реплики
         /// содержащий в себе все необходимые данные для воспроизведения операции в другой БД

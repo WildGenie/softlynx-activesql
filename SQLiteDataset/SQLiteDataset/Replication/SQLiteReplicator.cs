@@ -184,7 +184,7 @@ lastsync DATETIME
 
 
 -- таблица хранит данные по проводимым изменениям, первоначально заполняется триггером автоматически
-drop table if exists replica_log;
+-- drop table if exists replica_log; -- debug 
 
 create table IF NOT EXISTS replica_log (
 seqno INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -260,6 +260,19 @@ END;
                 cmd.ExecuteNonQuery();
             }
         }
+       
+       /// <summary>
+       /// Представлят массив buf как utf-8 строку.
+       /// Используется для отладочных целей.
+       /// </summary>
+       /// <param name="buf">Исходный массив byte[]</param>
+       /// <returns>Текст в кодировке utf-8</returns>
+       private string XmlStrFromBuffer(byte[] buf)
+       {
+           UTF8Encoding enc = new UTF8Encoding();
+           return enc.GetString(buf, 0, buf.Length);
+       }
+
 
         /// <summary>
         /// Создается буффер содержащий сериализованный объект  ReplicaPortion
@@ -272,7 +285,7 @@ END;
             byte[] result = null;
                 ReplicaPortion rp = new ReplicaPortion();
                 rp.RequestLog(this, ref LastKnownSeqNo);
-                if (rp.ReplicaSet.Count > 0)
+                if (rp.ReplicaSet.Length > 0)
                 {
                     XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
                     using (MemoryStream strm = new MemoryStream())
@@ -281,6 +294,7 @@ END;
                         result = strm.ToArray();
                         strm.Close();
                     }
+                    //String s = XmlStrFromBuffer(result);
                 }
                 rp = null;
                 return result;
@@ -293,6 +307,7 @@ END;
         public int ApplyReplicaBuffer(byte[] ReplicaBuffer)
         {
             if (ReplicaBuffer == null) return 0;
+            //String s = XmlStrFromBuffer(ReplicaBuffer);
             int apc = 0;
             XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
             using (MemoryStream strm = new MemoryStream(ReplicaBuffer))
