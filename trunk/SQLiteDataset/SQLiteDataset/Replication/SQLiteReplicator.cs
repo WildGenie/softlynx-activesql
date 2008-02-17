@@ -3,11 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Data.SQLite;
-using System.Data.Sql;
 using System.Data.Common;
-using System.Data.SqlClient;
 using System.ComponentModel;
-using System.Runtime.Serialization;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
@@ -21,7 +18,6 @@ namespace Softlynx.SQLiteDataset.Replication
         internal Hashtable LastIDs= new Hashtable();
         private Hashtable TableColumns = new Hashtable();
         private DbConnection master=null;
-        private string replica_filename = string.Empty;
         private Guid cached_guid = Guid.Empty;
         DbCommand CheckReplicaExists_cmd = null;
         DbCommand FixReplicaLog_cmd = null;
@@ -33,12 +29,6 @@ namespace Softlynx.SQLiteDataset.Replication
             set {master=value; Open();}
         }
 
-         public string ReplicaLogFN
-        {
-            get { return replica_filename; }
-//            set { replica = value; Open(); }
-        }
-        
         public bool Ready
         {
             get
@@ -68,18 +58,17 @@ public void Open()
     if ((master==null) ) return;
         try { master.Open(); }
         catch {};
-        replica_filename = System.IO.Path.ChangeExtension(ConnectionFileName(master),".dr3");
     InitReplicationSchema();
 }
 
-
+       /*
         static public string ConnectionFileName(DbConnection db)
         {
             DbConnectionStringBuilder dbb = new DbConnectionStringBuilder();
             dbb.ConnectionString = db.ConnectionString;
                 return (string)dbb["Data Source"];
         }
-
+       */
         /// <summary>
         /// Генерирует для таблицы name имя таблицы-реплики в базе реплик
         /// </summary>
@@ -285,7 +274,7 @@ END;
                 rp.RequestLog(this, ref LastKnownSeqNo);
                 if (rp.ReplicaSet.Count > 0)
                 {
-                    IFormatter formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
                     using (MemoryStream strm = new MemoryStream())
                     {
                         formatter.Serialize(strm, rp);
@@ -305,12 +294,11 @@ END;
         {
             if (ReplicaBuffer == null) return 0;
             int apc = 0;
-            IFormatter formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-            //IFormatter formatter = new System.Xml.Serialization. XmlSerializer();
+            XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
             using (MemoryStream strm = new MemoryStream(ReplicaBuffer))
             {
                 ReplicaPortion rp = (ReplicaPortion)formatter.Deserialize(strm);
-                apc+=rp.ApplyLog(this);
+                apc=rp.ApplyLog(this);
             }
             return apc;
         }
@@ -327,7 +315,7 @@ END;
             String[] result = (String[])TableColumns[TableName];
             if (result == null)
             {
-                result=new String[0];
+                ArrayList colnames = new ArrayList();
 
                 using (DbCommand cmd = MasterDB.CreateCommand())
                 {
@@ -336,13 +324,12 @@ END;
                     {
                         while (reader.Read())
                         {
-                            Array.Resize<String>(ref result, result.Length + 1);
-                            result[result.Length - 1] = reader.GetString(1);
+                            colnames.Add(reader.GetString(1));
                         };
                         reader.Close();
                     }
                 }
-
+                result=(String[])colnames.ToArray(typeof(String));
                 TableColumns[TableName] = result;
             }
             return result;
