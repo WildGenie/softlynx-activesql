@@ -15,12 +15,29 @@ namespace Softlynx.SQLiteDataset.Replication
 
    public class SQLiteReplicator : Component
     {
-        internal Hashtable LastIDs= new Hashtable();
+        public Hashtable LastIDs= new Hashtable();
         private Hashtable TableColumns = new Hashtable();
         private DbConnection master=null;
         private Guid cached_guid = Guid.Empty;
         DbCommand CheckReplicaExists_cmd = null;
         DbCommand FixReplicaLog_cmd = null;
+
+        /// <summary>
+        /// Задает максималный размер количества реплик в ReplicaSet
+        /// </summary>
+        public int MaxPortionSize = 250;
+
+        /// <summary>
+        /// Если в хеше IgnoreTable сущесвует значние ключа string равное имени таблицы то реплика пропускается. 
+        /// null - не использовать фильтр по таблице
+        /// </summary>
+        public Hashtable IgnoreTable = new Hashtable();
+
+        /// <summary>
+        /// Если в хеше IgnoreAuthor сущесвует значние ключа Guid равное имени таблицы то реплика пропускается.
+        /// null - не использоват фильтр по автору        
+        /// </summary>
+        public Hashtable IgnoreAuthor = new Hashtable();
 
         
         public DbConnection MasterDB
@@ -49,7 +66,6 @@ namespace Softlynx.SQLiteDataset.Replication
         private void CloseConnections()
         {
             if (master != null) master.Close();
-//            if (replica != null) replica.Close();
         }
 
 
@@ -61,14 +77,6 @@ public void Open()
     InitReplicationSchema();
 }
 
-       /*
-        static public string ConnectionFileName(DbConnection db)
-        {
-            DbConnectionStringBuilder dbb = new DbConnectionStringBuilder();
-            dbb.ConnectionString = db.ConnectionString;
-                return (string)dbb["Data Source"];
-        }
-       */
         /// <summary>
         /// Генерирует для таблицы name имя таблицы-реплики в базе реплик
         /// </summary>
@@ -139,6 +147,82 @@ public void Open()
             LastIDs[e.Table] = e.RowId;
         }
 
+       /// <summary>
+       /// Последнй добавленный серийный номер реплики
+       /// </summary>
+       public long LastReplicaSeqNo
+       {
+           get { try { return (long)LastIDs["replica_log"]; } catch { return 0; } }
+       }
+
+       /// <summary>
+       /// Возвращяет последний известный номер репликации для указанной БД
+       /// </summary>
+       /// <param name="DbGuid">Глобальный идентификатор БД</param>
+       /// <returns>Последний известнвй SeqNo для БД</returns>
+       public long GetLastKnownSeqNoForDB(Guid DbGuid)
+       {
+           using (DbCommand cmd = master.CreateCommand())
+           {
+               cmd.CommandText = "select replicaid from  replica_peer where peerid=@DbGuid";
+               cmd.Parameters.Add(new SQLiteParameter("@DbGuid", DbGuid));
+               try
+               {
+                   return (long)cmd.ExecuteScalar();
+               }
+               catch {
+                   return 0;
+               }
+           }
+       }
+
+       /// <summary>
+       /// Устанавливает последний известный номер репликации для указанной БД
+       /// </summary>
+       /// <param name="DbGuid">Глобальный идентификатор БД</param>
+       /// <param name="SeqNo">Последний известнвй SeqNo для БД</param>
+       public void SetLastKnownSeqNoForDB(Guid DbGuid,long SeqNo)
+       {
+           using (DbCommand cmd = master.CreateCommand())
+           {
+                   cmd.CommandText = "replace into replica_peer(replicaid,lastsync,peerid) values (@SeqNo,@Now,@DbGuid)";
+                   cmd.Parameters.Add(new SQLiteParameter("@SeqNo", SeqNo));
+                   cmd.Parameters.Add(new SQLiteParameter("@DbGuid", DbGuid));
+                   cmd.Parameters.Add(new SQLiteParameter("@Now", DateTime.Now));
+                   cmd.ExecuteNonQuery();
+           }
+       }
+
+
+       /// <summary>
+       /// Очищает таблицу не оставля ни каких записей реплик
+       /// </summary>
+       /// <param name="TableName">Имя таблицы по которой нужно очистить реплики</param>
+       public void ClearTableWithReplica(string TableName)
+       {
+           using (DbCommand cmd = master.CreateCommand())
+           {
+               cmd.CommandText = String.Format(@"
+delete from {0};
+delete from replica_log where table_name='{0}';", TableName);
+               cmd.ExecuteNonQuery();
+           }
+       }
+
+       /// <summary>
+       /// Удаление записи о реплике
+       /// </summary>
+       /// <param name="SeqNo">Серийный номер реплики</param>
+       public void RemoveReplica(long SeqNo)
+       {
+           using (DbCommand cmd = master.CreateCommand())
+           {
+               cmd.CommandText = "delete from replica_log where seqno=@SeqNo";
+               cmd.Parameters.Add(new SQLiteParameter("@SeqNo",SeqNo));
+               cmd.ExecuteNonQuery();
+           }
+       }
+
 
         /// <summary>
         /// Проверяет и при необходимости создает таблицы и триггеры,
@@ -171,7 +255,12 @@ update replica_log
             FixReplicaLog_cmd.Parameters.Add(new SQLiteParameter("@seqno"));
             FixReplicaLog_cmd.Prepare();
 
+            CreateReplicaTables();
 
+        }
+
+       public void CreateReplicaTables()
+       {
             using (DbCommand cmd = master.CreateCommand())
             {
                 
@@ -205,9 +294,10 @@ create index IF NOT EXISTS replica_log_replica_record_rowid on replica_log(recor
 ";        
                 cmd.ExecuteNonQuery();
 
-            if (SelfGuid == Guid.Empty) SelfGuid = Guid.NewGuid();
+                if (SelfGuid == Guid.Empty) SelfGuid = Guid.NewGuid();
             }
-        }
+
+       }
 
 
         /// <summary>
@@ -274,13 +364,16 @@ END;
        }
 
 
-        /// <summary>
-        /// Создается буффер содержащий сериализованный объект  ReplicaPortion
-        /// с данными по локальной реплике с номером изменений большим чем LastKnownSeqNo
-        /// </summary>
-        /// <param name="LastKnownSeqNo">Последний известнвй номер реплики. 0 если нужно все.</param>
-        /// <returns></returns>
-        public byte[] BuildLocalReplicaBuffer(ref Int64 LastKnownSeqNo)
+       
+       /// <summary>
+       /// Создается буффер содержащий сериализованный объект  ReplicaPortion
+       /// с данными по локальной реплике с номером изменений большим чем LastKnownSeqNo,
+       /// при этом игнорируются реплики по таблицам указанным в IgnoreTable и реплики от 
+       /// авторов, указанных в  IgnoreAuthor
+       /// </summary>
+       /// <param name="LastKnownSeqNo">Последний известнвй номер реплики. 0 если нужно все.</param>
+       /// <returns>Сериализованный в XML объект ReplicaPortion</returns>
+       public byte[] BuildReplicaBuffer(ref Int64 LastKnownSeqNo)
         {
             byte[] result = null;
                 ReplicaPortion rp = new ReplicaPortion();
@@ -301,13 +394,14 @@ END;
         }
 
         /// <summary>
-        /// Применяет к текущей БД данный по репликации в бефере ReplicaBuffer
+        /// Применяет к текущей БД данный по репликации в буффере ReplicaBuffer
         /// </summary>
-        /// <param name="ReplicaBuffer">Сериализованный бинарно объект ReplicaPortion</param>
+        /// <param name="ReplicaBuffer">Сериализованный в XML объект ReplicaPortion</param>
         public int ApplyReplicaBuffer(byte[] ReplicaBuffer)
         {
             if (ReplicaBuffer == null) return 0;
-            //String s = XmlStrFromBuffer(ReplicaBuffer);
+            String s = XmlStrFromBuffer(ReplicaBuffer);
+            s += " ";
             int apc = 0;
             XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
             using (MemoryStream strm = new MemoryStream(ReplicaBuffer))
