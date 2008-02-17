@@ -28,56 +28,71 @@ namespace Softlynx.SQLiteDataset.Replication
 
 
         /// <summary>
-        /// Задает максималный размер количества реплик в ReplicaSet
-        /// </summary>
-        [XmlIgnore]
-        public int MaxPortionSize = 100;
-
-        /// <summary>
         /// Заполняет ReplicaSet значениями реплик начиная с номера
         /// следующего за LastKnownSeqNo.
-        /// Максимальное количество записей регламентируется перемнной MaxPortionSize.
-        /// 
+        /// Максимальное количество записей регламентируется replicator.MaxPortionSize.
         /// </summary>
-        /// <param name="replicator"></param>
-        /// <param name="LastKnownSeqNo"></param>
+        /// <param name="replicator">Родительский объект репликации</param>
+        /// <param name="LastKnownSeqNo">Последний известный seqno реплики</param>
         public void RequestLog(SQLiteReplicator replicator, ref Int64 LastKnownSeqNo)
         {
-            using (DbTransaction transaction = replicator.MasterDB.BeginTransaction(System.Data.IsolationLevel.Snapshot))
+            using (DbTransaction transaction = replicator.MasterDB.BeginTransaction())
             {
-                using (DbCommand cmd = replicator.MasterDB.CreateCommand())
+                try
                 {
-                    cmd.CommandText = "select * from replica_log where seqno>@seqno limit @maxrecords";
-                    cmd.Parameters.Add(new SQLiteParameter("@seqno", LastKnownSeqNo));
-                    cmd.Parameters.Add(new SQLiteParameter("@maxrecords", MaxPortionSize));
-                    replicaset.Clear();
-                    using (DbDataReader reader = cmd.ExecuteReader())
+                    using (DbCommand cmd = replicator.MasterDB.CreateCommand())
                     {
-                        while (reader.Read())
+                        cmd.CommandText = "select * from replica_log where seqno>@seqno";
+                        cmd.Parameters.Add(new SQLiteParameter("@seqno", LastKnownSeqNo));
+                        replicaset.Clear();
+                        using (DbDataReader reader = cmd.ExecuteReader())
                         {
-                            ReplicaRecord rr = new ReplicaRecord(replicator, reader);
-                            replicaset.Add(rr);
-                            LastKnownSeqNo = rr.SeqNo;
-                        };
-                        reader.Close();
+                            while ((replicaset.Count < replicator.MaxPortionSize) && reader.Read())
+                            {
+                                ReplicaRecord rr = new ReplicaRecord(replicator, reader);
+                                LastKnownSeqNo = rr.SeqNo;
+                                if (replicator.IgnoreTable.ContainsKey(rr.TableName)) continue;
+                                if (replicator.IgnoreAuthor.ContainsKey(rr.Author)) continue;
+                                rr.LoadReplicaValues(replicator);
+                                replicaset.Add(rr);
+                            };
+                            reader.Close();
+                        }
                     }
+                    transaction.Commit();
                 }
-                transaction.Commit();
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
             }
         }
-
+        /// <summary>
+        /// Посредством родительского объекта replicator применяет действия указынные в репликах 
+        /// </summary>
+        /// <param name="replicator">Родительский объект репликации</param>
+        /// <returns>Число успешно выполненных реплик</returns>
         public int ApplyLog(SQLiteReplicator replicator)
         {
             if (ReplicaSet.Length <= 0) return 0;
             int apc = 0;
-            using (DbTransaction transaction = replicator.MasterDB.BeginTransaction(System.Data.IsolationLevel.Snapshot))
-            {
-                foreach (ReplicaRecord rr in ReplicaSet)
+                using (DbTransaction transaction = replicator.MasterDB.BeginTransaction())
                 {
-                    apc+=rr.Apply(replicator)?1:0;
+                    try
+                    {
+                        foreach (ReplicaRecord rr in ReplicaSet)
+                        {
+                            apc += rr.Apply(replicator) ? 1 : 0;
+                        }
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
-                transaction.Commit();
-            }
             return apc;
         }
     }

@@ -160,19 +160,20 @@ namespace Softlynx.SQLiteDataset.Replication
                 replicator.FixReplicaLog(SeqNo, Stamp, Author, ReplicaGuid);
             } else 
                 ReplicaGuid = reader.GetGuid(6);
+        }
 
-
-            using (DbCommand cmd = replicator.MasterDB.CreateCommand())
+        internal void LoadReplicaValues(SQLiteReplicator replicator)
+        {
+            if ((action == 'I') || (action == 'U'))
             {
-
-                if ((action == 'I') || (action == 'U'))
+                using (DbCommand cmd = replicator.MasterDB.CreateCommand())
                 {
                     cmd.Parameters.Clear();
                     cmd.CommandText = String.Format("select * from {0} where seqnoref=@seqno", SQLiteReplicator.ReplicaTable(TableName));
                     cmd.Parameters.Add(new SQLiteParameter("@seqno", SeqNo));
                     using (DbDataReader rowreader = cmd.ExecuteReader())
                     {
-                        while (rowreader.Read())
+                        if (rowreader.Read())
                         {
                             Object[] temp_fields = new Object[rowreader.VisibleFieldCount];
                             rowreader.GetValues(temp_fields);
@@ -184,9 +185,7 @@ namespace Softlynx.SQLiteDataset.Replication
 
                 }
             }
-
         }
-
 
         internal bool Apply(SQLiteReplicator replicator)
         {
@@ -195,7 +194,8 @@ namespace Softlynx.SQLiteDataset.Replication
             replicator.LastIDs.Clear();
 
             String[] columns=replicator.GetTableColumnNames(TableName);
-            
+            if (columns.Length <= 0) return false;
+
             using (DbCommand cmd = replicator.MasterDB.CreateCommand())
             {
                 if (Action == 'I')
@@ -213,7 +213,7 @@ namespace Softlynx.SQLiteDataset.Replication
                     values=values.TrimEnd(',');
 
                     cmd.CommandText = String.Format(@"
-insert into {0}({1}) values({2});
+insert or replace into {0}({1}) values({2});
 ", TableName, names, values);
                     cmd.ExecuteNonQuery();
                 }
@@ -246,7 +246,11 @@ delete from {0} where id=@rowguid
                 }
             }
 
-             replicator.FixReplicaLog((long)replicator.LastIDs["replica_log"], Stamp, Author, ReplicaGuid);
+            try
+            {
+                replicator.FixReplicaLog((long)replicator.LastIDs["replica_log"], Stamp, Author, ReplicaGuid);
+            }
+            catch { };
 
              return true;
         }
