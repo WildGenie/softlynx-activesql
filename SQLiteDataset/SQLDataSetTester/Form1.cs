@@ -80,7 +80,7 @@ namespace SQLDataSetTester
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
             Int64 last_id = 0;
-            byte[] buffer=repl1.BuildLocalReplicaBuffer(ref last_id);
+            byte[] buffer=repl1.BuildReplicaBuffer(ref last_id);
             repl2.ApplyReplicaBuffer(buffer);
 
             /*
@@ -91,13 +91,14 @@ namespace SQLDataSetTester
              */
 
             sqLiteDatasetWrapper2.PopulateDataSet(exampleDataSet2);
+            repl1.CreateSnapshot(@"c:\snap.db3","log");
 
         }
 
         private void toolStripButton8_Click(object sender, EventArgs e)
         {
             Int64 last_id = 0;
-            byte[] buffer = repl2.BuildLocalReplicaBuffer(ref last_id);
+            byte[] buffer = repl2.BuildReplicaBuffer(ref last_id);
             repl1.ApplyReplicaBuffer(buffer);
 
             sqLiteDatasetWrapper1.PopulateDataSet(exampleDataSet1);

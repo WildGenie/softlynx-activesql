@@ -68,6 +68,147 @@ namespace Softlynx.SQLiteDataset.Replication
             if (master != null) master.Close();
         }
 
+       public string ConnectionStringValue(string RequiredParam)
+       {
+           string result = null;
+           RequiredParam=RequiredParam.ToUpper();
+
+           foreach (string param in master.ConnectionString.Split(';'))
+           {
+               string[] kvp = param.Split('=');
+               if (kvp.Length < 1) continue;
+               if (kvp[0].ToUpper() == RequiredParam)
+               {
+                   result = string.Empty;
+                   if (kvp.Length > 1) result = kvp[1];
+                   break;
+               }
+
+           }
+           return result;
+       }
+
+       public void CreateSnapshot(string DestFile,params string[] EmptyTables)
+       {
+
+           using (DbTransaction transaction = master.BeginTransaction())
+           {
+               long latest_seqno = 0;
+
+               string sourcefn = ConnectionStringValue("Data Source");
+               using (FileStream dstrm = new FileStream(DestFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+               {
+                   using (Stream sstrm = new FileStream(sourcefn, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                   {
+                       byte[] buf = new byte[1024 * 1024];
+                       int readed = 0;
+                       while ((readed = sstrm.Read(buf, 0, buf.Length)) > 0)
+                       {
+                           dstrm.Write(buf, 0, readed);
+                       }
+                       sstrm.Close();
+                   }
+                   dstrm.Close();
+               }
+
+               SQLiteConnectionStringBuilder cb = new SQLiteConnectionStringBuilder(master.ConnectionString);
+               cb["Data Source"] = DestFile;
+               using (DbConnection snapshot = new SQLiteConnection(cb.ConnectionString))
+               {
+                   snapshot.Open();
+                   using (DbTransaction snapshot_transaction = snapshot.BeginTransaction())
+                   {
+                       using (DbCommand cmd = snapshot.CreateCommand())
+                       {
+                           cmd.Transaction = snapshot_transaction;
+                           cmd.CommandText = @"select seqno from replica_log order by seqno desc limit 1";
+                           try
+                           {
+                               latest_seqno = (long)cmd.ExecuteScalar();
+                           }
+                           catch { };
+
+                           foreach (string EmptyTable in EmptyTables)
+                           {
+                               cmd.CommandText = string.Format("delete from {0};", EmptyTable);
+                               try
+                               {
+                                   cmd.ExecuteNonQuery();
+                               }
+                               catch { };
+                           }
+
+                           cmd.CommandText = @"
+delete from replica_log;
+delete from replica_peer;
+";
+                           try
+                           {
+                               cmd.ExecuteNonQuery();
+                           }
+                           catch { };
+
+                           /*
+                           cmd.CommandText = @"
+    SELECT type,name,sql FROM sqlite_master
+    ORDER BY name;";
+                           string ObjectList = String.Empty;
+                           using (DbDataReader reader = cmd.ExecuteReader())
+                           {
+                               while (reader.Read())
+                               {
+                                   string ObjectType = reader.GetString(0);
+                                   string ObjectName = reader.GetString(1);
+                                   string ObjectSql = string.Empty;
+                                   try
+                                   {
+                                       ObjectSql=reader.GetString(2);
+                                   }
+                                   catch { }
+                                   ObjectList += String.Format("{0} {1}\n", ObjectType, ObjectName);
+                               }
+                               reader.Close();
+                           }
+                            */
+                       }
+                       snapshot_transaction.Commit();
+                       using (DbCommand cmd = snapshot.CreateCommand())
+                       {
+                           cmd.CommandText = @"
+VACUUM;
+ANALYZE;
+";
+                           cmd.ExecuteNonQuery();
+                       }
+
+                   }
+                   snapshot.Close();
+               };
+
+               SetLastKnownSeqNoForDB(SelfGuid,latest_seqno);
+
+               using (DbCommand cmd = master.CreateCommand())
+               {
+                   cmd.Transaction = transaction;
+                   cmd.CommandText = @"delete from replica_log where seqno<=@seqno";
+                   cmd.Parameters.Add(new SQLiteParameter("@seqno",latest_seqno));
+                   cmd.ExecuteNonQuery();
+
+               }
+
+               transaction.Commit();
+               using (DbCommand cmd = master.CreateCommand())
+               {
+                           cmd.CommandText = @"
+VACUUM;
+ANALYZE;
+";
+                           cmd.ExecuteNonQuery();
+               }
+           }
+       }
+
+
 
 public void Open()
 {
