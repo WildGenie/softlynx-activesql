@@ -88,127 +88,217 @@ namespace Softlynx.SQLiteDataset.Replication
            return result;
        }
 
-       public void CreateSnapshot(string DestFile,params string[] EmptyTables)
+       internal Hashtable GetDbInternalObjects(DbConnection conn) 
        {
+           Hashtable intobjects=new Hashtable();
+           
+           DbCommand cmd = conn.CreateCommand();
 
-           using (DbTransaction transaction = master.BeginTransaction())
+           cmd.CommandText = @"
+SELECT type,name,sql FROM sqlite_master
+ORDER BY name;";
+
+using (DbDataReader reader = cmd.ExecuteReader())
+{
+    while (reader.Read())
+    {
+        string ObjectType = reader.GetString(0);
+        if (! (
+            (ObjectType=="trigger")
+            ||
+            (ObjectType == "table")
+            ||
+            (ObjectType == "index")
+            )) {continue;};
+
+        string ObjectName = reader.GetString(1);
+        string ObjectSql = string.Empty;
+
+        string cs = string.Empty;
+        string ds = string.Empty;
+
+        try
+        {
+            ObjectSql=reader.GetString(2);
+        }
+        catch { }
+        
+        if (
+            ObjectName.StartsWith("cleanup_replica_when_delete_")
+            ||
+            ObjectName.StartsWith("create_replica_when_")
+            ||
+            ObjectName.StartsWith("replica_changes_on_")
+            )
+        {
+            cs = ObjectSql;
+            ds = String.Format("drop {0} {1};", ObjectType, ObjectName);
+        }
+
+        if (cs != string.Empty)
+        {
+            string on = "create_" + ObjectType;
+            String s= (string)intobjects[on];
+            if (s==null) s=string.Empty;
+            s+=cs+";\n";
+            intobjects[on] = s;
+        }
+        
+        if (ds != string.Empty)
+        {
+            string on = "drop_" + ObjectType;
+            String s = (string)intobjects[on];
+            if (s == null) s = string.Empty;
+            s += ds+"\n";
+            intobjects[on] = s;
+        }
+
+    }
+    reader.Close();
+}
+return intobjects;
+       }
+
+       internal void DropDbInteralObjects(DbConnection conn,Hashtable DbInternals)
+       {
+           using (DbCommand cmd = conn.CreateCommand())
            {
-               long latest_seqno = 0;
-
-               string sourcefn = ConnectionStringValue("Data Source");
-               using (FileStream dstrm = new FileStream(DestFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+               foreach (string ObjName in new string[] { "drop_index", "drop_trigger", "drop_table" })
                {
-                   using (Stream sstrm = new FileStream(sourcefn, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                   if (DbInternals.ContainsKey(ObjName))
                    {
-                       byte[] buf = new byte[1024 * 1024];
-                       int readed = 0;
-                       while ((readed = sstrm.Read(buf, 0, buf.Length)) > 0)
-                       {
-                           dstrm.Write(buf, 0, readed);
-                       }
-                       sstrm.Close();
-                   }
-                   dstrm.Close();
-               }
-
-               SQLiteConnectionStringBuilder cb = new SQLiteConnectionStringBuilder(master.ConnectionString);
-               cb["Data Source"] = DestFile;
-               using (DbConnection snapshot = new SQLiteConnection(cb.ConnectionString))
-               {
-                   snapshot.Open();
-                   using (DbTransaction snapshot_transaction = snapshot.BeginTransaction())
-                   {
-                       using (DbCommand cmd = snapshot.CreateCommand())
-                       {
-                           cmd.Transaction = snapshot_transaction;
-                           cmd.CommandText = @"select seqno from replica_log order by seqno desc limit 1";
-                           try
-                           {
-                               latest_seqno = (long)cmd.ExecuteScalar();
-                           }
-                           catch { };
-
-                           foreach (string EmptyTable in EmptyTables)
-                           {
-                               cmd.CommandText = string.Format("delete from {0};", EmptyTable);
-                               try
-                               {
-                                   cmd.ExecuteNonQuery();
-                               }
-                               catch { };
-                           }
-
-                           cmd.CommandText = @"
-delete from replica_log;
-delete from replica_peer;
-";
-                           try
-                           {
-                               cmd.ExecuteNonQuery();
-                           }
-                           catch { };
-
-                           /*
-                           cmd.CommandText = @"
-    SELECT type,name,sql FROM sqlite_master
-    ORDER BY name;";
-                           string ObjectList = String.Empty;
-                           using (DbDataReader reader = cmd.ExecuteReader())
-                           {
-                               while (reader.Read())
-                               {
-                                   string ObjectType = reader.GetString(0);
-                                   string ObjectName = reader.GetString(1);
-                                   string ObjectSql = string.Empty;
-                                   try
-                                   {
-                                       ObjectSql=reader.GetString(2);
-                                   }
-                                   catch { }
-                                   ObjectList += String.Format("{0} {1}\n", ObjectType, ObjectName);
-                               }
-                               reader.Close();
-                           }
-                            */
-                       }
-                       snapshot_transaction.Commit();
-                       using (DbCommand cmd = snapshot.CreateCommand())
-                       {
-                           cmd.CommandText = @"
-VACUUM;
-ANALYZE;
-";
-                           cmd.ExecuteNonQuery();
-                       }
-
-                   }
-                   snapshot.Close();
-               };
-
-               SetLastKnownSeqNoForDB(SelfGuid,latest_seqno);
-
-               using (DbCommand cmd = master.CreateCommand())
-               {
-                   cmd.Transaction = transaction;
-                   cmd.CommandText = @"delete from replica_log where seqno<=@seqno";
-                   cmd.Parameters.Add(new SQLiteParameter("@seqno",latest_seqno));
-                   cmd.ExecuteNonQuery();
-
-               }
-
-               transaction.Commit();
-               using (DbCommand cmd = master.CreateCommand())
-               {
-                           cmd.CommandText = @"
-VACUUM;
-ANALYZE;
-";
-                           cmd.ExecuteNonQuery();
+                       cmd.CommandText = (string)DbInternals[ObjName];
+                       cmd.ExecuteNonQuery();
+                   };
                }
            }
        }
 
+       internal void CreateDbInteralObjects(DbConnection conn, Hashtable DbInternals)
+       {
+           using (DbCommand cmd = conn.CreateCommand())
+           {
+               foreach (string ObjName in new string[] { "create_table", "create_index", "create_trigger"})
+               {
+                   if (DbInternals.ContainsKey(ObjName))
+                   {
+                       cmd.CommandText = (string)DbInternals[ObjName];
+                       cmd.ExecuteNonQuery();
+                   };
+               }
+           }
+       }
 
+       public void CreateSnapshot(string DestFile,params string[] EmptyTables)
+       {
+           using (DbTransaction transaction = master.BeginTransaction())
+               try
+               {
+                   long latest_seqno = 0;
+
+                   string sourcefn = ConnectionStringValue("Data Source");
+                   using (FileStream dstrm = new FileStream(DestFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+                   {
+                       using (Stream sstrm = new FileStream(sourcefn, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                       {
+                           byte[] buf = new byte[1024 * 1024];
+                           int readed = 0;
+                           while ((readed = sstrm.Read(buf, 0, buf.Length)) > 0)
+                           {
+                               dstrm.Write(buf, 0, readed);
+                           }
+                           sstrm.Close();
+                       }
+                       dstrm.Close();
+                   }
+                   SQLiteConnectionStringBuilder cb = new SQLiteConnectionStringBuilder(master.ConnectionString);
+                   cb["Data Source"] = DestFile;
+                   using (DbConnection snapshot = new SQLiteConnection(cb.ConnectionString))
+                   {
+                       snapshot.Open();
+                       using (DbTransaction snapshot_transaction = snapshot.BeginTransaction())
+                           try
+                           {
+                               using (DbCommand cmd = snapshot.CreateCommand())
+                               {
+                                   cmd.Transaction = snapshot_transaction;
+                                   cmd.CommandText = @"select seqno from replica_log order by seqno desc limit 1";
+                                   try
+                                   {
+                                       latest_seqno = (long)cmd.ExecuteScalar();
+                                   }
+                                   catch { };
+
+                                   Hashtable dbobjects = GetDbInternalObjects(snapshot);
+
+                                   DropDbInteralObjects(snapshot, dbobjects);
+
+                                   foreach (string EmptyTable in EmptyTables)
+                                   {
+                                       cmd.CommandText = string.Format("delete from {0};", EmptyTable);
+                                       cmd.ExecuteNonQuery();
+                                   }
+
+                                   cmd.CommandText = @"
+delete from replica_log;
+delete from replica_peer;
+
+replace into replica_peer(rowid,peerid,replicaid,lastsync) values (1,@emptyguid,@latest_seqno,CURRENT_TIMESTAMP);
+replace into replica_peer(peerid,replicaid,lastsync) values (@masterguid,@latest_seqno,CURRENT_TIMESTAMP)
+";
+                                   cmd.Parameters.Clear();
+                                   cmd.Parameters.Add(new SQLiteParameter("@emptyguid", Guid.Empty));
+                                   cmd.Parameters.Add(new SQLiteParameter("@latest_seqno", latest_seqno));
+                                   cmd.Parameters.Add(new SQLiteParameter("@masterguid", SelfGuid));
+                                   cmd.ExecuteNonQuery();
+                                   CreateDbInteralObjects(snapshot, dbobjects);
+
+                               }
+                               snapshot_transaction.Commit();
+                               using (DbCommand cmd = snapshot.CreateCommand())
+                               {
+                                   cmd.CommandText = @"
+VACUUM;
+ANALYZE;
+";
+                                   cmd.ExecuteNonQuery();
+                               }
+
+                           }
+                           catch
+                           {
+                               snapshot_transaction.Rollback();
+                               throw;
+                           }
+                       snapshot.Close();
+                   };
+
+                   SetLastKnownSeqNoForDB(SelfGuid, latest_seqno);
+
+                   using (DbCommand cmd = master.CreateCommand())
+                   {
+                       cmd.Transaction = transaction;
+                       cmd.CommandText = @"delete from replica_log where seqno<=@seqno";
+                       cmd.Parameters.Add(new SQLiteParameter("@seqno", latest_seqno));
+                       cmd.ExecuteNonQuery();
+
+                   };
+                   transaction.Commit();
+                   using (DbCommand cmd = master.CreateCommand())
+                   {
+                       cmd.CommandText = @"
+VACUUM;
+ANALYZE;
+";
+                       cmd.ExecuteNonQuery();
+                   }
+               }
+               catch
+               {
+                   transaction.Rollback();
+                   throw;
+               }
+       }
 
 public void Open()
 {
@@ -336,21 +426,6 @@ public void Open()
 
 
        /// <summary>
-       /// Очищает таблицу не оставля ни каких записей реплик
-       /// </summary>
-       /// <param name="TableName">Имя таблицы по которой нужно очистить реплики</param>
-       public void ClearTableWithReplica(string TableName)
-       {
-           using (DbCommand cmd = master.CreateCommand())
-           {
-               cmd.CommandText = String.Format(@"
-delete from {0};
-delete from replica_log where table_name='{0}';", TableName);
-               cmd.ExecuteNonQuery();
-           }
-       }
-
-       /// <summary>
        /// Удаление записи о реплике
        /// </summary>
        /// <param name="SeqNo">Серийный номер реплики</param>
@@ -428,13 +503,8 @@ replica_guid GUID  -- уникальный код реплики (для быс�
 
 -- индекс код реплики для быстрой проверки на наличие реплики в БД
 create index IF NOT EXISTS replica_log_replica_guid on replica_log(replica_guid);
-create index IF NOT EXISTS replica_log_replica_table_name on replica_log(table_name);
-create index IF NOT EXISTS replica_log_replica_record_rowid on replica_log(record_rowguid);
-
-
 ";        
                 cmd.ExecuteNonQuery();
-
                 if (SelfGuid == Guid.Empty) SelfGuid = Guid.NewGuid();
             }
 
@@ -454,34 +524,33 @@ create table if not exists replica_changes_on_{0} as
     select 0 as seqnoref,* from {0} limit 0;
 
 create index if not exists replica_changes_on_{0}_seqnoref on replica_changes_on_{0}(seqnoref);
-create index if not exists replica_changes_on_{0}_id on replica_changes_on_{0}(id);
 
 DROP TRIGGER IF EXISTS when_insert_{0}; -- comment it on producion
 DROP TRIGGER IF EXISTS when_update_{0}; -- comment it on producion
 DROP TRIGGER IF EXISTS when_delete_{0}; -- comment it on producion
 DROP TRIGGER IF EXISTS when_delete_{0}_replica_log; -- comment it on producion
 
-create trigger if not exists when_insert_{0} AFTER INSERT on {0}
+create trigger if not exists create_replica_when_insert_{0} AFTER INSERT on {0}
 BEGIN
 insert into replica_log(table_name,record_rowguid,action) values ('{0}',NEW.id,'I');
 insert into replica_changes_on_{0} select last_insert_rowid() as seqnoref,* from {0} where rowid=NEW.rowid;
 END;  
 
 
-create trigger if not exists when_update_{0} AFTER UPDATE on {0}
+create trigger if not exists create_replica_when_update_{0} AFTER UPDATE on {0}
 BEGIN
 delete from replica_log where record_rowguid=OLD.id and action='U';
 insert into replica_log(table_name,record_rowguid,action) values ('{0}',OLD.id,'U');
 insert into replica_changes_on_{0} select last_insert_rowid() as seqnoref,* from {0} where rowid=OLD.rowid;
 END;  
 
-create trigger if not exists when_delete_{0} AFTER DELETE on {0}
+create trigger if not exists create_replica_when_delete_{0} AFTER DELETE on {0}
 BEGIN
 delete from replica_log where record_rowguid=OLD.id and action='U';
 insert into replica_log(table_name,record_rowguid,action) values ('{0}',OLD.ID,'D');
 END;  
 
-create trigger if not exists when_delete_{0}_replica_log BEFORE DELETE on replica_log
+create trigger if not exists cleanup_replica_when_delete_{0}_replica_log BEFORE DELETE on replica_log
 BEGIN
 delete from replica_changes_on_{0} where seqnoref=old.seqno;
 END;
