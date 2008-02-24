@@ -91,7 +91,7 @@ namespace SQLDataSetTester
              */
 
             sqLiteDatasetWrapper2.PopulateDataSet(exampleDataSet2);
-            repl1.CreateSnapshot(@"c:\snap.db3","log");
+            repl1.CreateSnapshot(@"c:\snap.db3");
 
         }
 
