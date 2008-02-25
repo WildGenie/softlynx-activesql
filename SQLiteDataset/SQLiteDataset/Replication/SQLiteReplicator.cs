@@ -15,12 +15,15 @@ namespace Softlynx.SQLiteDataset.Replication
 
    public class SQLiteReplicator : Component
     {
+       private Guid OverrideMasterDbGuid = Guid.Empty;
         public Hashtable LastIDs= new Hashtable();
         private Hashtable TableColumns = new Hashtable();
         private DbConnection master=null;
         private Guid cached_guid = Guid.Empty;
         DbCommand CheckReplicaExists_cmd = null;
         DbCommand FixReplicaLog_cmd = null;
+        public bool HasSnapshot = false;
+
 
         /// <summary>
         /// Задает максималный размер количества реплик в ReplicaSet
@@ -80,13 +83,41 @@ namespace Softlynx.SQLiteDataset.Replication
                if (kvp[0].ToUpper() == RequiredParam)
                {
                    result = string.Empty;
-                   if (kvp.Length > 1) result = kvp[1];
+                   if (kvp.Length > 1) {
+                       result = kvp[1].Trim('"');
+
                    break;
+                   }
                }
 
            }
            return result;
        }
+
+       public string ChangeConnectionStringValue(string ConnectionString,string NewParam,string NewValue)
+       {
+           string result = string.Empty;
+           NewParam = NewParam.ToUpper();
+           string[] cparams = ConnectionString.Split(';');
+
+           foreach (string param in cparams)
+           {
+               string tmps=param;
+               string[] kvp = param.Split('=');
+               if (kvp.Length < 1) continue;
+               if (kvp[0].ToUpper() == NewParam)
+               {
+                   if (kvp.Length > 1)
+                   {
+                       kvp[1] = NewValue;
+                       tmps = String.Join("=", kvp);
+                   }
+               }
+               result += tmps+";";
+           }
+           return result;
+       }
+
 
        internal Hashtable GetDbInternalObjects(DbConnection conn) 
        {
@@ -194,26 +225,11 @@ return intobjects;
            using (DbTransaction transaction = master.BeginTransaction())
                try
                {
-                   long latest_seqno = 0;
-
+                   long latest_seqno = GetLastKnownSeqNoForDB(SelfGuid);
                    string sourcefn = ConnectionStringValue("Data Source");
-                   using (FileStream dstrm = new FileStream(DestFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
-                   {
-                       using (Stream sstrm = new FileStream(sourcefn, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                       {
-                           byte[] buf = new byte[1024 * 1024];
-                           int readed = 0;
-                           while ((readed = sstrm.Read(buf, 0, buf.Length)) > 0)
-                           {
-                               dstrm.Write(buf, 0, readed);
-                           }
-                           sstrm.Close();
-                       }
-                       dstrm.Close();
-                   }
-                   SQLiteConnectionStringBuilder cb = new SQLiteConnectionStringBuilder(master.ConnectionString);
-                   cb["Data Source"] = DestFile;
-                   using (DbConnection snapshot = new SQLiteConnection(cb.ConnectionString))
+                   File.Copy(sourcefn, DestFile, true);
+                   string snapshot_connectionstring = ChangeConnectionStringValue(master.ConnectionString, "Data Source", DestFile);
+                   using (DbConnection snapshot = new SQLiteConnection(snapshot_connectionstring))
                    {
                        snapshot.Open();
                        using (DbTransaction snapshot_transaction = snapshot.BeginTransaction())
@@ -243,13 +259,13 @@ return intobjects;
 delete from replica_log;
 delete from replica_peer;
 
-replace into replica_peer(rowid,peerid,replicaid,lastsync) values (1,@emptyguid,@latest_seqno,CURRENT_TIMESTAMP);
-replace into replica_peer(peerid,replicaid,lastsync) values (@masterguid,@latest_seqno,CURRENT_TIMESTAMP)
+insert into replica_peer(rowid,peerid,replicaid,lastsync) values (1,@emptyguid,@latest_seqno,CURRENT_TIMESTAMP);
+insert into replica_peer(peerid,replicaid,lastsync) values (@masterguid,@latest_seqno,CURRENT_TIMESTAMP)
 ";
                                    cmd.Parameters.Clear();
                                    cmd.Parameters.Add(new SQLiteParameter("@emptyguid", Guid.Empty));
                                    cmd.Parameters.Add(new SQLiteParameter("@latest_seqno", latest_seqno));
-                                   cmd.Parameters.Add(new SQLiteParameter("@masterguid", SelfGuid));
+                                   cmd.Parameters.Add(new SQLiteParameter("@masterguid",(OverrideMasterDbGuid==Guid.Empty)?SelfGuid:OverrideMasterDbGuid));
                                    cmd.ExecuteNonQuery();
                                    CreateDbInteralObjects(snapshot, dbobjects);
 
@@ -339,9 +355,22 @@ public void Open()
             {
                 using (DbCommand cmd = master.CreateCommand())
                 {
-                    cmd.CommandText = "insert or replace into replica_peer(peerid,rowid,lastsync) values (@myguid,1,CURRENT_TIMESTAMP)";
-                    cmd.Parameters.Add(new SQLiteParameter("@myguid", value));
-                    cmd.ExecuteNonQuery();
+                    cmd.CommandText = @"
+update replica_peer 
+    set 
+        peerid=@peerid,
+        lastsync=CURRENT_TIMESTAMP 
+    where rowid=1";
+                    cmd.Parameters.Add(new SQLiteParameter("@peerid", value));
+                    int updated=cmd.ExecuteNonQuery();
+                    if (updated == 0)
+                    {
+                     cmd.CommandText = @"
+insert into replica_peer(rowid,peerid,lastsync) values(1,@peerid,CURRENT_TIMESTAMP);
+";
+                     cmd.ExecuteNonQuery();
+                    }
+                    
                     cached_guid = value;
                 }
             
@@ -416,11 +445,26 @@ public void Open()
        {
            using (DbCommand cmd = master.CreateCommand())
            {
-                   cmd.CommandText = "replace into replica_peer(replicaid,lastsync,peerid) values (@SeqNo,@Now,@DbGuid)";
-                   cmd.Parameters.Add(new SQLiteParameter("@SeqNo", SeqNo));
-                   cmd.Parameters.Add(new SQLiteParameter("@DbGuid", DbGuid));
-                   cmd.Parameters.Add(new SQLiteParameter("@Now", DateTime.Now));
+               cmd.CommandText = @"
+update replica_peer 
+    set 
+        lastsync=@lastsync,
+        replicaid=@replicaid
+    where       
+        peerid=@peerid;
+";
+               cmd.Parameters.Add(new SQLiteParameter("@peerid", DbGuid));
+               cmd.Parameters.Add(new SQLiteParameter("@replicaid", SeqNo));
+               cmd.Parameters.Add(new SQLiteParameter("@lastsync", DateTime.Now));
+               int updated=cmd.ExecuteNonQuery();
+               if (updated == 0)
+               {
+                   cmd.CommandText = @"
+insert into replica_peer(peerid,replicaid,lastsync) 
+            values(@peerid,@replicaid,@lastsync);
+";
                    cmd.ExecuteNonQuery();
+               };
            }
        }
 
@@ -505,7 +549,7 @@ replica_guid GUID  -- уникальный код реплики (для быс�
 create index IF NOT EXISTS replica_log_replica_guid on replica_log(replica_guid);
 ";        
                 cmd.ExecuteNonQuery();
-                if (SelfGuid == Guid.Empty) SelfGuid = Guid.NewGuid();
+                if ((SelfGuid == Guid.Empty) && (OverrideMasterDbGuid==Guid.Empty)) SelfGuid = Guid.NewGuid();
             }
 
        }
@@ -584,24 +628,34 @@ END;
        /// <param name="LastKnownSeqNo">Последний известнвй номер реплики. 0 если нужно все.</param>
        /// <returns>Сериализованный в XML объект ReplicaPortion</returns>
        public byte[] BuildReplicaBuffer(ref Int64 LastKnownSeqNo)
-        {
-            byte[] result = null;
-                ReplicaPortion rp = new ReplicaPortion();
-                rp.RequestLog(this, ref LastKnownSeqNo);
-                if (rp.ReplicaSet.Length > 0)
-                {
-                    XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
-                    using (MemoryStream strm = new MemoryStream())
-                    {
-                        formatter.Serialize(strm, rp);
-                        result = strm.ToArray();
-                        strm.Close();
-                    }
-                    //String s = XmlStrFromBuffer(result);
-                }
-                rp = null;
-                return result;
-        }
+       {
+           if (
+              HasSnapshot &&
+             (LastKnownSeqNo < GetLastKnownSeqNoForDB(SelfGuid))
+             )
+           {
+               Exception ex = new Exception("A newer snapshot required");
+               throw ex;
+           }
+           byte[] result = null;
+           ReplicaPortion rp = new ReplicaPortion();
+           rp.RequestLog(this, ref LastKnownSeqNo);
+           if (rp.ReplicaSet.Length > 0)
+           {
+               XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
+               using (MemoryStream strm = new MemoryStream())
+               {
+                   formatter.Serialize(strm, rp);
+                   result = strm.ToArray();
+                   strm.Close();
+               }
+               //String s = XmlStrFromBuffer(result);
+           }
+           rp = null;
+           return result;
+       }
+
+        
 
         /// <summary>
         /// Применяет к текущей БД данный по репликации в буффере ReplicaBuffer
@@ -653,6 +707,10 @@ END;
             }
             return result;
         }
-        
+
+       public void SetMasterDbGuid(Guid DbGuid)
+       {
+           OverrideMasterDbGuid = DbGuid;
+       }
     }
 }
