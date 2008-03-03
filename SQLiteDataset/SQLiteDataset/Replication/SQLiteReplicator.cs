@@ -8,7 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
-
+using Softlynx.Logger;
 
 namespace Softlynx.SQLiteDataset.Replication
 {
@@ -23,6 +23,7 @@ namespace Softlynx.SQLiteDataset.Replication
         DbCommand CheckReplicaExists_cmd = null;
         DbCommand FixReplicaLog_cmd = null;
         public bool HasSnapshot = false;
+        public FileLogger logger = null;
 
 
         /// <summary>
@@ -31,7 +32,7 @@ namespace Softlynx.SQLiteDataset.Replication
         public int MaxPortionSize = 250;
 
         /// <summary>
-        /// Если в хеше IgnoreTable сущесвует значние ключа string равное имени таблицы то реплика пропускается. 
+        /// Если в хеше IgnoreTable сущесвует значение ключа string равное имени таблицы то реплика пропускается. 
         /// null - не использовать фильтр по таблице
         /// </summary>
         public Hashtable IgnoreTable = new Hashtable();
@@ -402,11 +403,6 @@ insert into replica_peer(rowid,peerid,lastsync) values(1,@peerid,CURRENT_TIMESTA
             FixReplicaLog_cmd.ExecuteNonQuery();
         }
 
-        void SQLiteReplicator_Update(object sender, UpdateEventArgs e)
-        {
-            LastIDs[e.Table] = e.RowId;
-        }
-
        /// <summary>
        /// Последнй добавленный серийный номер реплики
        /// </summary>
@@ -483,6 +479,7 @@ insert into replica_peer(peerid,replicaid,lastsync)
            }
        }
 
+       //public void Check
 
         /// <summary>
         /// Проверяет и при необходимости создает таблицы и триггеры,
@@ -490,8 +487,8 @@ insert into replica_peer(peerid,replicaid,lastsync)
         /// </summary>
         private void InitReplicationSchema()
         {
-
-            (MasterDB as SQLiteConnection).Update += new SQLiteUpdateEventHandler(SQLiteReplicator_Update);
+            MasterDB.StateChange += new System.Data.StateChangeEventHandler(MasterDB_StateChange);
+            MasterDB_StateChange(null, null);
 
             CheckReplicaExists_cmd = master.CreateCommand();
             CheckReplicaExists_cmd.CommandText = @"
@@ -518,6 +515,42 @@ update replica_log
             CreateReplicaTables();
 
         }
+
+       void SQLiteReplicator_Update(object sender, UpdateEventArgs e)
+       {
+           LastIDs[e.Table] = e.RowId;
+       }
+
+       private SQLiteUpdateEventHandler updater = null;
+
+       public SQLiteReplicator()
+       {
+           updater = new SQLiteUpdateEventHandler(SQLiteReplicator_Update);
+       }
+
+
+       void MasterDB_StateChange(object sender, System.Data.StateChangeEventArgs e)
+       {
+           if (
+               (e==null)
+                    ||
+               (e.CurrentState==System.Data.ConnectionState.Open)
+               )
+           {
+               ((SQLiteConnection)MasterDB).Update -= updater;
+               ((SQLiteConnection)MasterDB).Update += updater;
+           }
+
+           if (
+    (e != null)
+         &&
+    (e.CurrentState != System.Data.ConnectionState.Open)
+    )
+           {
+               //((SQLiteConnection)MasterDB).Update -= updater;
+           }
+
+       }
 
        public void CreateReplicaTables()
        {
@@ -639,7 +672,9 @@ END;
            }
            byte[] result = null;
            ReplicaPortion rp = new ReplicaPortion();
+           long initial_seqno = LastKnownSeqNo;
            rp.RequestLog(this, ref LastKnownSeqNo);
+           String s = string.Empty;
            if (rp.ReplicaSet.Length > 0)
            {
                XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
@@ -649,8 +684,17 @@ END;
                    result = strm.ToArray();
                    strm.Close();
                }
-               //String s = XmlStrFromBuffer(result);
+                s = XmlStrFromBuffer(result);
+            
+
            }
+           if (initial_seqno != LastKnownSeqNo)
+           {
+               LogMessage("New replica buffer for seqno from {0} to {1} :: {2}", 
+                   initial_seqno, 
+                   LastKnownSeqNo, 
+                   s);
+           };
            rp = null;
            return result;
        }
@@ -665,7 +709,7 @@ END;
         {
             if (ReplicaBuffer == null) return 0;
             String s = XmlStrFromBuffer(ReplicaBuffer);
-            s += " ";
+            LogMessage("Apply buffer {0}", s);
             int apc = 0;
             XmlSerializer formatter = new XmlSerializer(typeof(ReplicaPortion));
             using (MemoryStream strm = new MemoryStream(ReplicaBuffer))
@@ -711,6 +755,17 @@ END;
        public void SetMasterDbGuid(Guid DbGuid)
        {
            OverrideMasterDbGuid = DbGuid;
+       }
+
+        public void LogMessage(string format, params Object[] args)
+        {
+            LogMessage(string.Format(format, args));
+        }
+
+
+       public void LogMessage(string s)
+       {
+           if (logger!=null) logger.LogMessage(s);
        }
     }
 }
