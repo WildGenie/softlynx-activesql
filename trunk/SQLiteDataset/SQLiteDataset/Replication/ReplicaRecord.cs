@@ -189,7 +189,12 @@ namespace Softlynx.SQLiteDataset.Replication
 
         internal bool Apply(SQLiteReplicator replicator)
         {
-            if (replicator.IsReplicaExists(ReplicaGuid)) return false;
+            replicator.LogMessage("Try to apply replica ReplicaGuid:{0} RowGuid:{0} ", ReplicaGuid, RowGuid);
+            if (replicator.IsReplicaExists(ReplicaGuid))
+            {
+                replicator.LogMessage("Replica exists");
+                return false;
+            }
 
             replicator.LastIDs.Clear();
 
@@ -213,7 +218,7 @@ namespace Softlynx.SQLiteDataset.Replication
                     values=values.TrimEnd(',');
 
                     cmd.CommandText = String.Format(@"
-insert or replace into {0}({1}) values({2});
+replace into {0}({1}) values({2});
 ", TableName, names, values);
                     cmd.ExecuteNonQuery();
                 }
@@ -248,7 +253,9 @@ delete from {0} where id=@rowguid
 
             try
             {
-                replicator.FixReplicaLog((long)replicator.LastIDs["replica_log"], Stamp, Author, ReplicaGuid);
+                long localseqno = (long)replicator.LastIDs["replica_log"];
+                replicator.LogMessage("Fix ReplicaGuid:{0} at remote seqno:{1} to local seqno:{2}", ReplicaGuid, SeqNo,localseqno);
+                replicator.FixReplicaLog(localseqno, Stamp, Author, ReplicaGuid);
             }
             catch { };
 
