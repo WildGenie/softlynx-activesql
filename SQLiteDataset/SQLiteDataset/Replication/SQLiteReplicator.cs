@@ -223,14 +223,25 @@ return intobjects;
 
        public void CreateSnapshot(string DestFile,params string[] EmptyTables)
        {
-           using (DbTransaction transaction = master.BeginTransaction())
+           using (DbTransaction transaction = ((SQLiteConnection)master).BeginTransaction(System.Data.IsolationLevel.Serializable,true))
                try
                {
+                   using (DbCommand cmd = master.CreateCommand())
+                   {
+                       Guid fake_replica = Guid.NewGuid();
+                       cmd.Transaction = transaction;
+                       cmd.CommandText = @"
+insert into replica_log(replica_guid) values(@replica_guid);
+";
+                       cmd.Parameters.Add(new SQLiteParameter("@replica_guid", fake_replica));
+                       cmd.ExecuteNonQuery();
+                   };
+
                    long latest_seqno = GetLastKnownSeqNoForDB(SelfGuid);
                    string sourcefn = ConnectionStringValue("Data Source");
                    File.Copy(sourcefn, DestFile, true);
                    string snapshot_connectionstring = ChangeConnectionStringValue(master.ConnectionString, "Data Source", DestFile);
-                   using (DbConnection snapshot = new SQLiteConnection(snapshot_connectionstring))
+                   using (SQLiteConnection snapshot = new SQLiteConnection(snapshot_connectionstring))
                    {
                        snapshot.Open();
                        using (DbTransaction snapshot_transaction = snapshot.BeginTransaction())
