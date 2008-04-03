@@ -49,12 +49,15 @@ namespace Softlynx.SQLiteDataset.Replication
                         {
                             while ((replicaset.Count < replicator.MaxPortionSize) && reader.Read())
                             {
-                                ReplicaRecord rr = new ReplicaRecord(replicator, reader);
-                                LastKnownSeqNo = rr.SeqNo;
-                                if (replicator.IgnoreTable.ContainsKey(rr.TableName)) continue;
-                                if (replicator.IgnoreAuthor.ContainsKey(rr.Author)) continue;
-                                rr.LoadReplicaValues(replicator);
-                                replicaset.Add(rr);
+                                if (!reader.IsDBNull(1))
+                                {
+                                    ReplicaRecord rr = new ReplicaRecord(replicator, reader);
+                                    LastKnownSeqNo = rr.SeqNo;
+                                    if (replicator.IgnoreTable.ContainsKey(rr.TableName)) continue;
+                                    if (replicator.IgnoreAuthor.ContainsKey(rr.Author)) continue;
+                                    rr.LoadReplicaValues(replicator);
+                                    replicaset.Add(rr);
+                                }
                             };
                             reader.Close();
                         }
