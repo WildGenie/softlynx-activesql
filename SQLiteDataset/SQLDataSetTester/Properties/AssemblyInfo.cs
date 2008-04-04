@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("SQLDataSetTester")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("KotSOFT")]
+[assembly: AssemblyCompany("SoftLynx")]
 [assembly: AssemblyProduct("SQLDataSetTester")]
-[assembly: AssemblyCopyright("Copyright © KotSOFT 2007")]
+[assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
