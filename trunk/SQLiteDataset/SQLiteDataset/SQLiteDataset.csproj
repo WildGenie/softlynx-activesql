@@ -34,6 +34,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActiveRecord\RecordBase.cs" />
+    <Compile Include="ActiveRecord\Session.cs" />
     <Compile Include="FileLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Replication\ReplicaPortion.cs" />
