@@ -15,6 +15,24 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
     {
     }
 
+    [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
+    public class ForeignKey : Attribute
+    {
+        private Type _fClass;
+
+        public Type ForeignClass
+        {
+            get { return _fClass; }
+            set { _fClass = value; }
+        }
+
+        public ForeignKey(Type ForeignKeyClass)
+        {
+            ForeignClass = ForeignKeyClass;
+        }
+
+    }
+
     [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
     public class WithReplica : Attribute
     {
@@ -68,7 +86,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         internal bool IsPrimary = false;
         internal Type field_type = typeof(object);
         internal PropertyInfo prop = null;
-
+        internal UntypedRecordSet foreign_key = null;
+        
         internal String CreateColumnStatement()
         {
             string flags = string.Empty;
@@ -87,8 +106,15 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
         internal InField[] fields;
         internal InField[] primary_fields;
+        internal Type basetype = default(Type);
+        internal Hashtable foreign_keys = new Hashtable();
+
+        internal object PKEYValue(object o)
+        {
+            return primary_fields[0].prop.GetValue(o, null);
+        }
         
-        String ColumnsList(ICollection fromcolums, string columnprefix, string separator)
+        internal String ColumnsList(ICollection fromcolums, string columnprefix, string separator)
         {
             int i = 0;
             String[] clist = new string[fromcolums.Count];
@@ -102,12 +128,12 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             return String.Join(separator, clist);
         }
 
-        String ColumnsList(ICollection fromcolums, string columnprefix)
+        internal String ColumnsList(ICollection fromcolums, string columnprefix)
         {
             return ColumnsList(fromcolums, columnprefix, ",");
         }
 
-        String ColumnsList(ICollection fromcolums)
+        internal String ColumnsList(ICollection fromcolums)
         {
             return ColumnsList(fromcolums, string.Empty, ",");
         }
@@ -258,45 +284,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             return res;
         }
 
-        internal Array Read(Type type, string filter, string orderby, params object[] filter_params)
-        {
-            ArrayList  res = new ArrayList();
-
-            string cmd = String.Format("SELECT {0} from {1}", ColumnsList(fields),Name);
-            if (filter != string.Empty)
-            {
-                cmd += String.Format(" WHERE ({0})", filter);
-            };
-
-            if (orderby != string.Empty)
-            {
-                cmd += String.Format(" ORDER BY ({0})", orderby);
-            };
-
-            
-
-            using (DbTransaction transaction = FillCmd.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
-            {
-                using (DbDataReader reader = Session.CreateReader(cmd, filter_params))
-                {
-                    while (reader.Read())
-                    {
-                        int i = 0;
-                        object instance = type.GetConstructor(System.Type.EmptyTypes).Invoke(null);
-                        foreach (InField field in fields)
-                        {
-                            field.prop.SetValue(instance,reader.GetValue(i++),null);
-                        }
-                        res.Add(instance);
-                    }
-
-                    reader.Close();
-                }
-                transaction.Commit();
-            }
-
-            return res.ToArray(type);
-        }
+ 
 
 
 
@@ -392,15 +380,32 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     field.IsPrimary = prop.IsDefined(typeof(PrimaryKey), true);
                     field.field_type = prop.PropertyType;
                     field.prop = prop;
+
+                    if (prop.IsDefined(typeof(ForeignKey), true))
+                    {
+                        ForeignKey fk = (ForeignKey)Attribute.GetCustomAttribute(prop, typeof(ForeignKey));
+                        field.foreign_key = new UntypedRecordSet(fk.ForeignClass);
+                        table.foreign_keys[prop.Name] = field.foreign_key;
+                    }
+
                     fields.Add(field);
-                    if (field.IsPrimary) primary_fields.Add(field);
+                    if (field.IsPrimary) {
+                        if (primary_fields.Count>0) 
+                            throw new Exception(string.Format("Can't define more than one field for primary ondex on object {0} ",type.ToString()));
+                        primary_fields.Add(field);
+                    }
+
                 }
                 table.with_replica = type.IsDefined(typeof(WithReplica), true);
+                if ((table.with_replica) && ((primary_fields.Count!=1) || (primary_fields[0].Name.ToLower()!="id")))
+                throw new Exception(string.Format("Define a property with ID name as primary index on {0} to be ready for replication",type.ToString()));
+
+
                 table.fields = fields.ToArray();
                 table.primary_fields = primary_fields.ToArray();
                 tables[type] = table;
                 table_names[table.Name] = type;
-                
+                table.basetype = type;
                 table.InitContent();
 
                 ObjectVersions ov = new ObjectVersions();
@@ -459,24 +464,6 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             table.Read(Record);
         }
 
-        public static Array Read(Type type, string filter, string orderby, params object[] filter_params)
-        {
-            InTable table = (InTable)tables[type];
-            if (table == null) throw new Exception(string.Format("Can't read object {0} as Active Record", type.FullName));
-            return table.Read(type, filter, orderby, filter_params);
-
-        }
-
-        public static Array Read(Type type, string filter, params object[] filter_params)
-        {
-            return Read(type, filter, string.Empty, filter_params);
-        }
-
-        public static Array Read(Type type)
-        {
-            return Read(type, string.Empty, string.Empty);
-        }
-
 
         public static void Write(Object Record)
         {
@@ -492,6 +479,152 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             return table.Delete(Record);
         }
 
+
+        public static object PKEY(object Record)
+        {
+            InTable table = (InTable)tables[Record.GetType()];
+            if (table == null) throw new Exception(string.Format("Can't set PKEY for {0}", Record.ToString()));
+            return table.PKEYValue(Record);
+        }
+
+        internal static InTable ActiveRecordInfo(Type type)
+        {
+            InTable table = (InTable)tables[type];
+            if (table == null) throw new Exception(string.Format("Can't use {0} as Acive Record object", type.Name));
+            return table;
+        }
+
     }
 
+    public class RecordSet<T>:IEnumerable
+    {
+
+        private Hashtable index = new Hashtable();
+        private List<T> list = new List<T>();
+        private InTable table = null;
+
+        protected void InitUnderlyingClass(Type RecordType)
+        {
+            table = RecordBase.ActiveRecordInfo(RecordType);
+        }
+
+        
+
+        public RecordSet()
+        {
+            if (this.GetType()==typeof(RecordSet<T>))
+            InitUnderlyingClass(typeof(T));
+        }
+
+        public T Add(T record)
+        {
+            index.Add(table.PKEYValue(record), record);
+            list.Add(record);
+            return record;
+        }
+
+        public void Remove(T record)
+        {
+            index.Remove(table.PKEYValue(record));
+            list.Remove(record);
+        }
+
+        public T this[object key]
+        {
+            get { return (T)index[key];}
+        }
+
+        public T this[int pos]
+        {
+            get { return (T)list[pos]; }
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            return list.GetEnumerator();
+        }
+
+        public void Fill(string filter, string orderby, params object[] filter_params)
+        {
+            string cmd = String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
+            if (filter != string.Empty)
+            {
+                cmd += String.Format(" WHERE ({0})", filter);
+            };
+
+            if (orderby != string.Empty)
+            {
+                cmd += String.Format(" ORDER BY ({0})", orderby);
+            };
+
+
+
+            using (DbTransaction transaction = Session.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
+            {
+                using (DbDataReader reader = Session.CreateReader(cmd, filter_params))
+                {
+                    list.Clear();
+                    index.Clear();
+                    while (reader.Read())
+                    {
+                        int i = 0;
+                        ConstructorInfo ci = table.basetype.GetConstructor(System.Type.EmptyTypes);
+                        if (ci==null) 
+                            throw new Exception(string.Format("Can't create instance of {0} without default constructor",table.basetype.Name));
+                        T instance = (T)ci.Invoke(null);
+                        foreach (InField field in table.fields)
+                        {
+                            try
+                            {
+                                field.prop.SetValue(instance, reader.GetValue(i++), null);
+
+                            }
+                            catch
+                            {
+                                field.prop.SetValue(
+                                    instance,
+                                    field.prop.PropertyType.GetConstructor(System.Type.EmptyTypes).Invoke(null),
+                                    null);
+                            }
+                        }
+                        Add(instance);
+                    }
+                    reader.Close();
+                }
+                transaction.Commit();
+            }
+        }
+
+        public void Fill(string filter, params object[] filter_params)
+        {
+            Fill(filter, string.Empty, filter_params);
+        }
+
+        public void Fill()
+        {
+            Fill(string.Empty, string.Empty);
+        }
+
+        public void Sort()
+        {
+            list.Sort();
+        }
+
+        public void Sort(Comparison<T> comparision)
+        {
+            list.Sort(comparision);
+        }
+
+        public UntypedRecordSet ForeignKey(string ForeignKeyName)
+        {
+            return (UntypedRecordSet)table.foreign_keys[ForeignKeyName];
+        }
+    }
+    
+    public class UntypedRecordSet : RecordSet<object> {
+        public UntypedRecordSet(Type RecordType)
+        {
+            InitUnderlyingClass(RecordType);
+        }
+    };
 }
