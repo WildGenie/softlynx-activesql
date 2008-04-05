@@ -6,10 +6,46 @@ using Softlynx.SQLiteDataset.ActiveRecord;
 
 namespace SQLDataSetTester
 {
+    [InTable, WithReplica]
+    [TableVersion(1, "select 1")]
+    class Location:IComparable
+    {
+        Guid _id = Guid.Empty;
+        private string _Name;
+
+        [PrimaryKey]
+        public Guid ID
+        {
+            get { return _id; }
+            set { _id = value; }
+        }
+
+        public string Name
+        {
+            get { return _Name; }
+            set { _Name = value; }
+        }
+
+        public Location(){}
+
+        public Location(string name)
+        {
+            ID = Guid.NewGuid();
+            Name = name;
+        }
+
+        int IComparable.CompareTo(object l)    
+        {
+            return Name.CompareTo(((Location)l).Name);
+        }
+
+
+    }
+
+
     [InTable,WithReplica]
     [TableVersion(1,"select 1")]
-    [TableVersion(2,"select 2")]
-    class MyRecord
+    class Asset
     {
         Guid _id = Guid.Empty;
         private string _Description;
@@ -28,6 +64,14 @@ namespace SQLDataSetTester
             set { _Description = value; }
         }
 
+        private Guid _location;
+
+        [ForeignKey(typeof(Location))]
+        public Guid LocationID
+        {
+            get { return _location; }
+            set { _location = value; }
+        }
 
 
     }
@@ -41,15 +85,23 @@ namespace SQLDataSetTester
         static void Main()
         {
             Session.AttachDatabase(@"c:\temp\ar.db3");
-            MyRecord mr = new MyRecord();
-            mr.ID = Guid.NewGuid();
-            mr.Description = mr.ID.ToString().GetHashCode().ToString();
-            RecordBase.Write(mr);
-            mr.Description = mr.Description.GetHashCode().ToString();
-            RecordBase.Write(mr);
+            
+            RecordSet<Location> locs=new RecordSet<Location>();
+            RecordSet<Asset> assets = new RecordSet<Asset>();
+           
+            Location loc = locs.Add(new Location("Location 1"));
+            //RecordBase.Write(loc);
+            
+            loc = locs.Add(new Location("Location 2"));
+            //RecordBase.Write(loc);
+            
+            locs.Fill();
+            locs.Sort();
 
-            MyRecord[] records = (MyRecord[])RecordBase.Read(typeof(MyRecord));
-            RecordBase.Delete(records[0]);
+            Asset ast = new Asset();
+            ast.LocationID = locs[0].ID;
+            
+            loc = locs[locs[2].ID];
 
             Session.Detach();
             Application.EnableVisualStyles();
