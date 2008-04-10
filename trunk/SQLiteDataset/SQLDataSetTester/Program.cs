@@ -90,8 +90,11 @@ namespace SQLDataSetTester
             RecordSet<Asset> assets = new RecordSet<Asset>();
            
             Location loc = locs.Add(new Location("Location 1"));
-            //RecordBase.Write(loc);
-            
+            RecordBase.Write(loc);
+
+            locs.Clear();
+            loc=locs[loc.ID];
+
             loc = locs.Add(new Location("Location 2"));
             //RecordBase.Write(loc);
             
