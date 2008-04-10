@@ -113,7 +113,12 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         {
             return primary_fields[0].prop.GetValue(o, null);
         }
-        
+
+        internal void SetPKEYValue(object o,object v)
+        {
+            primary_fields[0].prop.SetValue(o,v,null);
+        }
+
         internal String ColumnsList(ICollection fromcolums, string columnprefix, string separator)
         {
             int i = 0;
@@ -457,11 +462,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             }
         }
 
-        public static void Read(Object Record)
+        public static bool Read(Object Record)
         {
             InTable table = (InTable) tables[Record.GetType()];
             if (table == null) throw new Exception(string.Format("Can't read object {0} as Active Record",Record.ToString()));
-            table.Read(Record);
+            return table.Read(Record);
         }
 
 
@@ -496,12 +501,32 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
     }
 
-    public class RecordSet<T>:IEnumerable
+    public class RecordSet<T>:IEnumerable,ICollection
     {
 
         private Hashtable index = new Hashtable();
         private List<T> list = new List<T>();
         private InTable table = null;
+
+        public void Clear()
+        {
+            lock (this)
+            {
+                index.Clear();
+                list.Clear();
+            }
+        }
+
+        public int Count { get { lock (this) return list.Count; } }
+
+        public void CopyTo(Array array, int index)
+        {
+            list.CopyTo((T[])array, index);
+        }
+
+        public Object SyncRoot { get { return this; } }
+
+        public bool IsSynchronized { get {return true;}}
 
         protected void InitUnderlyingClass(Type RecordType)
         {
@@ -518,80 +543,103 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
         public T Add(T record)
         {
-            index.Add(table.PKEYValue(record), record);
-            list.Add(record);
-            return record;
+            lock (this)
+            {
+                index.Add(table.PKEYValue(record), record);
+                list.Add(record);
+                return record;
+            }
         }
 
         public void Remove(T record)
         {
-            index.Remove(table.PKEYValue(record));
-            list.Remove(record);
+            lock (this)
+            {
+                index.Remove(table.PKEYValue(record));
+                list.Remove(record);
+            }
         }
 
         public T this[object key]
         {
-            get { return (T)index[key];}
+            get
+            {
+                lock (this)
+                {
+                    object o = index[key];
+                    if (o == null)
+                    {
+                        o = table.basetype.GetConstructor(System.Type.EmptyTypes).Invoke(null);
+                        table.SetPKEYValue(o, key);
+                        if (RecordBase.Read(o)) Add((T)o); else o = null;
+                    }
+                    return (T)o;
+                }
+            }
         }
 
         public T this[int pos]
         {
-            get { return (T)list[pos]; }
+            get { lock (this) return (T)list[pos]; }
         }
 
         public IEnumerator GetEnumerator()
         {
+            lock (this)
             return list.GetEnumerator();
         }
 
         public void Fill(string filter, string orderby, params object[] filter_params)
         {
-            string cmd = String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
-            if (filter != string.Empty)
+            lock (this)
             {
-                cmd += String.Format(" WHERE ({0})", filter);
-            };
-
-            if (orderby != string.Empty)
-            {
-                cmd += String.Format(" ORDER BY ({0})", orderby);
-            };
-
-
-
-            using (DbTransaction transaction = Session.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
-            {
-                using (DbDataReader reader = Session.CreateReader(cmd, filter_params))
+                string cmd = String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
+                if (filter != string.Empty)
                 {
-                    list.Clear();
-                    index.Clear();
-                    while (reader.Read())
-                    {
-                        int i = 0;
-                        ConstructorInfo ci = table.basetype.GetConstructor(System.Type.EmptyTypes);
-                        if (ci==null) 
-                            throw new Exception(string.Format("Can't create instance of {0} without default constructor",table.basetype.Name));
-                        T instance = (T)ci.Invoke(null);
-                        foreach (InField field in table.fields)
-                        {
-                            try
-                            {
-                                field.prop.SetValue(instance, reader.GetValue(i++), null);
+                    cmd += String.Format(" WHERE ({0})", filter);
+                };
 
-                            }
-                            catch
+                if (orderby != string.Empty)
+                {
+                    cmd += String.Format(" ORDER BY ({0})", orderby);
+                };
+
+
+
+                using (DbTransaction transaction = Session.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
+                {
+                    using (DbDataReader reader = Session.CreateReader(cmd, filter_params))
+                    {
+                        list.Clear();
+                        index.Clear();
+                        while (reader.Read())
+                        {
+                            int i = 0;
+                            ConstructorInfo ci = table.basetype.GetConstructor(System.Type.EmptyTypes);
+                            if (ci == null)
+                                throw new Exception(string.Format("Can't create instance of {0} without default constructor", table.basetype.Name));
+                            T instance = (T)ci.Invoke(null);
+                            foreach (InField field in table.fields)
                             {
-                                field.prop.SetValue(
-                                    instance,
-                                    field.prop.PropertyType.GetConstructor(System.Type.EmptyTypes).Invoke(null),
-                                    null);
+                                try
+                                {
+                                    field.prop.SetValue(instance, reader.GetValue(i++), null);
+
+                                }
+                                catch
+                                {
+                                    field.prop.SetValue(
+                                        instance,
+                                        field.prop.PropertyType.GetConstructor(System.Type.EmptyTypes).Invoke(null),
+                                        null);
+                                }
                             }
+                            Add(instance);
                         }
-                        Add(instance);
+                        reader.Close();
                     }
-                    reader.Close();
+                    transaction.Commit();
                 }
-                transaction.Commit();
             }
         }
 
@@ -607,11 +655,13 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
         public void Sort()
         {
+            lock (this)
             list.Sort();
         }
 
         public void Sort(Comparison<T> comparision)
         {
+            lock (this)
             list.Sort(comparision);
         }
 
