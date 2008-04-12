@@ -114,6 +114,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             return primary_fields[0].prop.GetValue(o, null);
         }
 
+        internal virtual bool IsVirtual
+        {
+            get { return false; }
+        }
+
         internal void SetPKEYValue(object o,object v)
         {
             primary_fields[0].prop.SetValue(o,v,null);
@@ -194,7 +199,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 if (pkeycolumns != String.Empty) pkeycolumns += ",";
                 pkeycolumns = String.Format("{0}=@{0}", dc.Name);
             };
-            if (pkeycolumns == String.Empty) throw new Exception("Can't update record until primary key defined");
+            if (pkeycolumns == String.Empty) throw new Exception(string.Format("Can't construct update quiery for type {0} until primary key is defined",Name));
 
             return String.Format("UPDATE {0} set {1} where ({2})",
                 Name,
@@ -235,7 +240,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         }
 
 
-        internal void InitContent()
+        internal virtual void InitContent()
         {
             InsertCmd = Session.CreateCommand(InsertCommandText());
             UpdateCmd = Session.CreateCommand(UpdateCommandText());
@@ -265,22 +270,23 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
 
 
-        internal bool Read(object Record)
+        internal virtual bool Read(object Record)
         {
             bool res = false;
-            int i=0;
             foreach (InField field in primary_fields)
             {
-                FillCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
+                FillCmd.Parameters["@" + field.Name].Value = field.prop.GetValue(Record, null);
             }
-            i = 0;
             using (SQLiteDataReader reader = FillCmd.ExecuteReader())
             {
+                int i = 0;
                 if (reader.Read())
                 {
                     foreach (InField field in fields)
                     {
-                        field.prop.SetValue(Record,reader.GetValue(i++),null);
+                        Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        field.prop.SetValue(Record,v,null);
+                        i++;
                     }
                     res = true;
                 }
@@ -289,38 +295,33 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             return res;
         }
 
- 
 
-
-
-        internal int Update(object Record)
+        internal virtual int Update(object Record)
         {
-            int i = 0;
             foreach (InField field in fields)
             {
-                UpdateCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
+                UpdateCmd.Parameters["@"+field.Name].Value = field.prop.GetValue(Record, null);
             }
             return UpdateCmd.ExecuteNonQuery();
         }
 
-        internal int Insert(object Record)
+        internal virtual int Insert(object Record)
         {
-            int i = 0;
             foreach (InField field in fields)
             {
-                InsertCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
+                InsertCmd.Parameters["@" + field.Name].Value = field.prop.GetValue(Record, null);
             }
             return InsertCmd.ExecuteNonQuery();
         }
 
-        internal int Write(object Record)
+        internal virtual int Write(object Record)
         {
             int r=Update(Record);
             if (r == 0) r = Insert(Record);
             return r;
         }
 
-        internal int Delete(object Record)
+        internal virtual int Delete(object Record)
         {
             int i = 0;
             foreach (InField field in primary_fields)
@@ -329,6 +330,39 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             }
             return DeleteCmd.ExecuteNonQuery();
         }
+    }
+
+    public class InVirtualTable : InTable
+    {
+        internal override void InitContent()
+        {
+        }
+        internal override bool IsVirtual
+        {
+            get { return true; }
+        }
+
+        internal override bool Read(object Record)
+        {
+            return false;
+        }
+
+        internal override int Delete(object Record)
+        {
+            return 0;
+        }
+
+        internal override int Insert(object Record)
+        {
+            return 0;
+        }
+
+        internal override int Update(object Record)
+        {
+            return 0;
+        }
+
+
     }
 
     [InTable]
@@ -393,7 +427,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                         table.foreign_keys[prop.Name] = field.foreign_key;
                     }
 
-                    fields.Add(field);
+                    if (prop.CanWrite) fields.Add(field);
                     if (field.IsPrimary) {
                         if (primary_fields.Count>0) 
                             throw new Exception(string.Format("Can't define more than one field for primary ondex on object {0} ",type.ToString()));
@@ -402,6 +436,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
                 }
                 table.with_replica = type.IsDefined(typeof(WithReplica), true);
+                if ((table.with_replica) && (table.IsVirtual))
+                {
+                throw new Exception(string.Format("Replica is not supported on virtual table {0}", table.Name));
+                }
+
                 if ((table.with_replica) && ((primary_fields.Count!=1) || (primary_fields[0].Name.ToLower()!="id")))
                 throw new Exception(string.Format("Define a property with ID name as primary index on {0} to be ready for replication",type.ToString()));
 
@@ -413,9 +452,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 table.basetype = type;
                 table.InitContent();
 
-                ObjectVersions ov = new ObjectVersions();
-                ov.Name = table.Name;
-                RecordBase.Read(ov);
+                if (!table.IsVirtual)
+                {
+                    ObjectVersions ov = new ObjectVersions();
+                    ov.Name = table.Name;
+                    RecordBase.Read(ov);
 
 
                     foreach (TableVersion update in Attribute.GetCustomAttributes(type, typeof(TableVersion), true))
@@ -429,7 +470,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                             catch (Exception E)
                             {
                                 throw new Exception(
-                                    string.Format("{0} when upgrading table {1} to version {2} with command:\n{3}", 
+                                    string.Format("{0} when upgrading table {1} to version {2} with command:\n{3}",
                                     E.Message,
                                     table.Name,
                                     update.Version,
@@ -444,6 +485,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     {
                         Session.replica.CreateTableReplicaLogSchema(table.Name);
                     }
+                }
                 }
         }
 
@@ -501,7 +543,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
     }
 
-    public class RecordSet<T>:IEnumerable,ICollection
+    public class RecordSet<T>:IEnumerable,ICollection,IList
     {
 
         private Hashtable index = new Hashtable();
@@ -521,6 +563,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
         public void CopyTo(Array array, int index)
         {
+            lock (this)
             list.CopyTo((T[])array, index);
         }
 
@@ -534,6 +577,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         }
 
         
+        public delegate void WhenAddNew(T record);
+        public delegate void WhenRemoveExisting(T record);
+
+        public event WhenAddNew OnAdded;
+        public event WhenRemoveExisting OnRemoved;
 
         public RecordSet()
         {
@@ -541,23 +589,75 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             InitUnderlyingClass(typeof(T));
         }
 
-        public T Add(T record)
+        public int Add(Object o)
         {
             lock (this)
             {
-                index.Add(table.PKEYValue(record), record);
-                list.Add(record);
-                return record;
+                Add((T)o);
+                return list.Count-1;
             }
         }
 
-        public void Remove(T record)
+        public bool Contains (Object record)
         {
             lock (this)
             {
-                index.Remove(table.PKEYValue(record));
-                list.Remove(record);
+                return index[table.PKEYValue(record)] != null;
             }
+        }
+
+
+
+        public T Add(T record)
+        {
+            if (record != null) lock (this)
+                {
+                    object pk = table.PKEYValue(record);
+                    object po = index[pk];
+                    if (po != null) list.Remove((T)po);
+                    index[pk]=record;
+                    list.Add(record);
+                    if (OnAdded != null) OnAdded(record);
+                }
+            return record;
+        }
+
+        public bool Remove(T record)
+        {
+            if (record!=null) lock (this)
+            {
+                object idxv=table.PKEYValue(record);
+                record = (T)index[idxv];
+                if (record!=null)
+                {
+                    index.Remove(idxv);
+                    if (list.Remove(record)) 
+                    if (OnRemoved!= null) OnRemoved(record);
+                    return true;
+                }
+            }
+        return false;
+        }
+
+        public void Remove(Object record)
+        {
+            Remove((T)record);
+        }
+
+        public void RemoveAt(int pos)
+        {
+            Remove(this[pos]);
+        }
+
+        public object this[int pos]
+        {
+            get { lock (this) return list[pos]; }
+            set { throw new Exception("Not supported"); }
+        }
+
+        public void Insert (int index,	Object value)
+        {
+            throw new Exception("Not supported");
         }
 
         public T this[object key]
@@ -567,7 +667,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 lock (this)
                 {
                     object o = index[key];
-                    if (o == null)
+                    if ((o == null) && (!table.IsVirtual))
                     {
                         o = table.basetype.GetConstructor(System.Type.EmptyTypes).Invoke(null);
                         table.SetPKEYValue(o, key);
@@ -577,10 +677,21 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 }
             }
         }
+        public bool IsReadOnly { get {return false;} }
+        
+        public bool IsFixedSize { get { return false; } }
 
-        public T this[int pos]
+        public int IndexOf(T record)
         {
-            get { lock (this) return (T)list[pos]; }
+            lock (this)
+            {
+                return list.IndexOf(record);
+            }
+        }
+
+        public int IndexOf(Object record)
+        {
+            return IndexOf((T)record);
         }
 
         public IEnumerator GetEnumerator()
@@ -591,6 +702,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
         public void Fill(string filter, string orderby, params object[] filter_params)
         {
+            if (table.IsVirtual)
+            {
+                throw new Exception("Can't fill virual tables from database");
+            }
+
             lock (this)
             {
                 string cmd = String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
@@ -621,17 +737,14 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                             T instance = (T)ci.Invoke(null);
                             foreach (InField field in table.fields)
                             {
+                                Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                                i++;
                                 try
                                 {
-                                    field.prop.SetValue(instance, reader.GetValue(i++), null);
-
+                                    field.prop.SetValue(instance, v, null);
                                 }
                                 catch
                                 {
-                                    field.prop.SetValue(
-                                        instance,
-                                        field.prop.PropertyType.GetConstructor(System.Type.EmptyTypes).Invoke(null),
-                                        null);
                                 }
                             }
                             Add(instance);
