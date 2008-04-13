@@ -66,7 +66,7 @@ namespace SQLDataSetTester
 
         private Guid _location;
 
-        [ForeignKey(typeof(Location))]
+
         public Guid LocationID
         {
             get { return _location; }
@@ -102,9 +102,9 @@ namespace SQLDataSetTester
             locs.Sort();
 
             Asset ast = new Asset();
-            ast.LocationID = locs[0].ID;
+            //ast.LocationID = locs[0].ID;
             
-            loc = locs[locs[2].ID];
+            //loc = locs[locs[2].ID];
 
             Session.Detach();
             Application.EnableVisualStyles();

@@ -548,6 +548,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         private Hashtable index = new Hashtable();
         private List<T> list = new List<T>();
         private InTable table = null;
+        private static System.Type[] EmptyTypes = new System.Type[0];
 
         public void Clear()
         {
@@ -684,7 +685,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     object o = index[key];
                     if ((o == null) && (!table.IsVirtual))
                     {
-                        o = table.basetype.GetConstructor(System.Type.EmptyTypes).Invoke(null);
+                        o = table.basetype.GetConstructor(EmptyTypes).Invoke(null);
                         table.SetPKEYValue(o, key);
                         if (RecordBase.Read(o)) Add((T)o); else o = null;
                     }
@@ -760,7 +761,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                                 while (reader.Read())
                                 {
                                     int i = 0;
-                                    ConstructorInfo ci = table.basetype.GetConstructor(System.Type.EmptyTypes);
+                                    ConstructorInfo ci = table.basetype.GetConstructor(EmptyTypes);
                                     if (ci == null)
                                         throw new Exception(string.Format("Can't create instance of {0} without default constructor", table.basetype.Name));
                                     T instance = (T)ci.Invoke(null);

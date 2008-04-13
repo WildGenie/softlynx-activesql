@@ -5,13 +5,13 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SQLiteDataset")]
-[assembly: AssemblyDescription("Reflect any DataSet to SQLite database")]
+[assembly: AssemblyTitle("SQLiteDatasetCE")]
+[assembly: AssemblyDescription("Reflect any DataSet to SQLite database on CF platform")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("SQLiteDataset")]
-[assembly: AssemblyCopyright("Copyright © Softlynx 2008")]
-[assembly: AssemblyTrademark("Softlynx")]
+[assembly: AssemblyProduct("SQLiteDatasetCE")]
+[assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
+[assembly: AssemblyTrademark("SoftLynx")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("bb26611e-238e-4169-9aa1-33dd892fc6ac")]
+[assembly: Guid("d5ea5cb8-6950-4552-906a-6980063b7f4f")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.0.98.0")]
-[assembly: AssemblyFileVersion("2.0.98.0")]
+[assembly: AssemblyVersion("1.0.*")]
+
