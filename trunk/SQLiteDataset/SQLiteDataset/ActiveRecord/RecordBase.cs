@@ -16,21 +16,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
     }
 
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public class ForeignKey : Attribute
+    public class Indexed : Attribute
     {
-        private Type _fClass;
-
-        public Type ForeignClass
-        {
-            get { return _fClass; }
-            set { _fClass = value; }
-        }
-
-        public ForeignKey(Type ForeignKeyClass)
-        {
-            ForeignClass = ForeignKeyClass;
-        }
-
     }
 
     [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
@@ -84,6 +71,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
     public class InField : NamedAttribute
     {
         internal bool IsPrimary = false;
+        internal bool IsIndexed = false;
         internal Type field_type = typeof(object);
         internal PropertyInfo prop = null;
         internal UntypedRecordSet foreign_key = null;
@@ -93,6 +81,12 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             string flags = string.Empty;
             return String.Format("{0} {1}{2}", Name,field_type.Name,flags);
         }
+    }
+
+    public interface IRecordSetItem
+    {
+        void Assigned();
+        void OnWrite();
     }
 
     [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
@@ -172,6 +166,10 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 throw new Exception (String.Format("Primary key not defined for table {0}",Name));
             }
             s += String.Format("\n);\n");
+            foreach (InField f in fields)
+            {
+                if (f.IsIndexed) s += string.Format("CREATE INDEX IF NOT EXISTS {0}_idx on {1}({0});\n", f.Name, Name);
+            }
             return s;
         }
 
@@ -316,9 +314,15 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
         internal virtual int Write(object Record)
         {
-            int r=Update(Record);
-            if (r == 0) r = Insert(Record);
-            return r;
+            using (DbTransaction transaction = Session.Connection.BeginTransaction())
+            {
+                int r = Update(Record);
+                if (r == 0) r = Insert(Record);
+                if (Record is IRecordSetItem)
+                    (Record as IRecordSetItem).OnWrite();
+                transaction.Commit();
+                return r;
+            }
         }
 
         internal virtual int Delete(object Record)
@@ -420,12 +424,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     field.field_type = prop.PropertyType;
                     field.prop = prop;
 
-                    if (prop.IsDefined(typeof(ForeignKey), true))
-                    {
-                        ForeignKey fk = (ForeignKey)Attribute.GetCustomAttribute(prop, typeof(ForeignKey));
-                        field.foreign_key = new UntypedRecordSet(fk.ForeignClass);
-                        table.foreign_keys[prop.Name] = field.foreign_key;
-                    }
+                    
+                    field.IsIndexed=prop.IsDefined(typeof(Indexed), true);
 
                     if (prop.CanWrite) fields.Add(field);
                     if (field.IsPrimary) {
@@ -451,7 +451,6 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 table_names[table.Name] = type;
                 table.basetype = type;
                 table.InitContent();
-
                 if (!table.IsVirtual)
                 {
                     ObjectVersions ov = new ObjectVersions();
@@ -543,7 +542,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
     }
 
-    public class RecordSet<T>:IEnumerable,ICollection,IList
+    public class RecordSet<T>:IEnumerable,ICollection,IList,IDisposable
     {
 
         private Hashtable index = new Hashtable();
@@ -557,6 +556,12 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 index.Clear();
                 list.Clear();
             }
+        }
+
+        public void Dispose()
+        {
+            table = null;
+            Clear();
         }
 
         public int Count { get { lock (this) return list.Count; } }
@@ -618,8 +623,18 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     index[pk]=record;
                     list.Add(record);
                     if (OnAdded != null) OnAdded(record);
+                    if (record is IRecordSetItem)
+                        (record as IRecordSetItem).Assigned();
                 }
             return record;
+        }
+
+        public List<T> ClonedList()
+        {
+            lock (this)
+            {
+                return new List<T>(list);
+            }
         }
 
         public bool Remove(T record)
@@ -700,59 +715,81 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             return list.GetEnumerator();
         }
 
+        private bool _clearBeforeFill=true;
+
+        public bool ClearBeforeFill
+        {
+            get { return _clearBeforeFill; }
+            set { _clearBeforeFill = value; }
+        }
+	
         public void Fill(string filter, string orderby, params object[] filter_params)
         {
             if (table.IsVirtual)
             {
                 throw new Exception("Can't fill virual tables from database");
             }
-
-            lock (this)
-            {
-                string cmd = String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
-                if (filter != string.Empty)
+           
+                lock (this)
                 {
-                    cmd += String.Format(" WHERE ({0})", filter);
-                };
-
-                if (orderby != string.Empty)
-                {
-                    cmd += String.Format(" ORDER BY ({0})", orderby);
-                };
-
-
-
-                using (DbTransaction transaction = Session.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
-                {
-                    using (DbDataReader reader = Session.CreateReader(cmd, filter_params))
+                    string cmd = String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
+                    if (filter != string.Empty)
                     {
-                        list.Clear();
-                        index.Clear();
-                        while (reader.Read())
+                        cmd += String.Format(" WHERE ({0})", filter);
+                    };
+
+                    if (orderby != string.Empty)
+                    {
+                        cmd += String.Format(" ORDER BY ({0})", orderby);
+                    };
+
+
+
+                    using (DbTransaction transaction = Session.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
+                    {
+                        try
                         {
-                            int i = 0;
-                            ConstructorInfo ci = table.basetype.GetConstructor(System.Type.EmptyTypes);
-                            if (ci == null)
-                                throw new Exception(string.Format("Can't create instance of {0} without default constructor", table.basetype.Name));
-                            T instance = (T)ci.Invoke(null);
-                            foreach (InField field in table.fields)
+
+                            using (DbDataReader reader = Session.CreateReader(cmd, filter_params))
                             {
-                                Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                                i++;
-                                try
+                                if (ClearBeforeFill)
                                 {
-                                    field.prop.SetValue(instance, v, null);
+                                    list.Clear();
+                                    index.Clear();
                                 }
-                                catch
+                                while (reader.Read())
                                 {
+                                    int i = 0;
+                                    ConstructorInfo ci = table.basetype.GetConstructor(System.Type.EmptyTypes);
+                                    if (ci == null)
+                                        throw new Exception(string.Format("Can't create instance of {0} without default constructor", table.basetype.Name));
+                                    T instance = (T)ci.Invoke(null);
+                                    foreach (InField field in table.fields)
+                                    {
+                                        Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                                        i++;
+                                        try
+                                        {
+                                            field.prop.SetValue(instance, v, null);
+                                        }
+                                        catch
+                                        {
+                                        }
+                                    }
+                                    Add(instance);
                                 }
+                                reader.Close();
                             }
-                            Add(instance);
+                            transaction.Commit();
                         }
-                        reader.Close();
+                        catch (Exception E)
+                        {
+                            transaction.Commit();
+                            throw new Exception(
+                                string.Format("{0} when running SQL command:\n{1}",
+                                E.Message, cmd), E);
+                        }
                     }
-                    transaction.Commit();
-                }
             }
         }
 
