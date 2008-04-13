@@ -71,6 +71,9 @@
       <Link>Replication\SQLiteReplicator.cs</Link>
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="..\SQLiteDataset\SimpleConfig\ConfigParams.cs">
+      <Link>SimpleConfig\ConfigParams.cs</Link>
+    </Compile>
     <Compile Include="..\SQLiteDataset\SQLiteColumnWrapper.cs">
       <Link>SQLiteColumnWrapper.cs</Link>
       <SubType>Component</SubType>
