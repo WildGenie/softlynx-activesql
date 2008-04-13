@@ -41,6 +41,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Replication\ReplicaPortion.cs" />
     <Compile Include="Replication\ReplicaRecord.cs" />
+    <Compile Include="SimpleConfig\ConfigParams.cs" />
     <Compile Include="SQLiteColumnWrapper.cs">
       <SubType>Component</SubType>
     </Compile>

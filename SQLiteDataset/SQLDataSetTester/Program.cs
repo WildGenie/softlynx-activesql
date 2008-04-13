@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.IO;
 using Softlynx.SQLiteDataset.ActiveRecord;
+using Softlynx.SQLiteDataset.SimpleConfig;
 
 namespace SQLDataSetTester
 {
@@ -84,6 +85,13 @@ namespace SQLDataSetTester
         [STAThread]
         static void Main()
         {
+            SimpleConfig.FileName = @"c:\mycfg.xml";
+            SimpleConfig.Pairs["drink"] = "1";
+            SimpleConfig.Pairs["vehicle"] = "bike";
+            SimpleConfig.Save();
+            SimpleConfig.Load();
+
+
             Session.AttachDatabase(@"c:\temp\ar.db3");
             
             RecordSet<Location> locs=new RecordSet<Location>();
