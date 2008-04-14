@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.Threading;
+ 
 
 namespace Softlynx.SQLiteDataset.ActiveRecord
 {
@@ -526,7 +528,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         }
 
 
-        public static object PKEY(object Record)
+        internal static object PKEY(object Record)
         {
             InTable table = (InTable)tables[Record.GetType()];
             if (table == null) throw new Exception(string.Format("Can't set PKEY for {0}", Record.ToString()));
