@@ -15,7 +15,6 @@ namespace Softlynx.SQLiteDataset.Replication
     /// <summary>
     /// Описание одной записи репликации
     /// </summary>
-    [Serializable]
     [XmlInclude(typeof(System.DBNull))]
     public class ReplicaRecord
     {
