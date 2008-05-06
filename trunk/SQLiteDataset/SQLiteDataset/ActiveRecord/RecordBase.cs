@@ -81,7 +81,16 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         internal String CreateColumnStatement()
         {
             string flags = string.Empty;
-            return String.Format("{0} {1}{2}", Name,field_type.Name,flags);
+            String columnDatatype = String.Empty;
+            if (field_type.Name == "String")
+            {
+                columnDatatype = "Text";
+            }
+            else
+            {
+                columnDatatype = field_type.Name;
+            }
+            return String.Format("{0} {1}{2}", Name, columnDatatype, flags);
         }
     }
 
