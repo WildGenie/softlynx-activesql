@@ -14,7 +14,7 @@ namespace Softlynx.SQLiteDataset.Replication
     /// <summary>
     /// Порция данных о репликах
     /// </summary>
-    [Serializable]
+    //[Serializable]
     public class ReplicaPortion
     {
         ArrayList replicaset = new ArrayList();
