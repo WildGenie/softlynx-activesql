@@ -598,6 +598,23 @@ create index IF NOT EXISTS replica_log_replica_guid on replica_log(replica_guid)
 
        }
 
+        /// <summary>
+        /// Удаление схемы для ведения записей об изменениях в таблице TableName
+        /// </summary>
+        /// <param name="TableName">Имя таблицы</param>
+       public void DropTableReplicaLogSchema(string TableName)
+        {
+            using (DbCommand cmd = master.CreateCommand())
+            {
+                cmd.CommandText = String.Format(@"
+delete from replica_log where record_rowguid in (select id from replica_changes_on_{0});
+drop table if exists replica_changes_on_{0};
+", TableName);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
 
         /// <summary>
         /// Создание схемы для ведения записей об изменениях в таблице TableName
@@ -613,17 +630,11 @@ create table if not exists replica_changes_on_{0} as
 
 create index if not exists replica_changes_on_{0}_seqnoref on replica_changes_on_{0}(seqnoref);
 
-DROP TRIGGER IF EXISTS when_insert_{0}; -- comment it on producion
-DROP TRIGGER IF EXISTS when_update_{0}; -- comment it on producion
-DROP TRIGGER IF EXISTS when_delete_{0}; -- comment it on producion
-DROP TRIGGER IF EXISTS when_delete_{0}_replica_log; -- comment it on producion
-
 create trigger if not exists create_replica_when_insert_{0} AFTER INSERT on {0}
 BEGIN
 insert into replica_log(table_name,record_rowguid,action) values ('{0}',NEW.id,'I');
 insert into replica_changes_on_{0} select last_insert_rowid() as seqnoref,* from {0} where rowid=NEW.rowid;
 END;  
-
 
 create trigger if not exists create_replica_when_update_{0} AFTER UPDATE on {0}
 BEGIN

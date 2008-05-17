@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.IO;
 using Softlynx.SQLiteDataset.ActiveRecord;
-using Softlynx.SQLiteDataset.SimpleConfig;
+using Softlynx.SimpleConfig;
 
 namespace SQLDataSetTester
 {
     [InTable, WithReplica]
     [TableVersion(1, "select 1")]
+    [TableVersion(2, TableAction.Recreate)]
     class Location:IComparable
     {
         Guid _id = Guid.Empty;
@@ -46,6 +47,7 @@ namespace SQLDataSetTester
 
     [InTable,WithReplica]
     [TableVersion(1,"select 1")]
+    [TableVersion(2, TableAction.Recreate)]
     class Asset
     {
         Guid _id = Guid.Empty;
