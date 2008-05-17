@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace Softlynx.SQLiteDataset.ActiveRecord
 {
-
+    public enum TableAction { None, RunSQL, Recreate };
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public class ExcludeFromTable : Attribute
     {
@@ -54,6 +54,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         }
 
         private string _sql_code;
+        private TableAction _table_action=TableAction.None;
 
         public string SQLCode
         {
@@ -61,9 +62,30 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             set { _sql_code = value; }
         }
 
+        public TableAction Action
+        {
+            get { return _table_action; }
+            set { _table_action = value; }
+        }
+
         public TableVersion(int version, string sql_code)
         {
             Version = version;
+            Action = TableAction.RunSQL;
+            SQLCode = sql_code;
+        }
+
+        public TableVersion(int version, TableAction action)
+        {
+            Version = version;
+            Action = action;
+            SQLCode = string.Empty;
+        }
+
+        public TableVersion(int version, TableAction action, string sql_code)
+        {
+            Version = version;
+            Action = action;
             SQLCode = sql_code;
         }
 
@@ -153,7 +175,12 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             return ColumnsList(fromcolums, string.Empty, ",");
         }
 
-        String CreateTableStatement()
+        internal String DropTableStatement()
+        {
+         return String.Format("DROP TABLE IF  EXISTS {0};", Name);
+        }
+
+        internal String CreateTableStatement()
         {
             String s = String.Format("CREATE TABLE IF NOT EXISTS {0} (\n", Name);
             String cols = String.Empty;
@@ -475,15 +502,30 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                         {
                             try
                             {
+                                if (update.Action == TableAction.Recreate)
+                                {
+                                    if (table.with_replica)
+                                        Session.replica.DropTableReplicaLogSchema(table.Name);
+                                    Session.RunCommand(table.DropTableStatement());
+                                    Session.RunCommand(table.CreateTableStatement());
+                                }
+                                if (
+                                    (update.Action==TableAction.RunSQL) 
+                                    || 
+                                    (update.Action==TableAction.Recreate) 
+                                    &&
+                                    (update.SQLCode!=string.Empty)
+                                    )
                                 Session.RunCommand(update.SQLCode);
                             }
                             catch (Exception E)
                             {
                                 throw new Exception(
-                                    string.Format("{0} when upgrading table {1} to version {2} with command:\n{3}",
+                                    string.Format("{0} when upgrading table {1} to version {2} with {3} action and command:\n{4}",
                                     E.Message,
                                     table.Name,
                                     update.Version,
+                                    update.Action.ToString(),
                                     update.SQLCode), E);
                             }
                             ov.Version = update.Version;
