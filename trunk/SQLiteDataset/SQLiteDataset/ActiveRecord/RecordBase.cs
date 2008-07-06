@@ -495,6 +495,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     ov.Name = table.Name;
                     RecordBase.Read(ov);
 
+                    if (table.with_replica)
+                    {
+                        Session.replica.CreateTableReplicaLogSchema(table.Name);
+                    }
+
 
                     foreach (TableVersion update in Attribute.GetCustomAttributes(type, typeof(TableVersion), true))
                     {
@@ -508,6 +513,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                                         Session.replica.DropTableReplicaLogSchema(table.Name);
                                     Session.RunCommand(table.DropTableStatement());
                                     Session.RunCommand(table.CreateTableStatement());
+                                    if (table.with_replica) Session.replica.CreateTableReplicaLogSchema(table.Name);
                                 }
                                 if (
                                     (update.Action==TableAction.RunSQL) 
@@ -533,10 +539,6 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                         }
                     }
 
-                    if (table.with_replica)
-                    {
-                        Session.replica.CreateTableReplicaLogSchema(table.Name);
-                    }
                 }
                 }
         }
