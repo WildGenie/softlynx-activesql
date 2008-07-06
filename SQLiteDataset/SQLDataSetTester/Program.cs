@@ -46,8 +46,8 @@ namespace SQLDataSetTester
 
 
     [InTable,WithReplica]
-    [TableVersion(1,"select 1")]
-    [TableVersion(2, TableAction.Recreate)]
+//    [TableVersion(1,"select 1")]
+    [TableVersion(1,TableAction.Recreate)]
     class Asset
     {
         Guid _id = Guid.Empty;
