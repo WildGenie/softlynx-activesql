@@ -778,8 +778,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             get { return _clearBeforeFill; }
             set { _clearBeforeFill = value; }
         }
-	
-        public void Fill(string filter, string orderby, params object[] filter_params)
+     
+        public void Fill(string filter, string orderby, int limit, params object[] filter_params)
         {
             if (table.IsVirtual)
             {
@@ -796,9 +796,14 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
                     if (orderby != string.Empty)
                     {
-                        cmd += String.Format(" ORDER BY ({0})", orderby);
+                        cmd += String.Format(" ORDER BY {0}", orderby);
                     };
 
+
+                    if (limit>0)
+                    {
+                        cmd += String.Format(" LIMIT {0}", limit);
+                    };
 
 
                     using (DbTransaction transaction = Session.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
@@ -847,6 +852,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                         }
                     }
             }
+        }
+
+        public void Fill(string filter, string orderby, params object[] filter_params)
+        {
+            Fill(filter, orderby, 0, filter_params);
         }
 
         public void Fill(string filter, params object[] filter_params)
