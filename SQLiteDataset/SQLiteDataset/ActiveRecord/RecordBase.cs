@@ -104,7 +104,10 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         {
             string flags = string.Empty;
             String columnDatatype = String.Empty;
-            if (field_type.Name == "String")
+            if (
+                (field_type.Name == "String") || 
+                (field_type.Name == "Object")
+                )
             {
                 columnDatatype = "Text";
             }
@@ -778,8 +781,13 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             get { return _clearBeforeFill; }
             set { _clearBeforeFill = value; }
         }
-     
+
         public void Fill(string filter, string orderby, int limit, params object[] filter_params)
+       {
+           Fill((Type[])null, filter, orderby, limit, filter_params);
+       }
+
+        public void Fill(Type[] ptypes,string filter, string orderby, int limit, params object[] filter_params)
         {
             if (table.IsVirtual)
             {
@@ -788,7 +796,9 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
            
                 lock (this)
                 {
-                    string cmd = String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
+                    string cmd = string.Empty;
+                    
+                    cmd += String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.Name);
                     if (filter != string.Empty)
                     {
                         cmd += String.Format(" WHERE ({0})", filter);
@@ -810,6 +820,19 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     {
                         try
                         {
+                            if ((ptypes != null) && (ptypes.Length > 0))
+                            {
+                                string ts = string.Empty;
+                                foreach (Type t in ptypes)
+                                {
+                                    if (ts != string.Empty) ts += ",";
+                                    ts += "[" + t.Name + "]";
+                                }
+                                cmd = "TYPES " + ts + ";\n"+cmd+";\n";
+
+                                if (ptypes.Length != table.fields.Length)
+                                    throw new FormatException("TYPES count are not equal to fileds count at:\n"+cmd);
+                            }
 
                             using (DbDataReader reader = Session.CreateReader(cmd, filter_params))
                             {
@@ -831,7 +854,12 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                                         i++;
                                         try
                                         {
-                                            field.prop.SetValue(instance, v, null);
+                                            lock (field.prop)
+                                            {
+                                                Type pt = field.prop.PropertyType;
+                                                field.prop.SetValue(instance, v, null);
+                                                
+                                            };
                                         }
                                         catch
                                         {

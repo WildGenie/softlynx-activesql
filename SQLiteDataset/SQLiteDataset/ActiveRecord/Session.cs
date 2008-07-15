@@ -68,7 +68,9 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             int i = 0;
             while (i < parameters.Length)
             {
-                cmd.Parameters.AddWithValue(parameters[i++].ToString(), parameters[i++]);
+                string pname = parameters[i++].ToString();
+                object pvalue = parameters[i++];
+                cmd.Parameters.AddWithValue(pname, pvalue);
             }
             return cmd;
         }
