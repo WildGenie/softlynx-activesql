@@ -22,7 +22,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
     {
     }
 
-    [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class WithReplica : Attribute
     {
     }
@@ -42,7 +42,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
     {
     }
 
-    [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     public class TableVersion : NamedAttribute
     {
         private int _version;
@@ -122,10 +122,10 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
     public interface IRecordSetItem
     {
         void Assigned();
-        void OnWrite();
+        bool OnWrite();
     }
 
-    [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class InTable : NamedAttribute
     {
         private SQLiteCommand InsertCmd = null;
@@ -357,10 +357,15 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         {
             using (DbTransaction transaction = Session.Connection.BeginTransaction())
             {
-                int r = Update(Record);
-                if (r == 0) r = Insert(Record);
+                bool write_handled = false;
+                int r = 0;
                 if (Record is IRecordSetItem)
-                    (Record as IRecordSetItem).OnWrite();
+                    write_handled=(Record as IRecordSetItem).OnWrite();
+                if (!write_handled)
+                {
+                    r = Update(Record);
+                    if (r == 0) r = Insert(Record);
+                };
                 transaction.Commit();
                 return r;
             }
@@ -787,6 +792,23 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
            Fill((Type[])null, filter, orderby, limit, filter_params);
        }
 
+        static class ADO_MAPPINGS
+        {
+            internal static Hashtable map = new Hashtable();
+            static ADO_MAPPINGS()
+            {
+                map[typeof(Guid)]="uniqueidentifier";
+                map[typeof(String)] = "nvarchar";
+                map[typeof(decimal)] = "decimal";
+                map[typeof(DateTime)] = "datetime";
+                map[typeof(Int64)] = "bigint";
+                map[typeof(Int32)] = "int";
+                map[typeof(Boolean)] = "bit";
+
+
+            }
+        }
+
         public void Fill(Type[] ptypes,string filter, string orderby, int limit, params object[] filter_params)
         {
             if (table.IsVirtual)
@@ -826,7 +848,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                                 foreach (Type t in ptypes)
                                 {
                                     if (ts != string.Empty) ts += ",";
-                                    ts += "[" + t.Name + "]";
+                                    ts += "[" + (string)ADO_MAPPINGS.map[t] + "]";
                                 }
                                 cmd = "TYPES " + ts + ";\n"+cmd+";\n";
 
