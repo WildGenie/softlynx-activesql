@@ -20,6 +20,7 @@ namespace Softlynx.SQLiteDataset.Replication
         private Hashtable TableColumns = new Hashtable();
         private DbConnection master=null;
         private Guid cached_guid = Guid.Empty;
+       private Guid  dbVersion = Guid.Empty;
         DbCommand CheckReplicaExists_cmd = null;
         DbCommand FixReplicaLog_cmd = null;
         public bool HasSnapshot = false;
@@ -347,7 +348,25 @@ public void Open()
         }
 
 
-        public Guid SelfGuid
+       public Guid DBVersionGuid
+       {
+           get
+           {
+               if (dbVersion == Guid.Empty)
+               {
+                   using (DbCommand cmd = master.CreateCommand())
+                   {
+                       cmd.CommandText = "select id from version";
+                       Object obj = cmd.ExecuteScalar();
+                       if (obj == null) return Guid.Empty;
+                       dbVersion = (Guid)obj;
+                   }
+               }
+               return dbVersion;
+           }
+       } 
+       
+       public Guid SelfGuid
         {
             get {
                 if (cached_guid == Guid.Empty)
@@ -388,6 +407,49 @@ insert into replica_peer(rowid,peerid,lastsync) values(1,@peerid,CURRENT_TIMESTA
             
             }
         }
+
+       public Guid SelfGuid1
+       {
+           get
+           {
+               if (cached_guid == Guid.Empty)
+               {
+                   using (DbCommand cmd = master.CreateCommand())
+                   {
+                       cmd.CommandText = "select peerid from replica_peer where rowid=1";
+                       Object obj = cmd.ExecuteScalar();
+                       if (obj == null) return Guid.Empty;
+                       cached_guid = (Guid)obj;
+
+                   }
+               }
+               return cached_guid;
+           }
+           set
+           {
+               using (DbCommand cmd = master.CreateCommand())
+               {
+                   cmd.CommandText = @"
+update replica_peer 
+    set 
+        peerid=@peerid,
+        lastsync=CURRENT_TIMESTAMP 
+    where rowid=1";
+                   cmd.Parameters.Add(new SQLiteParameter("@peerid", value));
+                   int updated = cmd.ExecuteNonQuery();
+                   if (updated == 0)
+                   {
+                       cmd.CommandText = @"
+insert into replica_peer(rowid,peerid,lastsync) values(1,@peerid,CURRENT_TIMESTAMP);
+";
+                       cmd.ExecuteNonQuery();
+                   }
+
+                   cached_guid = value;
+               }
+
+           }
+       }
 
 
         internal bool IsReplicaExists(Guid ReplicaGuid)
@@ -524,6 +586,7 @@ update replica_log
             FixReplicaLog_cmd.Prepare();
 
             CreateReplicaTables();
+            CreateVersionTables();
 
         }
 
@@ -563,6 +626,33 @@ update replica_log
 
        }
 
+       public void CreateVersionTables()
+       {
+           using (DbCommand cmd = master.CreateCommand())
+           {
+
+               cmd.CommandText = "select count(*) from version";
+               try
+               {
+                   cmd.ExecuteNonQuery();
+               }
+               catch
+               {
+                   Guid DBVersion = Guid.NewGuid();
+                   cmd.CommandText = @"
+create table IF NOT EXISTS Version (
+id GUID 
+);
+
+insert into version (id) values (@DBVersion)";
+
+                   cmd.Parameters.Add(new SQLiteParameter("@DBVersion", DBVersion));
+                   cmd.ExecuteNonQuery();
+               }
+           }
+
+       }
+       
        public void CreateReplicaTables()
        {
             using (DbCommand cmd = master.CreateCommand())
