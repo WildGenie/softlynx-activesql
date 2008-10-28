@@ -37,6 +37,26 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         }
     }
 
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class BeforeRecordBaseDelete : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class AfterRecordBaseDelete : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class BeforeRecordBaseWrite : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class AfterRecordBaseWrite : Attribute
+    {
+    }
+
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public class PrimaryKey : NamedAttribute
     {
@@ -124,6 +144,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         void Assigned();
         bool OnWrite();
     }
+    
+    delegate void RecordBaseEvent(object o);
 
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class InTable : NamedAttribute
@@ -138,6 +160,10 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         internal InField[] primary_fields;
         internal Type basetype = default(Type);
         internal Hashtable foreign_keys = new Hashtable();
+        internal event RecordBaseEvent BeforeRecordBaseDelete=null;
+        internal event RecordBaseEvent AfterRecordBaseDelete = null;
+        internal event RecordBaseEvent BeforeRecordBaseWrite = null;
+        internal event RecordBaseEvent AfterRecordBaseWrite = null;
 
         internal object PKEYValue(object o)
         {
@@ -357,6 +383,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         {
             using (DbTransaction transaction = Session.Connection.BeginTransaction())
             {
+                if (BeforeRecordBaseWrite != null) BeforeRecordBaseWrite(Record);
                 bool write_handled = false;
                 int r = 0;
                 if (Record is IRecordSetItem)
@@ -366,6 +393,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     r = Update(Record);
                     if (r == 0) r = Insert(Record);
                 };
+                if (AfterRecordBaseWrite != null) AfterRecordBaseWrite(Record);
                 transaction.Commit();
                 return r;
             }
@@ -373,12 +401,21 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
         internal virtual int Delete(object Record)
         {
-            int i = 0;
-            foreach (InField field in primary_fields)
+            int res = 0;
+            using (DbTransaction transaction = Session.Connection.BeginTransaction())
             {
-                DeleteCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
+
+                if (BeforeRecordBaseDelete != null) BeforeRecordBaseDelete(Record);
+                int i = 0;
+                foreach (InField field in primary_fields)
+                {
+                    DeleteCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
+                }
+                res = DeleteCmd.ExecuteNonQuery();
+                if (AfterRecordBaseDelete != null) AfterRecordBaseDelete(Record);
+                transaction.Commit();
             }
-            return DeleteCmd.ExecuteNonQuery();
+            return res;
         }
     }
 
@@ -460,6 +497,37 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
                 List<InField> fields = new List<InField>();
                 List<InField> primary_fields = new List<InField>();
+
+                foreach (MethodInfo method in type.GetMethods())
+                {
+                    foreach (Attribute mattr in Attribute.GetCustomAttributes(method))
+                    {
+                        if (mattr.GetType() == typeof(BeforeRecordBaseDelete))
+                        {
+                            MethodInfo m = method;
+                            table.BeforeRecordBaseDelete += new RecordBaseEvent(delegate(object o) { method.Invoke(o, null); });
+                        }
+
+                        if (mattr.GetType() == typeof(AfterRecordBaseDelete))
+                        {
+                            MethodInfo m = method;
+                            table.AfterRecordBaseDelete += new RecordBaseEvent(delegate(object o) {m.Invoke(o, null); });
+                        }
+
+                        if (mattr.GetType() == typeof(BeforeRecordBaseWrite))
+                        {
+                            MethodInfo m = method;
+                            table.BeforeRecordBaseWrite += new RecordBaseEvent(delegate(object o) { m.Invoke(o, null); });
+                        }
+
+                        if (mattr.GetType() == typeof(AfterRecordBaseWrite))
+                        {
+                            MethodInfo m = method;
+                            table.AfterRecordBaseWrite += new RecordBaseEvent(delegate(object o) { m.Invoke(o, null); });
+                        }
+                    }
+                }
+
                 foreach (PropertyInfo prop in type.GetProperties())
                 {
                     if (prop.IsDefined(typeof(ExcludeFromTable), true)) continue;
