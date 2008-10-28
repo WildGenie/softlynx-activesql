@@ -304,7 +304,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             UpdateCmd.Prepare();
             DeleteCmd.Prepare();
             FillCmd.Prepare();
-            Session.RunCommand(CreateTableStatement());
+            //Session.RunCommand(CreateTableStatement());
         }
 
 
@@ -427,7 +427,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             set { _name = value; }
         }
 
-        private int _version;
+        private int _version=-1;
 
         public int Version
         {
@@ -496,20 +496,18 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 tables[type] = table;
                 table_names[table.Name] = type;
                 table.basetype = type;
-                table.InitContent();
                 if (!table.IsVirtual)
                 {
+                    table.InitContent();
+
                     ObjectVersions ov = new ObjectVersions();
                     ov.Name = table.Name;
                     RecordBase.Read(ov);
+ 
+                    List<Attribute> attrs=new List<Attribute>(Attribute.GetCustomAttributes(type, typeof(TableVersion), true));
+                    attrs.Insert(0, new TableVersion(0, string.Empty));
 
-                    if (table.with_replica)
-                    {
-                        Session.replica.CreateTableReplicaLogSchema(table.Name);
-                    }
-
-
-                    foreach (TableVersion update in Attribute.GetCustomAttributes(type, typeof(TableVersion), true))
+                    foreach (TableVersion update in attrs)
                     {
                         if (update.Version > ov.Version)
                         {
