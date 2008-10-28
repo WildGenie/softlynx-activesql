@@ -694,7 +694,8 @@ create index IF NOT EXISTS replica_log_replica_guid on replica_log(replica_guid)
         /// <param name="TableName">Имя таблицы</param>
        public void DropTableReplicaLogSchema(string TableName)
         {
-            using (DbCommand cmd = master.CreateCommand())
+            Array r=master.GetSchema("Tables").Select(string.Format("Table_Name = 'replica_changes_on_{0}'",TableName));
+           if (r.Length>0) using (DbCommand cmd = master.CreateCommand())
             {
                 cmd.CommandText = String.Format(@"
 delete from replica_log where record_rowguid in (select id from replica_changes_on_{0});
