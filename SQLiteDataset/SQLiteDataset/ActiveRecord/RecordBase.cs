@@ -502,11 +502,14 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
                     ObjectVersions ov = new ObjectVersions();
                     ov.Name = table.Name;
-                    RecordBase.Read(ov);
+                    try
+                    {
+                        RecordBase.Read(ov);
+                    }
+                    catch (SQLiteException) { }
  
                     List<Attribute> attrs=new List<Attribute>(Attribute.GetCustomAttributes(type, typeof(TableVersion), true));
-                    attrs.Insert(0, new TableVersion(0, string.Empty));
-
+                    attrs.Insert(0, new TableVersion(0, TableAction.Recreate));
                     foreach (TableVersion update in attrs)
                     {
                         if (update.Version > ov.Version)
