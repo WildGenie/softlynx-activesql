@@ -224,7 +224,7 @@ return intobjects;
 
        public void CreateSnapshot(string DestFile,params string[] EmptyTables)
        {
-           using (DbTransaction transaction = ((SQLiteConnection)master).BeginTransaction(System.Data.IsolationLevel.Serializable,true))
+           using (DbTransaction transaction = master.BeginTransaction())
                try
                {
                    using (DbCommand cmd = master.CreateCommand())
@@ -332,8 +332,8 @@ ANALYZE;
 public void Open()
 {
     if ((master==null) ) return;
-        try { master.Open(); }
-        catch {};
+        if (master.State==System.Data.ConnectionState.Closed) 
+            master.Open();
     InitReplicationSchema();
 }
 
@@ -611,8 +611,11 @@ update replica_log
                (e.CurrentState==System.Data.ConnectionState.Open)
                )
            {
-               ((SQLiteConnection)MasterDB).Update -= updater;
-               ((SQLiteConnection)MasterDB).Update += updater;
+               if (MasterDB.DataSource != null)
+               {
+                   ((SQLiteConnection)MasterDB).Update -= updater;
+                   ((SQLiteConnection)MasterDB).Update += updater;
+               }
            }
 
            if (

@@ -907,7 +907,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     };
 
 
-                    using (DbTransaction transaction = Session.Connection.BeginTransaction(IsolationLevel.ReadUncommitted))
+                    using (DbTransaction transaction = Session.Connection.BeginTransaction())
                     {
                         try
                         {
