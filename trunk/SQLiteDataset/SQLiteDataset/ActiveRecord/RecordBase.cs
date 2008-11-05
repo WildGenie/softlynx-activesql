@@ -57,6 +57,11 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
     {
     }
 
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class AfterDatabaseOpened : Attribute
+    {
+    }
+
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public class PrimaryKey : NamedAttribute
     {
@@ -164,6 +169,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
         internal event RecordBaseEvent AfterRecordBaseDelete = null;
         internal event RecordBaseEvent BeforeRecordBaseWrite = null;
         internal event RecordBaseEvent AfterRecordBaseWrite = null;
+        internal event RecordBaseEvent AfterDatabaseOpened = null;
 
         internal object PKEYValue(object o)
         {
@@ -417,6 +423,13 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             }
             return res;
         }
+
+        internal virtual void CallAfterDatabaseOpened()
+        {
+            if (AfterDatabaseOpened != null)
+                AfterDatabaseOpened(null);
+        }
+
     }
 
     public class InVirtualTable : InTable
@@ -498,33 +511,40 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 List<InField> fields = new List<InField>();
                 List<InField> primary_fields = new List<InField>();
 
-                foreach (MethodInfo method in type.GetMethods())
+                foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
                 {
                     foreach (Attribute mattr in Attribute.GetCustomAttributes(method))
                     {
-                        if (mattr.GetType() == typeof(BeforeRecordBaseDelete))
+                        if ((mattr.GetType() == typeof(BeforeRecordBaseDelete)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.BeforeRecordBaseDelete += new RecordBaseEvent(delegate(object o) { method.Invoke(o, null); });
+                            table.BeforeRecordBaseDelete += new RecordBaseEvent(delegate(object o) { m.Invoke(o, null); });
                         }
 
-                        if (mattr.GetType() == typeof(AfterRecordBaseDelete))
+                        if ((mattr.GetType() == typeof(AfterRecordBaseDelete)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
                             table.AfterRecordBaseDelete += new RecordBaseEvent(delegate(object o) {m.Invoke(o, null); });
                         }
 
-                        if (mattr.GetType() == typeof(BeforeRecordBaseWrite))
+                        if ((mattr.GetType() == typeof(BeforeRecordBaseWrite)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
                             table.BeforeRecordBaseWrite += new RecordBaseEvent(delegate(object o) { m.Invoke(o, null); });
                         }
 
-                        if (mattr.GetType() == typeof(AfterRecordBaseWrite))
+                        if ((mattr.GetType() == typeof(AfterRecordBaseWrite)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
                             table.AfterRecordBaseWrite += new RecordBaseEvent(delegate(object o) { m.Invoke(o, null); });
                         }
+
+                        if ((mattr.GetType() == typeof(AfterDatabaseOpened)) && (method.IsStatic))
+                        {
+                            MethodInfo m = method;
+                            table.AfterDatabaseOpened+= new RecordBaseEvent(delegate(object o) { m.Invoke(null, null); });
+                        }
+
                     }
                 }
 
@@ -617,6 +637,7 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     }
 
                 }
+                table.CallAfterDatabaseOpened();
                 }
         }
 
