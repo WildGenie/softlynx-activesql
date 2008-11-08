@@ -637,7 +637,6 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     }
 
                 }
-                table.CallAfterDatabaseOpened();
                 }
         }
 
@@ -652,6 +651,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 {
                     TryToRegisterAsActiveRecord(t);
                 }
+                foreach (InTable t in tables.Values)
+                    t.CallAfterDatabaseOpened();
                 transaction.Commit();
             }
         }
