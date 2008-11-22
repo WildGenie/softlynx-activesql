@@ -713,6 +713,14 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
             }
         }
 
+        public void PopulateTargetList(IList targetlist)
+        {
+            foreach (object o in list)
+            {
+                targetlist.Add(o);
+            }
+        }
+
         public void Dispose()
         {
             table = null;
