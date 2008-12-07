@@ -13,7 +13,9 @@ using Softlynx.Logger;
 namespace Softlynx.SQLiteDataset.Replication
 {
 
-   public class SQLiteReplicator : Component
+   public delegate void DatabaseUpdateEvent(object sender, UpdateEventArgs e);
+   
+    public class SQLiteReplicator : Component
     {
        private Guid OverrideMasterDbGuid = Guid.Empty;
         public Hashtable LastIDs= new Hashtable();
@@ -25,6 +27,7 @@ namespace Softlynx.SQLiteDataset.Replication
         DbCommand FixReplicaLog_cmd = null;
         public bool HasSnapshot = false;
         public FileLogger logger = null;
+        public event DatabaseUpdateEvent OnDatabaseUpdate=null;
 
 
         /// <summary>
@@ -593,6 +596,7 @@ update replica_log
        void SQLiteReplicator_Update(object sender, UpdateEventArgs e)
        {
            LastIDs[e.Table] = e.RowId;
+           if (OnDatabaseUpdate != null) OnDatabaseUpdate(sender,e);
        }
 
        private SQLiteUpdateEventHandler updater = null;
