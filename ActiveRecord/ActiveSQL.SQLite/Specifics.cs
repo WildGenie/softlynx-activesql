@@ -5,26 +5,26 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Softlynx.ActiveSQL;
-using Npgsql;
+using System.Data.SQLite;
 
-namespace Softlynx.ActiveSQL.Postgres
+namespace Softlynx.ActiveSQL.SQLite
 {
-    public class PgSqlSpecifics : IProviderSpecifics
+    public class SQLiteSpecifics : IProviderSpecifics
     {
-        NpgsqlConnectionStringBuilder sb = new NpgsqlConnectionStringBuilder();
-        DbConnection db = new NpgsqlConnection();
+        Hashtable sb = new Hashtable();
+        DbConnection db = new SQLiteConnection();
 
         private static Hashtable CreateTypeMapping()
         {
             Hashtable res = new Hashtable();
-            res[typeof(string)] = new object[] { "Text", DbType.String };
+            res[typeof(string)] = new object[] { "TEXT", DbType.String };
             res[typeof(Int16)] = new object[] { "smallint", DbType.Int16 };
-            res[typeof(Int32)] = new object[] { "integer", DbType.Int32 };
+            res[typeof(Int32)] = new object[] { "int", DbType.Int32 };
             res[typeof(Int64)] = new object[] { "bigint", DbType.Int64 };
-            res[typeof(DateTime)] = new object[] { "Timestamptz", DbType.DateTime };
-            res[typeof(Guid)] = new object[] { "Uuid", DbType.Guid };
-            res[typeof(Object)] = new object[] { "bytea", DbType.Binary};
-            res[typeof(byte[])] = new object[] { "bytea", DbType.Binary};
+            res[typeof(DateTime)] = new object[] { "TIMESTAMPTZ", DbType.DateTime };
+            res[typeof(Guid)] = new object[] { "GUID", DbType.Guid };
+            res[typeof(Object)] = new object[] { "BLOB", DbType.Binary};
+            res[typeof(byte[])] = new object[] { "BLOB", DbType.Binary};
             return res;
         }
 
@@ -33,7 +33,7 @@ namespace Softlynx.ActiveSQL.Postgres
 
         public DbParameter CreateParameter(string name, object value)
         {
-            DbParameter p = new NpgsqlParameter();
+            DbParameter p = new SQLiteParameter();
             p.DbType = GetDbType(value.GetType());
             p.ParameterName = name;
             p.Value = value;
@@ -42,7 +42,7 @@ namespace Softlynx.ActiveSQL.Postgres
 
         public DbParameter CreateParameter(string name, Type type)
         {
-            DbParameter p = new NpgsqlParameter();
+            DbParameter p = new SQLiteParameter();
             p.DbType = GetDbType(type);
             p.ParameterName = name;
             return p;
@@ -72,7 +72,7 @@ namespace Softlynx.ActiveSQL.Postgres
 
         public string AsFieldParam(string s)
         {
-            return string.Format(":{0}", s);
+            return string.Format("@{0}", s);
         }
 
         public DbConnection Connection
@@ -85,7 +85,12 @@ namespace Softlynx.ActiveSQL.Postgres
         public void ExtendConnectionString(string key, string value)
         {
             sb.Add(key, value);
-            db.ConnectionString = sb.ConnectionString;
+            string s = string.Empty;
+            foreach (DictionaryEntry de in sb)
+            {
+                s += string.Format("{0}={1};", de.Key, de.Value);
+            }
+            db.ConnectionString = s;
 
         }
 
@@ -93,5 +98,6 @@ namespace Softlynx.ActiveSQL.Postgres
         {
             return select;
         }
+
     }
 }

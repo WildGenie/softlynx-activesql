@@ -5,15 +5,14 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Active Record Posgres adapter")]
-[assembly: AssemblyDescription("Active Record Posgres adapter")]
+[assembly: AssemblyTitle("Active Record SQLite adapter")]
+[assembly: AssemblyDescription("Active Record SQLite adapter")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("ActiveSQL.Postgres")]
+[assembly: AssemblyProduct("ActiveSQL.SQLite")]
 [assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
@@ -21,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("8020d38d-ffaf-48e7-b357-d6c0bf4fdd8a")]
+[assembly: Guid("2b48593e-ff3d-48fa-bc6a-0414c9e03c7f")]
 
 // Version information for an assembly consists of the following four values:
 //
