@@ -27,6 +27,7 @@ namespace ActiveRecordTester
             static public PropType Name = new PropType("Name", "{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
         }
 
+        [ExcludeFromTable]
         public string Name
         {
             get { return (string)GetPropertyLastValue(Property.Name); }

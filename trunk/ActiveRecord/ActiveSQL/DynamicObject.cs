@@ -208,7 +208,7 @@ namespace Softlynx.ActiveSQL
     /// Время измнения храниться в Created
     /// Автор изменения AuthorID
     /// </summary>
-    
+
     public abstract class ObjectProp
     {
         Guid _id = Guid.NewGuid();

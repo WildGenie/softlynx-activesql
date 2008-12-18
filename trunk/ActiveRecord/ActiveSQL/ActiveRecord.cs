@@ -88,15 +88,11 @@ namespace Softlynx.ActiveSQL
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class RecordSetAssign:NamedAttribute
-    {
-    }
-
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class RecordSetInsert : NamedAttribute
     {
     }
 
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class RecordSetRemove : NamedAttribute
     {
     }
@@ -642,6 +638,7 @@ namespace Softlynx.ActiveSQL
 
         internal void TryToRegisterAsActiveRecord(Type type)
         {
+            if (type.IsAbstract) return;
             if (tables.ContainsKey(type))
                 throw new Exception(string.Format("Object {0} already registered as ActiveRecord", type.ToString()));
             if (type.IsDefined(typeof(InTable), true))
