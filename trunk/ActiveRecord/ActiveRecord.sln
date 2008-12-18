@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveRecordTester", "SQLDataSetTester\ActiveRecordTester.csproj", "{4BCF3FE3-FB3D-4A35-9C55-1298D0B32602}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveRecordTester", "ActiveRecordTester\ActiveRecordTester.csproj", "{4BCF3FE3-FB3D-4A35-9C55-1298D0B32602}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
@@ -20,6 +20,36 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleConfig", "SimpleConfi
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveSQL.Postgres", "ActiveSQL.Postgres\ActiveSQL.Postgres.csproj", "{E4987ABC-7D45-447A-A161-D3EBFF1B9043}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveSQL CF", "ActiveSQL CF\ActiveSQL CF.csproj", "{706E294B-9999-45BC-B459-E4686F97BB64}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleConfig CF", "SimpleConfig CF\SimpleConfig CF.csproj", "{665E2243-330F-495D-AFE0-4344CB5FE516}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveSQL.SQLite", "ActiveSQL.SQLite\ActiveSQL.SQLite.csproj", "{932E0E9A-AA89-48F9-A3F3-36FB1585ED1E}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveRecordTesterCF", "ActiveRecordTesterCF\ActiveRecordTesterCF.csproj", "{82691BF9-20D1-4B04-B19A-CF25169BB52B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveSQL.SQLite CF", "ActiveSQL.SQLite CF\ActiveSQL.SQLite CF.csproj", "{1274B129-346A-43BC-93C3-AD8D2652A11F}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
@@ -47,6 +77,28 @@ Global
 		{E4987ABC-7D45-447A-A161-D3EBFF1B9043}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4987ABC-7D45-447A-A161-D3EBFF1B9043}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4987ABC-7D45-447A-A161-D3EBFF1B9043}.Release|Any CPU.Build.0 = Release|Any CPU
+		{706E294B-9999-45BC-B459-E4686F97BB64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{706E294B-9999-45BC-B459-E4686F97BB64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{706E294B-9999-45BC-B459-E4686F97BB64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{706E294B-9999-45BC-B459-E4686F97BB64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{665E2243-330F-495D-AFE0-4344CB5FE516}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{665E2243-330F-495D-AFE0-4344CB5FE516}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{665E2243-330F-495D-AFE0-4344CB5FE516}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{665E2243-330F-495D-AFE0-4344CB5FE516}.Release|Any CPU.Build.0 = Release|Any CPU
+		{932E0E9A-AA89-48F9-A3F3-36FB1585ED1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{932E0E9A-AA89-48F9-A3F3-36FB1585ED1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{932E0E9A-AA89-48F9-A3F3-36FB1585ED1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{932E0E9A-AA89-48F9-A3F3-36FB1585ED1E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82691BF9-20D1-4B04-B19A-CF25169BB52B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82691BF9-20D1-4B04-B19A-CF25169BB52B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82691BF9-20D1-4B04-B19A-CF25169BB52B}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{82691BF9-20D1-4B04-B19A-CF25169BB52B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82691BF9-20D1-4B04-B19A-CF25169BB52B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82691BF9-20D1-4B04-B19A-CF25169BB52B}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{1274B129-346A-43BC-93C3-AD8D2652A11F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1274B129-346A-43BC-93C3-AD8D2652A11F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1274B129-346A-43BC-93C3-AD8D2652A11F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1274B129-346A-43BC-93C3-AD8D2652A11F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

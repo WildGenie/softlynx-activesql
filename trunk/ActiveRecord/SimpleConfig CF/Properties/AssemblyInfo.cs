@@ -5,15 +5,14 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Active Record Posgres adapter")]
-[assembly: AssemblyDescription("Active Record Posgres adapter")]
+[assembly: AssemblyTitle("SimpleConfig CE")]
+[assembly: AssemblyDescription("Simple Key Value string pairs storage")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("ActiveSQL.Postgres")]
-[assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyProduct("SimpleConfig")]
+[assembly: AssemblyCopyright("Copyright © SoftLynx  2008")]
+[assembly: AssemblyTrademark("SoftLynx")]
 [assembly: AssemblyCulture("")]
-
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
@@ -21,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("8020d38d-ffaf-48e7-b357-d6c0bf4fdd8a")]
+[assembly: Guid("95599a3b-d96b-4a61-be57-cc3106ae7a72")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -32,5 +31,5 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.*")]
+

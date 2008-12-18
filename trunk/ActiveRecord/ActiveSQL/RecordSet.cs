@@ -11,8 +11,6 @@ namespace Softlynx.RecordSet
 {
    public class RecordSet<T>:IEnumerable,ICollection,IList,IDisposable
     {
-       public static RecordManager DefaultRecordManager = null;
-
         private Hashtable index = new Hashtable();
         private List<T> list = new List<T>();
         private InTable table = null;
@@ -53,12 +51,6 @@ namespace Softlynx.RecordSet
 
         public bool IsSynchronized { get {return true;}}
 
-        protected void InitUnderlyingClass(Type RecordType)
-        {
-//            table = RecordBase.ActiveRecordInfo(RecordType);
-        }
-
-        
         public delegate void WhenAddNew(T record);
         public delegate void WhenRemoveExisting(T record);
 
@@ -257,10 +249,23 @@ namespace Softlynx.RecordSet
                                 while (reader.Read())
                                 {
                                     int i = 0;
-                                    ConstructorInfo ci = table.basetype.GetConstructor(EmptyTypes);
+                                    object[] cparams = new object[] { table.manager };
+
+                                    ConstructorInfo ci =  table.basetype.GetConstructor(new Type[] { typeof(RecordManager) });
                                     if (ci == null)
-                                        throw new Exception(string.Format("Can't create instance of {0} without default constructor", table.basetype.Name));
-                                    T instance = (T)ci.Invoke(null);
+                                    {
+                                        cparams = null;
+                                        ci = table.basetype.GetConstructor(new Type[] { });
+                                    };
+
+                                    if (ci == null)
+                                        throw new Exception(string.Format("Can't create instance of {0} without known constructor", table.basetype.Name));
+
+                                    T instance = (T)ci.Invoke(cparams);
+                                    if ((cparams == null) && (instance is IRecordManagerDriven))
+                                    {
+                                        (instance as IRecordManagerDriven).Manager = table.manager;
+                                    }
                                     foreach (InField field in table.fields)
                                     {
                                         Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);

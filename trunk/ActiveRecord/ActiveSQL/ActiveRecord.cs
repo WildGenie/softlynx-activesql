@@ -2,21 +2,19 @@
 using System.Text;
 using System.Data;
 using System.Data.Common;
-using System.Data.Sql;
-using System.Data.SqlClient;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-
 
 
 namespace Softlynx.ActiveSQL
 {
     public interface IProviderSpecifics
     {
-        DbParameter CreateParameter(InField f);
-        string GetSqlType(InField f);
-        DbType GetDbType(InField f);
+        DbParameter CreateParameter(string name, object value);
+        DbParameter CreateParameter(string name, Type t);
+        string GetSqlType(Type t);
+        DbType GetDbType(Type t);
         string AsFieldName(string s);
         string AsFieldParam(string s);
         DbConnection Connection
@@ -24,6 +22,7 @@ namespace Softlynx.ActiveSQL
             get;
         }
         void ExtendConnectionString(string key, string value);
+        string AdoptSelectCommand(string select, InField[] fields);
     }
 
     #region Common attributes
@@ -176,13 +175,10 @@ namespace Softlynx.ActiveSQL
     #endregion
     
     delegate void RecordManagerEvent(object o);
+    delegate void RecordManagerWriteEvent(object o, ref bool Handled);
     delegate void RecordSetEvent(object o, object recordset);
 
-    public interface IActiveRecordWriter
-    {
-        bool ActiveRecordWrite(RecordManager manager);
-    }
-
+  
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class InTable : NamedAttribute,ICloneable
 
@@ -201,7 +197,7 @@ namespace Softlynx.ActiveSQL
         internal Hashtable foreign_keys = new Hashtable();
         internal event RecordManagerEvent BeforeRecordManagerDelete = null;
         internal event RecordManagerEvent AfterRecordManagerDelete = null;
-        internal event RecordManagerEvent BeforeRecordManagerWrite = null;
+        internal event RecordManagerWriteEvent BeforeRecordManagerWrite = null;
         internal event RecordManagerEvent AfterRecordManagerWrite = null;
         internal event RecordManagerEvent AfterRecordManagerRead = null;
         internal event RecordManagerEvent AfterDatabaseOpened = null;
@@ -285,7 +281,7 @@ namespace Softlynx.ActiveSQL
             s += String.Format("\n);\n");
             foreach (InField f in fields)
             {
-                if (f.IsIndexed) s += string.Format("CREATE INDEX {0}_idx on {1}({0});\n", manager.AsFieldName(f.Name), manager.AsFieldName(Name));
+                if (f.IsIndexed) s += string.Format("CREATE INDEX {0}_idx on {1}({2});\n",f.Name, manager.AsFieldName(Name),manager.AsFieldName(f.Name));
             }
             return s;
         }
@@ -346,12 +342,12 @@ namespace Softlynx.ActiveSQL
                 if (pkeycolumns != String.Empty) pkeycolumns += ",";
                 pkeycolumns = String.Format("{0}={1}", manager.AsFieldName(dc.Name), manager.AsFieldParam(dc.Name));
             };
-
-            return String.Format("SELECT {0} FROM {1} where ({2})",
+            return manager.AdoptSelectCommand(
+             String.Format("SELECT {0} FROM {1} where ({2})",
                 ColumnsList(fields),
                 manager.AsFieldName(Name),
                 pkeycolumns
-                );
+                ),fields);
         }
 
 
@@ -410,6 +406,8 @@ namespace Softlynx.ActiveSQL
                 }
                 reader.Close();
             }
+            if (Record is IRecordManagerDriven)
+                (Record as IRecordManagerDriven).Manager = manager;
             if (res && (AfterRecordManagerRead != null))
                 AfterRecordManagerRead(Record);
             return res;
@@ -438,13 +436,12 @@ namespace Softlynx.ActiveSQL
         {
             using (ManagerTransaction t=manager.BeginTransaction())
             {
-                if (BeforeRecordManagerWrite != null) BeforeRecordManagerWrite(Record);
+                if (Record is IRecordManagerDriven)
+                    (Record as IRecordManagerDriven).Manager = manager;
+
                 bool write_handled = false;
                 int r = 0;
-                if (Record is IActiveRecordWriter)
-                {
-                    write_handled = ((IActiveRecordWriter)(Record)).ActiveRecordWrite(manager);
-                }
+                if (BeforeRecordManagerWrite != null) BeforeRecordManagerWrite(Record, ref write_handled);
                 if (!write_handled)
                 {
                     r = Update(Record);
@@ -473,6 +470,8 @@ namespace Softlynx.ActiveSQL
             int res = 0;
             using (ManagerTransaction transaction = manager.BeginTransaction())
             {
+                if (Record is IRecordManagerDriven)
+                    (Record as IRecordManagerDriven).Manager = manager;
 
                 if (BeforeRecordManagerDelete != null) BeforeRecordManagerDelete(Record);
                 int i = 0;
@@ -613,8 +612,13 @@ namespace Softlynx.ActiveSQL
             {
                 string pname = parameters[i++].ToString();
                 object pvalue = parameters[i++];
-                cmd.Parameters.Add(new SqlParameter(pname, pvalue));
+                DbParameter p = specifics.CreateParameter(pname, pvalue);
+                cmd.Parameters.Add(p);
             }
+            
+            if (parameters.Length > 0) 
+                cmd.Prepare();
+            
             return cmd;
         }
 
@@ -660,25 +664,30 @@ namespace Softlynx.ActiveSQL
                         if ((mattr.GetType() == typeof(BeforeRecordManagerDelete)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.BeforeRecordManagerDelete += new RecordManagerEvent(delegate(object o) { m.Invoke(o, null); });
+                            table.BeforeRecordManagerDelete += new RecordManagerEvent(delegate(object o) { CallMethod(m, o); });
                         }
 
                         if ((mattr.GetType() == typeof(AfterRecordManagerDelete)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.AfterRecordManagerDelete += new RecordManagerEvent(delegate(object o) { m.Invoke(o, null); });
+                            table.AfterRecordManagerDelete += new RecordManagerEvent(delegate(object o) { CallMethod(m, o); });
                         }
 
                         if ((mattr.GetType() == typeof(BeforeRecordManagerWrite)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.BeforeRecordManagerWrite += new RecordManagerEvent(delegate(object o) { m.Invoke(o, null); });
+                            table.BeforeRecordManagerWrite += new RecordManagerWriteEvent(delegate(object o, ref bool handled)
+                            {
+                                object[] prm = new object[] { handled };
+                                CallWriteMethod(m, o,  prm);
+                                handled = (bool)prm[0];
+                            });
                         }
 
                         if ((mattr.GetType() == typeof(AfterRecordManagerRead)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.AfterRecordManagerRead += new RecordManagerEvent(delegate(object o) { m.Invoke(o, null); });
+                            table.AfterRecordManagerRead += new RecordManagerEvent(delegate(object o) { CallMethod(m, o); });
                         }
 
                         if ((mattr.GetType() == typeof(RecordSetInsert)) && (!method.IsStatic))
@@ -696,7 +705,7 @@ namespace Softlynx.ActiveSQL
                         if ((mattr.GetType() == typeof(AfterRecordManagerWrite)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.AfterRecordManagerWrite += new RecordManagerEvent(delegate(object o) { m.Invoke(o, null); });
+                            table.AfterRecordManagerWrite += new RecordManagerEvent(delegate(object o) { CallMethod(m, o); });
                         }
 
                         if ((mattr.GetType() == typeof(AfterDatabaseOpened)) && (method.IsStatic))
@@ -755,7 +764,7 @@ namespace Softlynx.ActiveSQL
                         {
                             RunCommand(table.CreateTableStatement());
                         }
-                        catch (DbException)
+                        catch (Exception)
                         {
                         }
                         table.InitContent();
@@ -765,7 +774,7 @@ namespace Softlynx.ActiveSQL
                     {
                     Read(ov);
                     }
-                    catch (DbException) 
+                    catch (Exception) 
                     {
                     }
 
@@ -779,10 +788,15 @@ namespace Softlynx.ActiveSQL
                             {
                                 if (update.Action == TableAction.Recreate)
                                 {
+
 //                                    if (table.with_replica)
 //                                        Session.replica.DropTableReplicaLogSchema(table.Name);
-                                    RunCommand(table.DropTableStatement());
-                                    RunCommand(table.CreateTableStatement());
+                                    string s = update.SQLCode;
+                                    update.SQLCode = table.DropTableStatement();
+                                    RunCommand(update.SQLCode);
+                                    update.SQLCode = table.CreateTableStatement();
+                                    RunCommand(update.SQLCode);
+                                    update.SQLCode = s;
                                     table.InitContent();
 //                                    if (table.with_replica) Session.replica.CreateTableReplicaLogSchema(table.Name);
                                 }
@@ -813,6 +827,57 @@ namespace Softlynx.ActiveSQL
 
                 }
             }
+        }
+
+        private void CallWriteMethod(MethodInfo m, object o,  params object[] prms)
+        {
+            ParameterInfo[] pi = m.GetParameters();
+            object[] prm = new object[pi.Length];
+            int pos = 0;
+            Hashtable backref = new Hashtable();
+            foreach (ParameterInfo p in pi)
+            {
+                prm[pos]=p.DefaultValue;
+                if (p.ParameterType.IsInstanceOfType(this))
+                    prm[pos] = this; else 
+                {
+                    int inpos = 0;
+                    foreach (object so in prms) {
+                        if (p.ParameterType.IsInstanceOfType(so))
+                        {
+                            prm[pos] =so;
+                            break;
+                        }
+
+                    if ((p.ParameterType.IsByRef) && (p.ParameterType.FullName==so.GetType().FullName+"&"))
+                    {
+                        prm[pos] = so;
+                        backref[pos]=inpos;
+                        break;
+                    }
+                    inpos++;
+                    }
+                }
+                pos++;
+            }
+                m.Invoke(o, prm);
+
+                foreach (DictionaryEntry de in backref)
+                    prms[(int)de.Value]=prm[(int)de.Key];
+        }
+
+        private void CallMethod(MethodInfo m, object o)
+        {
+            ParameterInfo[] pi = m.GetParameters();
+            object[] prm = new object[pi.Length];
+            int pos = 0;
+            foreach (ParameterInfo p in pi)
+            {
+                if (p.ParameterType.IsInstanceOfType(this))
+                    prm[pos] = this;
+                pos++;
+            }
+            m.Invoke(o, prm);
         }
         
         internal void InitStructure(params Type[] types)
@@ -867,12 +932,12 @@ namespace Softlynx.ActiveSQL
 
  
         public string SqlType(InField f) {
-            return specifics.GetSqlType(f);
+            return specifics.GetSqlType(f.FieldType);
         }
 
         public DbParameter CreateParameter(InField f)
         {
-            return specifics.CreateParameter(f);
+            return specifics.CreateParameter(f.Name, f.FieldType);
         }
         internal string AsFieldName(string s)
         {
@@ -885,5 +950,10 @@ namespace Softlynx.ActiveSQL
         }
 
 
+
+        internal string AdoptSelectCommand(string select, InField[] fields)
+        {
+            return specifics.AdoptSelectCommand(select, fields);
+        }
     }
 }
