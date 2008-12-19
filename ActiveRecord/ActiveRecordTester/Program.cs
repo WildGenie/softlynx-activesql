@@ -21,6 +21,7 @@ namespace ActiveRecordTester
     [InTable]
     class DemoObject:DynamicObject<DemoProperty>
     {
+
         public DemoObject(RecordManager manager) : base(manager) { }
         public class Property
         {
@@ -33,6 +34,8 @@ namespace ActiveRecordTester
             get { return (string)GetPropertyLastValue(Property.Name); }
             set { SetPropertyLastValue(Property.Name,value); }
         }
+        
+     
     }
 
     static class Program

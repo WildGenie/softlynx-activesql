@@ -28,19 +28,13 @@ namespace Softlynx.ActiveSQL
     #region Common attributes
     public enum TableAction { None, RunSQL, Recreate };
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public class ExcludeFromTable : Attribute
-    {
-    }
+    public class ExcludeFromTable : Attribute { }
 
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public class Indexed : Attribute
-    {
-    }
+    public class Indexed : Attribute { }
 
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    public class WithReplica : Attribute
-    {
-    }
+    public class WithReplica : Attribute { }
 
     public class NamedAttribute : Attribute
     {
@@ -53,52 +47,38 @@ namespace Softlynx.ActiveSQL
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class BeforeRecordManagerDelete : Attribute
-    {
-    }
+    public class BeforeRecordManagerDelete : Attribute { }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class AfterRecordManagerDelete : Attribute
-    {
-    }
+    public class AfterRecordManagerDelete : Attribute { }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class BeforeRecordManagerWrite : Attribute
-    {
-    }
+    public class BeforeRecordManagerWrite : Attribute { }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class AfterRecordManagerWrite : Attribute
-    {
-    }
+    public class AfterRecordManagerWrite : Attribute { }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class AfterRecordManagerRead : Attribute
-    {
-    }
+    public class AfterRecordManagerRead : Attribute { }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class AfterDatabaseOpened : Attribute
-    {
-    }
+    public class RecordManagerPostRegistration : Attribute { }
 
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public class PrimaryKey : NamedAttribute
-    {
-    }
+    public class PrimaryKey : NamedAttribute { }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class RecordSetInsert : NamedAttribute
-    {
-    }
+    public class RecordSetInsert : NamedAttribute { }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class RecordSetRemove : NamedAttribute
-    {
-    }
+    public class RecordSetRemove : NamedAttribute { }
 
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class OnTableVersionChange : Attribute { }
+
+    
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-    public class TableVersion : NamedAttribute
+    public class TableVersion : NamedAttribute,IComparable<TableVersion>
     {
         
         private int _version;
@@ -143,6 +123,11 @@ namespace Softlynx.ActiveSQL
             Version = version;
             Action = action;
             SQLCode = sql_code;
+        }
+
+        public int CompareTo(TableVersion obj)
+        {
+            return Version.CompareTo(obj.Version);
         }
 
     }
@@ -196,7 +181,8 @@ namespace Softlynx.ActiveSQL
         internal event RecordManagerWriteEvent BeforeRecordManagerWrite = null;
         internal event RecordManagerEvent AfterRecordManagerWrite = null;
         internal event RecordManagerEvent AfterRecordManagerRead = null;
-        internal event RecordManagerEvent AfterDatabaseOpened = null;
+        internal event RecordManagerEvent RecordManagerPostRegistration = null;
+        internal event RecordManagerEvent TableVersionChanged = null;
         internal event RecordSetEvent RecordSetInsert = null;
         internal event RecordSetEvent RecordSetRemove = null;
 
@@ -347,7 +333,7 @@ namespace Softlynx.ActiveSQL
         }
 
 
-        internal virtual void InitContent()
+        internal virtual void InitSqlMethods()
         {
             InsertCmd = manager.CreateCommand(InsertCommandText());
             UpdateCmd = manager.CreateCommand(UpdateCommandText());
@@ -482,10 +468,16 @@ namespace Softlynx.ActiveSQL
             return res;
         }
 
-        internal virtual void CallAfterDatabaseOpened()
+        internal virtual void PostRegistrationEvent()
         {
-            if (AfterDatabaseOpened != null)
-                AfterDatabaseOpened(null);
+            if (RecordManagerPostRegistration != null)
+                RecordManagerPostRegistration(null);
+        }
+
+        internal void DoTableVersionChanged(int version)
+        {
+            if (TableVersionChanged != null)
+                TableVersionChanged(version);
         }
     }
 
@@ -676,7 +668,7 @@ namespace Softlynx.ActiveSQL
                             table.BeforeRecordManagerWrite += new RecordManagerWriteEvent(delegate(object o, ref bool handled)
                             {
                                 object[] prm = new object[] { handled };
-                                CallWriteMethod(m, o,  prm);
+                                CallMethod(m, o,  prm);
                                 handled = (bool)prm[0];
                             });
                         }
@@ -705,10 +697,16 @@ namespace Softlynx.ActiveSQL
                             table.AfterRecordManagerWrite += new RecordManagerEvent(delegate(object o) { CallMethod(m, o); });
                         }
 
-                        if ((mattr.GetType() == typeof(AfterDatabaseOpened)) && (method.IsStatic))
+                        if ((mattr.GetType() == typeof(RecordManagerPostRegistration)) && (method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.AfterDatabaseOpened += new RecordManagerEvent(delegate(object o) { m.Invoke(null, null); });
+                            table.RecordManagerPostRegistration += new RecordManagerEvent(delegate(object o) { CallMethod(m, null); });
+                        }
+
+                        if ((mattr.GetType() == typeof(OnTableVersionChange)) && (method.IsStatic))
+                        {
+                            MethodInfo m = method;
+                            table.TableVersionChanged += new RecordManagerEvent(delegate(object o) { CallMethod(m, null,o); });
                         }
 
                     }
@@ -731,7 +729,7 @@ namespace Softlynx.ActiveSQL
                     if (field.IsPrimary)
                     {
                         if (primary_fields.Count > 0)
-                            throw new Exception(string.Format("Can't define more than one field for primary ondex on object {0} ", type.ToString()));
+                            throw new Exception(string.Format("Can't define more than one field for primary index on object {0} ", type.ToString()));
                         primary_fields.Add(field);
                     }
 
@@ -764,7 +762,7 @@ namespace Softlynx.ActiveSQL
                         catch (Exception)
                         {
                         }
-                        table.InitContent();
+                        table.InitSqlMethods();
                     }
                     ov.Name = table.Name;
                     try
@@ -775,8 +773,9 @@ namespace Softlynx.ActiveSQL
                     {
                     }
 
-                    List<Attribute> attrs = new List<Attribute>(Attribute.GetCustomAttributes(type, typeof(TableVersion), true));
+                    List<TableVersion> attrs = new List<TableVersion>((IEnumerable<TableVersion>)Attribute.GetCustomAttributes(type, typeof(TableVersion), true));
                     attrs.Insert(0, new TableVersion(0, TableAction.Recreate));
+                    attrs.Sort();
                     foreach (TableVersion update in attrs)
                     {
                         if (update.Version > ov.Version)
@@ -794,7 +793,6 @@ namespace Softlynx.ActiveSQL
                                     update.SQLCode = table.CreateTableStatement();
                                     RunCommand(update.SQLCode);
                                     update.SQLCode = s;
-                                    table.InitContent();
 //                                    if (table.with_replica) Session.replica.CreateTableReplicaLogSchema(table.Name);
                                 }
                                 if (
@@ -805,6 +803,8 @@ namespace Softlynx.ActiveSQL
                                     (update.SQLCode != string.Empty)
                                     )
                                 RunCommand(update.SQLCode);
+
+                            table.DoTableVersionChanged(update.Version);
                             }
                             catch (Exception E)
                             {
@@ -818,15 +818,14 @@ namespace Softlynx.ActiveSQL
                             }
                             ov.Version = update.Version;
                             Write(ov);
-                        } else
-                            table.InitContent();
+                        } 
                     }
-
+                    table.InitSqlMethods();
                 }
             }
         }
 
-        private void CallWriteMethod(MethodInfo m, object o,  params object[] prms)
+        private void CallMethod(MethodInfo m, object o,  params object[] prms)
         {
             ParameterInfo[] pi = m.GetParameters();
             object[] prm = new object[pi.Length];
@@ -863,20 +862,6 @@ namespace Softlynx.ActiveSQL
                     prms[(int)de.Value]=prm[(int)de.Key];
         }
 
-        private void CallMethod(MethodInfo m, object o)
-        {
-            ParameterInfo[] pi = m.GetParameters();
-            object[] prm = new object[pi.Length];
-            int pos = 0;
-            foreach (ParameterInfo p in pi)
-            {
-                if (p.ParameterType.IsInstanceOfType(this))
-                    prm[pos] = this;
-                pos++;
-            }
-            m.Invoke(o, prm);
-        }
-        
         internal void InitStructure(params Type[] types)
         {
 
@@ -889,7 +874,7 @@ namespace Softlynx.ActiveSQL
                     TryToRegisterAsActiveRecord(t);
                 }
                 foreach (InTable t in tables.Values)
-                    t.CallAfterDatabaseOpened();
+                    t.PostRegistrationEvent();
                 transaction.Commit();
             }
         }
