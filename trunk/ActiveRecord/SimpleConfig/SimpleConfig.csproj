@@ -10,7 +10,7 @@
     <RootNamespace>Softlynx.SimpleConfig</RootNamespace>
     <AssemblyName>Softlynx.SimpleConfig</AssemblyName>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>AlexeiVolkov.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\AlexeiVolkov.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -39,7 +39,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="AlexeiVolkov.snk" />
+    <None Include="..\AlexeiVolkov.snk">
+      <Link>AlexeiVolkov.snk</Link>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
