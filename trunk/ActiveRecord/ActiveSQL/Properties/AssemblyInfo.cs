@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Active SQL")]
+[assembly: AssemblyTitle("Softlynx.ActiveSQL framework")]
 [assembly: AssemblyDescription("Active Record paradigm for SQL")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("ActiveSQL")]
+[assembly: AssemblyProduct("Softlynx.ActiveSQL")]
 [assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

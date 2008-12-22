@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SimpleConfig CE")]
-[assembly: AssemblyDescription("Simple Key Value string pairs storage")]
+[assembly: AssemblyTitle("Softlynx.SimpleConfig  XML key value storage for CF")]
+[assembly: AssemblyDescription("Simple Key Value string pairs storage Compact Framework")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("SimpleConfig")]
+[assembly: AssemblyProduct("Softlynx.SimpleConfig")]
 [assembly: AssemblyCopyright("Copyright © SoftLynx  2008")]
 [assembly: AssemblyTrademark("SoftLynx")]
 [assembly: AssemblyCulture("")]

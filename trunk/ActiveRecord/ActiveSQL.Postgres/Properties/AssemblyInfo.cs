@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Active Record Posgres adapter")]
+[assembly: AssemblyTitle("Softlynx.ActiveSQL.Postgres specifics")]
 [assembly: AssemblyDescription("Active Record Posgres adapter")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("ActiveSQL.Postgres")]
+[assembly: AssemblyProduct("Softlynx.ActiveSQL.Postgres")]
 [assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -7,8 +7,10 @@
     <ProjectGuid>{E4987ABC-7D45-447A-A161-D3EBFF1B9043}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ActiveSQL.Postgres</RootNamespace>
-    <AssemblyName>ActiveSQL.Postgres</AssemblyName>
+    <RootNamespace>Softlynx.ActiveSQL.Postgres</RootNamespace>
+    <AssemblyName>Softlynx.ActiveSQL.Postgres</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>AlexeiVolkov.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -31,6 +33,7 @@
     <Reference Include="Npgsql, Version=2.0.1.0, Culture=neutral, PublicKeyToken=5d8b90d52f46fda7, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\NPgSQL\Npgsql2.0.1-bin-ms.net\bin\Npgsql.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -44,7 +47,11 @@
     <ProjectReference Include="..\ActiveSQL\ActiveSQL.csproj">
       <Project>{97168E99-75E4-4ACD-A2FC-3D95C7B8D74B}</Project>
       <Name>ActiveSQL</Name>
+      <Private>False</Private>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AlexeiVolkov.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
