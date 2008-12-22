@@ -7,8 +7,10 @@
     <ProjectGuid>{932E0E9A-AA89-48F9-A3F3-36FB1585ED1E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ActiveSQL.SQLite</RootNamespace>
-    <AssemblyName>ActiveSQL.SQLite</AssemblyName>
+    <RootNamespace>Softlynx.ActiveSQL.SQLite</RootNamespace>
+    <AssemblyName>Softlynx.ActiveSQL.SQLite</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>AlexeiVolkov.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -30,7 +32,10 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.SQLite, Version=1.0.51.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86" />
+    <Reference Include="System.Data.SQLite, Version=1.0.51.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -41,7 +46,11 @@
     <ProjectReference Include="..\ActiveSQL\ActiveSQL.csproj">
       <Project>{97168E99-75E4-4ACD-A2FC-3D95C7B8D74B}</Project>
       <Name>ActiveSQL</Name>
+      <Private>False</Private>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AlexeiVolkov.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

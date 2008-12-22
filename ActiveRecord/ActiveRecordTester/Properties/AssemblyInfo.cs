@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SQLDataSetTester")]
+[assembly: AssemblyTitle("ActiveRecordTester")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("SQLDataSetTester")]
+[assembly: AssemblyProduct("ActiveRecordTester")]
 [assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

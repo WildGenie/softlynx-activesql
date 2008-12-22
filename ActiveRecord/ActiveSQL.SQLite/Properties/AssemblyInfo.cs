@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Active Record SQLite adapter")]
+[assembly: AssemblyTitle("Softlynx.ActiveSQL.SQLite specifics")]
 [assembly: AssemblyDescription("Active Record SQLite adapter")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("ActiveSQL.SQLite")]
+[assembly: AssemblyProduct("Softlynx.ActiveSQL.SQLite")]
 [assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

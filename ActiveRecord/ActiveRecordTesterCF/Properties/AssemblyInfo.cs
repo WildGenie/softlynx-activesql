@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("ActiveRecordTesterCE")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Промсвязьбанк")]
+[assembly: AssemblyCompany("SoftLynx")]
 [assembly: AssemblyProduct("ActiveRecordTesterCE")]
-[assembly: AssemblyCopyright("Copyright © Промсвязьбанк 2008")]
+[assembly: AssemblyCopyright("Copyright © SoftLynx 2008")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
