@@ -698,12 +698,12 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
 
     public class RecordSet<T>:IEnumerable,ICollection,IList,IDisposable
     {
-
+        public delegate bool FillPredicate(T item);
         private Hashtable index = new Hashtable();
         private List<T> list = new List<T>();
         private InTable table = null;
         private static System.Type[] EmptyTypes = new System.Type[0];
-
+        public FillPredicate FillFilter = null;
         public void Clear()
         {
             lock (this)
@@ -986,6 +986,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                                         {
                                         }
                                     }
+                                    if ((FillFilter!=null) && (!FillFilter(instance)))
+                                        continue;
                                     Add(instance);
                                 }
                                 reader.Close();
