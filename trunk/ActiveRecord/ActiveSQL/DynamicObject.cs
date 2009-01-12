@@ -86,66 +86,66 @@ namespace Softlynx.ActiveSQL
 
     abstract public class BaseSerializer
     {
-        abstract internal byte[] ToArray(object o);
-        abstract internal object FromArray(byte[] a);
-        abstract internal Type ManagedType();
-        abstract internal int TypeValue();
+        abstract public byte[] ToArray(object o);
+        abstract public object FromArray(byte[] a);
+        abstract public Type ManagedType();
+        abstract public int TypeValue();
     }
 
     internal class IntSerializer : BaseSerializer
     {
-        override internal Type ManagedType() { return typeof(int); }
-        override internal byte[] ToArray(object o) { return BitConverter.GetBytes((int)o); }
-        override internal object FromArray(byte[] a) { return BitConverter.ToInt32(a, 0); }
-        override internal int TypeValue() { return 1; }
+        override public Type ManagedType() { return typeof(int); }
+        override public byte[] ToArray(object o) { return BitConverter.GetBytes((int)o); }
+        override public object FromArray(byte[] a) { return BitConverter.ToInt32(a, 0); }
+        override public int TypeValue() { return 1; }
     }
 
     internal class StringSerializer : BaseSerializer
     {
-        override internal Type ManagedType() { return typeof(String); }
-        override internal byte[] ToArray(object o) { return UTF8Encoding.UTF8.GetBytes((string)o); }
-        override internal object FromArray(byte[] a) { return UTF8Encoding.UTF8.GetString(a, 0, a.Length); }
-        override internal int TypeValue() { return 2; }
+        override public Type ManagedType() { return typeof(String); }
+        override public byte[] ToArray(object o) { return UTF8Encoding.UTF8.GetBytes((string)o); }
+        override public object FromArray(byte[] a) { return UTF8Encoding.UTF8.GetString(a, 0, a.Length); }
+        override public int TypeValue() { return 2; }
     }
 
     internal class DoubleSerializer : BaseSerializer
     {
-        override internal Type ManagedType() { return typeof(Double); }
-        override internal byte[] ToArray(object o) { return BitConverter.GetBytes((Double)o); }
-        override internal object FromArray(byte[] a) { return BitConverter.ToDouble(a, 0); }
-        override internal int TypeValue() { return 3; }
+        override public Type ManagedType() { return typeof(Double); }
+        override public byte[] ToArray(object o) { return BitConverter.GetBytes((Double)o); }
+        override public object FromArray(byte[] a) { return BitConverter.ToDouble(a, 0); }
+        override public int TypeValue() { return 3; }
     }
 
     internal class GuidSerializer : BaseSerializer
     {
-        override internal Type ManagedType() { return typeof(Guid); }
-        override internal byte[] ToArray(object o) { return ((Guid)o).ToByteArray(); }
-        override internal object FromArray(byte[] a) { return new Guid(a); }
-        override internal int TypeValue() { return 4; }
+        override public Type ManagedType() { return typeof(Guid); }
+        override public byte[] ToArray(object o) { return ((Guid)o).ToByteArray(); }
+        override public object FromArray(byte[] a) { return new Guid(a); }
+        override public int TypeValue() { return 4; }
     }
 
     internal class DecimalSerializer : BaseSerializer
     {
-        override internal Type ManagedType() { return typeof(Decimal); }
-        override internal byte[] ToArray(object o) { return BitConverter.GetBytes(Decimal.ToDouble((decimal)o)); }
-        override internal object FromArray(byte[] a) { return new Decimal(BitConverter.ToDouble(a, 0)); }
-        override internal int TypeValue() { return 5; }
+        override public Type ManagedType() { return typeof(Decimal); }
+        override public byte[] ToArray(object o) { return BitConverter.GetBytes(Decimal.ToDouble((decimal)o)); }
+        override public object FromArray(byte[] a) { return new Decimal(BitConverter.ToDouble(a, 0)); }
+        override public int TypeValue() { return 5; }
     }
 
     internal class DateTimeSerializer : BaseSerializer
     {
-        override internal Type ManagedType() { return typeof(DateTime); }
-        override internal byte[] ToArray(object o) { return BitConverter.GetBytes(((DateTime)o).Ticks); }
-        override internal object FromArray(byte[] a) { return new DateTime(BitConverter.ToInt64(a, 0)); }
-        override internal int TypeValue() { return 6; }
+        override public Type ManagedType() { return typeof(DateTime); }
+        override public byte[] ToArray(object o) { return BitConverter.GetBytes(((DateTime)o).Ticks); }
+        override public object FromArray(byte[] a) { return new DateTime(BitConverter.ToInt64(a, 0)); }
+        override public int TypeValue() { return 6; }
     }
 
     internal class BooleanSerializer : BaseSerializer
     {
-        override internal Type ManagedType() { return typeof(Boolean); }
-        override internal byte[] ToArray(object o) { return BitConverter.GetBytes((Boolean)o); }
-        override internal object FromArray(byte[] a) { return BitConverter.ToBoolean(a, 0); }
-        override internal int TypeValue() { return 7; }
+        override public Type ManagedType() { return typeof(Boolean); }
+        override public byte[] ToArray(object o) { return BitConverter.GetBytes((Boolean)o); }
+        override public object FromArray(byte[] a) { return BitConverter.ToBoolean(a, 0); }
+        override public int TypeValue() { return 7; }
     }
 
     public static class ValueFormatter
