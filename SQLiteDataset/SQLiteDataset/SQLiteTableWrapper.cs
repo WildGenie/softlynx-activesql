@@ -257,7 +257,8 @@ namespace Softlynx.SQLiteDataset
                         finally
                         {
                             reader.Close();
-                            transaction.Commit();
+                            try { transaction.Commit(); }
+                            catch (SQLiteException) { };
                             table.EndLoadData();
                         };
                     }

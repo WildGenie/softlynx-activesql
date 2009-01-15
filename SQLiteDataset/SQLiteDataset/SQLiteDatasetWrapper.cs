@@ -122,11 +122,14 @@ namespace Softlynx.SQLiteDataset
                             tables[table.TableName]=wrapper;
                             wrapper.ReflectTableCreation();
                         }
-                        transaction.Commit();
+                        try { transaction.Commit(); }
+                        catch (SQLiteException) { };
+
                     }
                     catch
                     {
-                        transaction.Rollback();
+                        try { transaction.Rollback(); }
+                        catch (SQLiteException) { };
                         throw;
                     }
                     

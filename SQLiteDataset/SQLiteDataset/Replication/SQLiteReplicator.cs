@@ -286,7 +286,8 @@ insert into replica_peer(peerid,replicaid,lastsync) values (@masterguid,@latest_
                                    CreateDbInteralObjects(snapshot, dbobjects);
 
                                }
-                               snapshot_transaction.Commit();
+                               try { snapshot_transaction.Commit();}
+                               catch (SQLiteException) { };
                                using (DbCommand cmd = snapshot.CreateCommand())
                                {
                                    cmd.CommandText = @"
@@ -315,7 +316,9 @@ ANALYZE;
                        cmd.ExecuteNonQuery();
 
                    };
-                   transaction.Commit();
+                   try { transaction.Commit(); }
+                   catch (SQLiteException) { };
+
                    using (DbCommand cmd = master.CreateCommand())
                    {
                        cmd.CommandText = @"

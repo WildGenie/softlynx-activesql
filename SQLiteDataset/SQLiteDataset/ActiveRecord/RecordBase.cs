@@ -400,7 +400,9 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                     if (r == 0) r = Insert(Record);
                 };
                 if (AfterRecordBaseWrite != null) AfterRecordBaseWrite(Record);
-                transaction.Commit();
+                try { transaction.Commit();}
+                catch (SQLiteException) { };
+                
                 return r;
             }
         }
@@ -419,7 +421,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 }
                 res = DeleteCmd.ExecuteNonQuery();
                 if (AfterRecordBaseDelete != null) AfterRecordBaseDelete(Record);
-                transaction.Commit();
+                try { transaction.Commit(); }
+                catch (SQLiteException) { };
             }
             return res;
         }
@@ -653,7 +656,8 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                 }
                 foreach (InTable t in tables.Values)
                     t.CallAfterDatabaseOpened();
-                transaction.Commit();
+                try { transaction.Commit(); }
+                catch (SQLiteException) { };
             }
         }
 
@@ -992,11 +996,13 @@ namespace Softlynx.SQLiteDataset.ActiveRecord
                                 }
                                 reader.Close();
                             }
-                            transaction.Commit();
+                            try { transaction.Commit(); }
+                            catch (SQLiteException) { };
                         }
                         catch (Exception E)
                         {
-                            transaction.Commit();
+                            try { transaction.Rollback(); }
+                            catch (SQLiteException) { };
                             throw new Exception(
                                 string.Format("{0} when running SQL command:\n{1}",
                                 E.Message, cmd), E);
