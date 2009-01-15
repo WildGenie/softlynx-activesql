@@ -62,11 +62,13 @@ namespace Softlynx.SQLiteDataset.Replication
                             reader.Close();
                         }
                     }
-                    transaction.Commit();
+                    try { transaction.Commit(); }
+                    catch (SQLiteException) { };
                 }
                 catch
                 {
-                    transaction.Rollback();
+                    try { transaction.Rollback(); }
+                    catch (SQLiteException) { };
                     throw;
                 }
             }
@@ -88,11 +90,13 @@ namespace Softlynx.SQLiteDataset.Replication
                         {
                             apc += rr.Apply(replicator) ? 1 : 0;
                         }
-                        transaction.Commit();
+                        try { transaction.Commit(); }
+                        catch (SQLiteException) { };
                     }
                     catch
                     {
-                        transaction.Rollback();
+                        try { transaction.Rollback(); }
+                        catch (SQLiteException) { };
                         throw;
                     }
                 }
