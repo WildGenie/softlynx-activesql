@@ -9,6 +9,10 @@ using System.Reflection;
 
 namespace Softlynx.ActiveSQL
 {
+    public class NotActiveRecordException : ApplicationException { 
+        public NotActiveRecordException(string msg):base(msg){}
+    };
+
     public interface IProviderSpecifics
     {
         DbParameter CreateParameter(string name, object value);
@@ -17,6 +21,7 @@ namespace Softlynx.ActiveSQL
         DbType GetDbType(Type t);
         string AsFieldName(string s);
         string AsFieldParam(string s);
+        string AutoincrementStatement(string ColumnName);
         DbConnection Connection
         {
             get;
@@ -32,6 +37,9 @@ namespace Softlynx.ActiveSQL
 
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public class Indexed : Attribute { }
+
+    [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
+    public class Autoincrement : Attribute { }
 
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class WithReplica : Attribute { }
@@ -65,7 +73,11 @@ namespace Softlynx.ActiveSQL
     public class RecordManagerPostRegistration : Attribute { }
 
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public class PrimaryKey : NamedAttribute { }
+    public class PrimaryKey : NamedAttribute {
+        internal bool _GenerateSQL_PK = true;
+        public PrimaryKey() { }
+        public PrimaryKey(bool GenerateSQL_PK) { _GenerateSQL_PK = GenerateSQL_PK; }
+    }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class RecordSetInsert : NamedAttribute { }
@@ -76,11 +88,11 @@ namespace Softlynx.ActiveSQL
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
     public class OnTableVersionChange : Attribute { }
 
+
     
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     public class TableVersion : NamedAttribute,IComparable<TableVersion>
     {
-        
         private int _version;
 
         public int Version
@@ -136,14 +148,20 @@ namespace Softlynx.ActiveSQL
     public class InField : NamedAttribute
     {
         internal bool IsPrimary = false;
+        internal bool GenerateSQL_PK = true;
         internal bool IsIndexed = false;
+        internal bool IsAutoincrement = false;
         internal Type field_type = typeof(object);
         internal PropertyInfo prop = null;
         //internal UntypedRecordSet foreign_key = null;
 
         internal String CreateColumnStatement(RecordManager manager)
         {
-            return String.Format("{0} {1}", manager.AsFieldName(Name), manager.SqlType(this));
+
+            return  
+                IsAutoincrement?
+                String.Format(manager.Autoincrement(Name)):
+                String.Format("{0} {1}", manager.AsFieldName(Name), manager.SqlType(this));
         }
 
         public Type FieldType
@@ -155,9 +173,9 @@ namespace Softlynx.ActiveSQL
 
     #endregion
     
-    delegate void RecordManagerEvent(object o);
-    delegate void RecordManagerWriteEvent(object o, ref bool Handled);
-    delegate void RecordSetEvent(object o, object recordset);
+    public delegate void RecordManagerEvent(object o);
+    public delegate void RecordManagerWriteEvent(object o, ref bool Handled);
+    public delegate void RecordSetEvent(object o, object recordset);
 
   
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
@@ -176,15 +194,15 @@ namespace Softlynx.ActiveSQL
         internal InField[] primary_fields;
         internal Type basetype = default(Type);
         internal Hashtable foreign_keys = new Hashtable();
-        internal event RecordManagerEvent BeforeRecordManagerDelete = null;
-        internal event RecordManagerEvent AfterRecordManagerDelete = null;
-        internal event RecordManagerWriteEvent BeforeRecordManagerWrite = null;
-        internal event RecordManagerEvent AfterRecordManagerWrite = null;
-        internal event RecordManagerEvent AfterRecordManagerRead = null;
-        internal event RecordManagerEvent RecordManagerPostRegistration = null;
-        internal event RecordManagerEvent TableVersionChanged = null;
-        internal event RecordSetEvent RecordSetInsert = null;
-        internal event RecordSetEvent RecordSetRemove = null;
+        public event RecordManagerEvent BeforeRecordManagerDelete = null;
+        public event RecordManagerEvent AfterRecordManagerDelete = null;
+        public event RecordManagerWriteEvent BeforeRecordManagerWrite = null;
+        public event RecordManagerEvent AfterRecordManagerWrite = null;
+        public event RecordManagerEvent AfterRecordManagerRead = null;
+        public event RecordManagerEvent RecordManagerPostRegistration = null;
+        public event RecordManagerEvent TableVersionChanged = null;
+        public event RecordSetEvent RecordSetInsert = null;
+        public event RecordSetEvent RecordSetRemove = null;
 
         public object Clone()
         {
@@ -248,17 +266,27 @@ namespace Softlynx.ActiveSQL
                 cols += String.Format("{0}", col.CreateColumnStatement(manager));
             }
             s += cols;
-            if (primary_fields.Length > 0)
+
+            if (primary_fields.Length ==0)
+            {
+                throw new Exception(String.Format("Primary key not defined for table {0}", Name));
+            };
+
+
+            List<InField> PKf = new List<InField>();
+            foreach (InField f in primary_fields)
+            {
+                if (f.IsPrimary && f.GenerateSQL_PK)
+                    PKf.Add(f);
+            }
+
+            if (PKf.Count > 0)
             {
                 string flags = string.Empty;
                 s += String.Format(",\nPRIMARY KEY ({0}) {1}",
-                    ColumnsList(primary_fields),
+                    ColumnsList(PKf),
                     flags
                     );
-            }
-            else
-            {
-                throw new Exception(String.Format("Primary key not defined for table {0}", Name));
             }
             s += String.Format("\n);\n");
             foreach (InField f in fields)
@@ -270,10 +298,17 @@ namespace Softlynx.ActiveSQL
 
         string InsertCommandText()
         {
+            List<InField> insertfields = new List<InField>();
+            foreach (InField f in fields)
+            {
+                if (!f.IsAutoincrement)
+                    insertfields.Add(f);
+            }
+
             return String.Format("INSERT INTO {0}({1}) values ({2})",
                 manager.AsFieldName(Name),
-                ColumnsList(fields),
-                ColumnsList(fields, true)
+                ColumnsList(insertfields),
+                ColumnsList(insertfields, true)
                 );
         }
 
@@ -345,7 +380,8 @@ namespace Softlynx.ActiveSQL
             {
 
                 DbParameter prm = manager.CreateParameter(field);
-                InsertCmd.Parameters.Add(prm);
+                if (!field.IsAutoincrement)
+                    InsertCmd.Parameters.Add(prm);
                 UpdateCmd.Parameters.Add(prm);
             }
 
@@ -409,7 +445,8 @@ namespace Softlynx.ActiveSQL
         {
             foreach (InField field in fields)
             {
-                InsertCmd.Parameters[field.Name].Value = field.prop.GetValue(Record, null);
+                if (!field.IsAutoincrement)
+                    InsertCmd.Parameters[field.Name].Value = field.prop.GetValue(Record, null);
             }
             return InsertCmd.ExecuteNonQuery();
         }
@@ -538,9 +575,13 @@ namespace Softlynx.ActiveSQL
 
     }
 
+    public delegate void RecordOperation(RecordManager Manager, Object obj);
 
     public class RecordManager
     {
+        public event RecordOperation OnRecordWritten=null;
+        public event RecordOperation OnRecordDeleted=null;
+
         static RecordManager _default = null;
 
         public static RecordManager Default
@@ -626,6 +667,11 @@ namespace Softlynx.ActiveSQL
         {
             using (DbCommand cmd = CreateCommand(command, parameters))
                 return cmd.ExecuteReader();
+        }
+
+        public IEnumerable RegisteredTypes
+        {
+            get { return tables.Values; }
         }
 
         internal void TryToRegisterAsActiveRecord(Type type)
@@ -719,9 +765,13 @@ namespace Softlynx.ActiveSQL
                     if (field == null) field = new InField();
                     if (field.Name == string.Empty) field.Name = prop.Name;
                     field.IsPrimary = prop.IsDefined(typeof(PrimaryKey), true);
+                    foreach (PrimaryKey pk in prop.GetCustomAttributes(typeof(PrimaryKey), true))
+                    {
+                        if (pk._GenerateSQL_PK == false) field.GenerateSQL_PK = false;
+                    }
+                    field.IsAutoincrement = prop.IsDefined(typeof(Autoincrement), true);
                     field.field_type = prop.PropertyType;
                     field.prop = prop;
-
 
                     field.IsIndexed = prop.IsDefined(typeof(Indexed), true);
 
@@ -740,8 +790,8 @@ namespace Softlynx.ActiveSQL
                     throw new Exception(string.Format("Replica is not supported on virtual table {0}", table.Name));
                 }
 
-                if ((table.with_replica) && ((primary_fields.Count != 1) || (primary_fields[0].Name.ToLower() != "id")))
-                    throw new Exception(string.Format("Define a property with ID name as primary index on {0} to be ready for replication", type.ToString()));
+                //if ((table.with_replica) && ((primary_fields.Count != 1) || (primary_fields[0].Name.ToLower() != "id")))
+                //    throw new Exception(string.Format("Define a property with ID name as primary index on {0} to be ready for replication", type.ToString()));
 
 
                 table.fields = fields.ToArray();
@@ -869,6 +919,22 @@ namespace Softlynx.ActiveSQL
 
             using (ManagerTransaction transaction = BeginTransaction())
             {
+                /*
+                bool needreplicationobjects = false;
+                foreach (Type t in types)
+                {
+                    if (t.IsDefined(typeof(WithReplica), true)) {
+                        Type[] ReplicaObjects=new Type[]{};
+                        foreach (Type ro in ReplicaObjects)
+                        {
+                            TryToRegisterAsActiveRecord(ro);
+                        }
+                        break;
+                    }
+                }
+                */
+
+
                 foreach (Type t in types)
                 {
                     TryToRegisterAsActiveRecord(t);
@@ -889,13 +955,25 @@ namespace Softlynx.ActiveSQL
         public void Write(Object Record)
         {
             InTable table = ActiveRecordInfo(Record.GetType());
-            table.Write(Record);
+            using (ManagerTransaction t = BeginTransaction())
+            {
+                table.Write(Record);
+                if (OnRecordWritten != null) OnRecordWritten(this, Record);
+                t.Commit();
+            }
         }
 
         public int Delete(Object Record)
         {
             InTable table = ActiveRecordInfo(Record.GetType());
-            return table.Delete(Record);
+            int res=0;
+            using (ManagerTransaction t = BeginTransaction())
+            {
+            res=table.Delete(Record);
+            if (OnRecordDeleted != null) OnRecordDeleted(this, Record);
+            t.Commit();
+            };
+            return res;
         }
 
 
@@ -905,13 +983,17 @@ namespace Softlynx.ActiveSQL
             return table.PKEYValue(Record);
         }
 
-        internal InTable ActiveRecordInfo(Type type)
+        internal InTable ActiveRecordInfo(Type type, bool withexception)
         {
             InTable table = (InTable)tables[type];
-            if (table == null) throw new Exception(string.Format("Can't use {0} as Acive Record object", type.Name));
+            if ((table == null) && (withexception)) throw new NotActiveRecordException(string.Format("Can't use {0} as Acive Record object", type.Name));
             return table;
         }
 
+        internal InTable ActiveRecordInfo(Type type)
+        {
+            return ActiveRecordInfo(type, true);
+        }
  
         public string SqlType(InField f) {
             return specifics.GetSqlType(f.FieldType);
@@ -936,6 +1018,11 @@ namespace Softlynx.ActiveSQL
         internal string AdoptSelectCommand(string select, InField[] fields)
         {
             return specifics.AdoptSelectCommand(select, fields);
+        }
+
+        internal string Autoincrement(string Name)
+        {
+            return specifics.AutoincrementStatement(Name);
         }
     }
 }

@@ -52,6 +52,8 @@ namespace Softlynx.ActiveSQL.SQLite
         public string GetSqlType(Type t)
         {
             object[] o = (object[])type_mapping[t];
+            if (t.IsEnum)
+                o = (object[])type_mapping[typeof(int)];
             if (o == null) return "bytea";
             return (string)o[0];
         }
@@ -60,6 +62,8 @@ namespace Softlynx.ActiveSQL.SQLite
         public DbType GetDbType(Type  t)
         {
             object[] o = (object[])type_mapping[t];
+            if (t.IsEnum)
+                o = (object[])type_mapping[typeof(int)];
             if (o == null) return DbType.Object;
             return (DbType)o[1];
         }
@@ -73,6 +77,11 @@ namespace Softlynx.ActiveSQL.SQLite
         public string AsFieldParam(string s)
         {
             return string.Format("@{0}", s);
+        }
+
+        public string AutoincrementStatement(string ColumnName)
+        {
+            return string.Format("{0} INTEGER PRIMARY KEY AUTOINCREMENT", AsFieldName(ColumnName));
         }
 
         public DbConnection Connection
