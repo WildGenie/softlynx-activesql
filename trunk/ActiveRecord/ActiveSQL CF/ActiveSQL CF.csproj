@@ -64,6 +64,9 @@
     <Compile Include="..\ActiveSQL\Replication.cs">
       <Link>Replication.cs</Link>
     </Compile>
+    <Compile Include="..\ActiveSQL\Serialization.cs">
+      <Link>Serialization.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
