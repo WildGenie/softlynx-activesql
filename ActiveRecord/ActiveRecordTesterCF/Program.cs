@@ -14,8 +14,9 @@ namespace ActiveRecordTesterCE
     public class DemoProperty : ObjectProp { }
 
     [InTable]
-    class DemoObject : DynamicObject<DemoProperty>
+    public class DemoObject : DynamicObject<DemoProperty>
     {
+        public DemoObject() : base() { }
         public DemoObject(RecordManager manager) : base(manager) { }
         public class Property
         {

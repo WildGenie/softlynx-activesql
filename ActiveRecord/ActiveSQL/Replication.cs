@@ -18,21 +18,32 @@ namespace Softlynx.ActiveSQL.Replication
     {
 
     [InTable]
-    public  class ReplicaPeers:IDObject
+    public class ReplicaPeer:IDObject
     {
+        public static Guid ID_DbInstance = new Guid("{11942243-F7A6-47b9-9416-5C1BA978138E}");
+        public static Guid ID_Snapshot = new Guid("{EF30C2E9-E035-4f98-A76D-AFA5075AC66A}");
+
         Int64 _SeqNO = 0;
-        Int64 SeqNO
+        public Int64 SeqNO
         {
             get { return _SeqNO; }
             set { _SeqNO=value; }
         }
 
         DateTime _LastUpdate = DateTime.Now;
-        DateTime LastUpdate
+        public DateTime LastUpdate
         {
             get { return _LastUpdate; }
             set { _LastUpdate = value; }
         }
+
+        private Guid _ReplicaID = Guid.Empty;
+        public Guid ReplicaID
+        {
+            get { return _ReplicaID; }
+            set { _ReplicaID = value; }
+        }
+
     }
 
     [InTable]
@@ -97,44 +108,38 @@ namespace Softlynx.ActiveSQL.Replication
 
     }
 
-        [InTable]
-        public class InstanceID:IDObject
-        {
-            public static Guid SelfID=new Guid("{11942243-F7A6-47b9-9416-5C1BA978138E}");
-            private Guid _value = Guid.Empty;
-            public Guid Value
-            {
-                get { return _value; }
-                set { _value = value; }
-            }
-        }
-
-        Hashtable IDS = new Hashtable();
+        Hashtable DBIDS = new Hashtable();
+        Hashtable RPIDS = new Hashtable();
         Hashtable CMDS = new Hashtable();
 
-        public Guid SelfGuid(RecordManager Manager)
+        private Guid GetHashID(Hashtable ht, Guid gid, RecordManager Manager, bool generatenew)
         {
-            Guid res = Guid.Empty;
-            object o = IDS[Manager];
-            if (o == null)
+            ReplicaPeer rp = (ReplicaPeer)ht[Manager];
+            if (rp == null)
             {
-                InstanceID II = new InstanceID();
-                II.ID = InstanceID.SelfID;
-                if (Manager.Read(II))
-                {
-                    res = II.Value;
-                }
-                else
-                {
-                    res = Guid.NewGuid();
-                    II.Value = res;
-                    Manager.Write(II);
-                }
-                IDS[Manager] = res;
+                rp = new ReplicaPeer();
+                rp.ID = gid;
+                Manager.Read(rp);
+                ht[Manager] = rp;
             }
-            else res = (Guid)o;
-            return res;
+            if ((rp.ReplicaID == Guid.Empty) && generatenew)
+            {
+                rp.ReplicaID = Guid.NewGuid();
+                Manager.Write(rp);
+            }
+            return rp.ReplicaID;
         }
+
+        public Guid DBSelfGuid(RecordManager Manager)
+        {
+            return GetHashID(DBIDS,ReplicaPeer.ID_DbInstance, Manager,true);
+        }
+
+        public Guid DBSnapshot(RecordManager Manager)
+        {
+            return GetHashID(RPIDS, ReplicaPeer.ID_Snapshot, Manager, false);
+        }
+
 
         public void RegisterWithRecordManager()
         {
@@ -155,17 +160,14 @@ namespace Softlynx.ActiveSQL.Replication
             if (hasreplica)
             using (ManagerTransaction mt = Manager.BeginTransaction())
             {
-                if (Manager.ActiveRecordInfo(typeof(InstanceID),false) == null)
-                    Manager.TryToRegisterAsActiveRecord(typeof(InstanceID));
-
-                Guid MyID = SelfGuid(Manager);
 
                 if (Manager.ActiveRecordInfo(typeof(ReplicaLog), false) == null)
                     Manager.TryToRegisterAsActiveRecord(typeof(ReplicaLog));
 
-                if (Manager.ActiveRecordInfo(typeof(ReplicaPeers), false) == null)
-                    Manager.TryToRegisterAsActiveRecord(typeof(ReplicaPeers));
+                if (Manager.ActiveRecordInfo(typeof(ReplicaPeer), false) == null)
+                    Manager.TryToRegisterAsActiveRecord(typeof(ReplicaPeer));
 
+                Guid MyID = DBSelfGuid(Manager);
 
                 Manager.OnRecordWritten += new RecordOperation(Manager_OnRecordWritten);
                 Manager.OnRecordDeleted += new RecordOperation(Manager_OnRecordDeleted);
@@ -189,7 +191,7 @@ namespace Softlynx.ActiveSQL.Replication
             if (!aro.with_replica) return;
             ReplicaLog l = new ReplicaLog();
             l.ID = Guid.NewGuid();
-            l.AutorID = SelfGuid(Manager);
+            l.AutorID = DBSelfGuid(Manager);
             l.ObjectName = obj.GetType().Name;
             l.ObjectValue=SerializeObject(aro, obj,operation);
             l.ObjectOperation = operation;
@@ -227,6 +229,49 @@ namespace Softlynx.ActiveSQL.Replication
             TextReader tr = new StreamReader(ms);
             string data=tr.ReadToEnd();
             return data;
+        }
+
+        private int ApplyOperation(RecordManager Manager,ReplicaLog log)
+        {
+            Type rt = Manager.GetTypeFromTableName(log.ObjectName);
+            InTable it = rt==null?null:Manager.ActiveRecordInfo(rt,false);
+            if (it!=null)
+            {
+                ArrayList objs = new ArrayList();
+                MemoryStream ms = new MemoryStream();
+                TextWriter tw = new StreamWriter(ms);
+                tw.Write(log.ObjectValue);
+                tw.Flush();
+                ms.Seek(0, SeekOrigin.Begin);
+                object dobj=serializer.Deserialize(ms);
+                if (dobj is ArrayList)
+                {
+                    objs = (ArrayList)dobj;
+                    Hashtable vals=new Hashtable();
+                    while (objs.Count > 1)
+                    {
+                        vals[objs[0]] = objs[1];
+                        objs.RemoveRange(0, 2);
+                    }
+                    if (vals.Count>0) {
+                    Object instance = Activator.CreateInstance(rt);
+
+                    if (instance is IRecordManagerDriven)
+                        (instance as IRecordManagerDriven).Manager = Manager;
+
+                    foreach (InField f in it.fields)
+                    {
+                        object value = vals[f.Name];
+                        if (value != null)
+                            f.prop.SetValue(instance, value, null);
+                    }
+                        return (log.ObjectOperation==ReplicaLog.Operation.Delete)
+                            ?Manager.Delete(instance)
+                            :Manager.Write(instance);
+                    }
+                }
+            }
+            return 0;
         }
     }
 }

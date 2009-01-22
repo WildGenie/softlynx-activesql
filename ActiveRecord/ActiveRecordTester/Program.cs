@@ -26,7 +26,7 @@ namespace ActiveRecordTester
     [WithReplica]
     class DemoObject:DynamicObject<DemoProperty>
     {
-
+        public DemoObject() : base() { }
         public DemoObject(RecordManager manager) : base(manager) { }
         public class Property
         {
@@ -59,10 +59,10 @@ namespace ActiveRecordTester
             SimpleConfig.Load();
 
             IProviderSpecifics prov = new PgSqlSpecifics();
-            prov.ExtendConnectionString("Database", "tests");
-            prov.ExtendConnectionString("Host", "sql.vladimir.psb");
-            prov.ExtendConnectionString("User Id", "reporter");
-            prov.ExtendConnectionString("Password", "reporter");
+            prov.ExtendConnectionString("Database", "test");
+            prov.ExtendConnectionString("Host", "localhost");
+            prov.ExtendConnectionString("User Id", "test");
+            prov.ExtendConnectionString("Password", "test");
             
             //prov = new SQLiteSpecifics();
             //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
@@ -80,13 +80,18 @@ namespace ActiveRecordTester
             dom.Name = "name " + dom.ID.ToString();
             //string ss2=r1.SerializeObject(dom);
             //RecordManager.Default.Read(dom);
+            //RecordManager.Default.Write(dom);
+            //RecordManager.Default.Write(dom);
             RecordManager.Default.Write(dom);
-            RecordManager.Default.Write(dom);
-            RecordManager.Default.Write(dom);
-            RecordManager.Default.Delete(dom);
+            //RecordManager.Default.Delete(dom);
 
             //RecordManager.Default.Read(dom);
             RecordSet<DemoObject> drs = new RecordSet<DemoObject>();
+            ArrayList l=new ArrayList();
+            foreach (DemoObject dobj in  drs.DirectEnumerator())
+            {
+                string s=dobj.ToString();
+            }
             drs.Fill();
             drs.Clear();
             /*

@@ -674,6 +674,11 @@ namespace Softlynx.ActiveSQL
             get { return tables.Values; }
         }
 
+        public Type GetTypeFromTableName(string TableName)
+        {
+            return (Type)table_names[TableName];
+        }
+
         internal void TryToRegisterAsActiveRecord(Type type)
         {
             if (type.IsAbstract) return;
@@ -952,15 +957,17 @@ namespace Softlynx.ActiveSQL
         }
 
 
-        public void Write(Object Record)
+        public int Write(Object Record)
         {
+            int res = 0;
             InTable table = ActiveRecordInfo(Record.GetType());
             using (ManagerTransaction t = BeginTransaction())
             {
-                table.Write(Record);
+                res = table.Write(Record);
                 if (OnRecordWritten != null) OnRecordWritten(this, Record);
                 t.Commit();
             }
+            return res;
         }
 
         public int Delete(Object Record)
