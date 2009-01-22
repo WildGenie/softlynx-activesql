@@ -10,25 +10,6 @@ using System.Reflection;
 namespace Softlynx.ActiveSQL
 {
 
-
-
-    public interface IIDObject
-    {
-        Guid ID { get; set;}
-    }
-
-    public class IDObject:IIDObject
-    {
-        private Guid _ID;
-
-        [PrimaryKey]
-        public Guid ID
-        {
-            get { return _ID; }
-            set { _ID = value; }
-        }
-    }
-
     public class PropType
     {
         internal static Hashtable propreg = new Hashtable();

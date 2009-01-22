@@ -6,6 +6,7 @@ using System.IO;
 using Softlynx.ActiveSQL;
 using Softlynx.ActiveSQL.Postgres;
 using Softlynx.ActiveSQL.SQLite;
+using Softlynx.ActiveSQL.Replication;
 
 using Softlynx.RecordSet;
 using Softlynx.SimpleConfig;
@@ -15,10 +16,14 @@ using System.Data.Common;
 
 namespace ActiveRecordTester
 {
+ 
     [InTable]
+    [WithReplica]
     public class DemoProperty : ObjectProp { }
 
+
     [InTable]
+    [WithReplica]
     class DemoObject:DynamicObject<DemoProperty>
     {
 
@@ -46,6 +51,7 @@ namespace ActiveRecordTester
         [STAThread]
         static void Main()
         {
+            
             SimpleConfig.FileName = @"c:\mycfg.xml";
             SimpleConfig.Pairs["drink"] = "1";
             SimpleConfig.Pairs["vehicle"] = "bike";
@@ -58,20 +64,27 @@ namespace ActiveRecordTester
             prov.ExtendConnectionString("User Id", "reporter");
             prov.ExtendConnectionString("Password", "reporter");
             
-            prov = new SQLiteSpecifics();
-            prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
-            prov.ExtendConnectionString("BinaryGUID","FALSE");
+            //prov = new SQLiteSpecifics();
+            //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
+            //prov.ExtendConnectionString("BinaryGUID","FALSE");
+            
             prov.Connection.Open();
             RecordManager.Default = new RecordManager(prov, typeof(Program).Assembly.GetTypes());
-
+            ReplicaManager r1 = new ReplicaManager();
+            r1.RegisterWithRecordManager(RecordManager.Default);
             DemoObject dom = new DemoObject(RecordManager.Default);
             //dom.ID = Guid.NewGuid();
             dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7B}");
 
             string n = dom.Name;
             dom.Name = "name " + dom.ID.ToString();
-//              RecordManager.Default.Read(dom);
-            //RecordManager.Default.Write(dom);
+            //string ss2=r1.SerializeObject(dom);
+            //RecordManager.Default.Read(dom);
+            RecordManager.Default.Write(dom);
+            RecordManager.Default.Write(dom);
+            RecordManager.Default.Write(dom);
+            RecordManager.Default.Delete(dom);
+
             //RecordManager.Default.Read(dom);
             RecordSet<DemoObject> drs = new RecordSet<DemoObject>();
             drs.Fill();
