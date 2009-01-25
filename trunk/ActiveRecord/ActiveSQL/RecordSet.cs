@@ -9,6 +9,179 @@ using Softlynx.ActiveSQL;
 
 namespace Softlynx.RecordSet
 {
+    public class RecordIterator <T>: IEnumerable, IEnumerator, IDisposable
+    {
+        private ManagerTransaction transaction = null;
+        private InTable table = null;
+        private string cmd = string.Empty;
+        private object[] filter_params = null;
+        private DbDataReader reader = null;
+        private object[] cparams = null;
+        private ConstructorInfo ci = null;
+
+        internal RecordIterator(InTable _table, Type[] ptypes, string filter, string orderby, int limit, params object[] _filter_params)
+        {
+            table = _table;
+            if (table.IsVirtual)
+                throw new Exception("Can't fill virual tables from database");
+
+            filter_params = _filter_params;
+
+            cmd += String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.manager.AsFieldName(table.Name));
+            if (filter != string.Empty)
+            {
+                cmd += String.Format(" WHERE ({0})", filter);
+            };
+
+            if (orderby != string.Empty)
+            {
+                cmd += String.Format(" ORDER BY {0}", orderby);
+            };
+
+
+            if (limit > 0)
+            {
+                cmd += String.Format(" LIMIT {0}", limit);
+            };
+
+            cparams = new object[] { table.manager };
+            ci = table.basetype.GetConstructor(new Type[] { typeof(RecordManager) });
+            if (ci == null)
+            {
+                cparams = null;
+                ci = table.basetype.GetConstructor(new Type[] { });
+            };
+
+            if (ci == null)
+                throw new Exception(string.Format("Can't create instance of {0} without known constructor", table.basetype.Name));
+        }
+
+        public void Reset()
+        {
+            if (reader != null)
+                reader.Close();
+            if (transaction != null)
+                transaction.Commit();
+
+            reader = null;
+            transaction = null;
+        }
+
+        public object Current
+        {
+            get
+            {
+                T instance = (T)ci.Invoke(cparams);
+                if ((cparams == null) && (instance is IRecordManagerDriven))
+                {
+                    (instance as IRecordManagerDriven).Manager = table.manager;
+                }
+                int i = 0;
+                foreach (InField field in table.fields)
+                {
+                    Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                    i++;
+                    try
+                    {
+                        lock (field.prop)
+                        {
+                            Type pt = field.prop.PropertyType;
+                            field.prop.SetValue(instance, v, null);
+
+                        };
+                    }
+                    catch
+                    {
+                    }
+                }
+                return instance;
+            }
+        }
+
+        public bool MoveNext()
+        {
+            if (transaction == null)
+                transaction = table.manager.BeginTransaction();
+            if (reader == null)
+                reader = table.manager.CreateReader(cmd, filter_params);
+            return reader.Read();
+        }
+
+        public void Dispose()
+        {
+            Reset();
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            return this;
+        }
+
+        public int Fill(IList list)
+        {
+            int count = 0;
+            foreach (object o in this)
+            {
+                list.Add(o);
+                count++;
+            }
+            return count;
+        }
+
+        static public RecordIterator<T> DirectEnumerator(RecordManager manager, Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
+        {
+            InTable t = manager.ActiveRecordInfo(typeof(T));
+            return new RecordIterator<T>(t, ptypes, filter, orderby, limit, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
+        {
+            return DirectEnumerator(RecordManager.Default, ptypes, filter, orderby, limit, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(RecordManager manager, string filter, string orderby, int limit, params object[] filter_params)
+        {
+            return DirectEnumerator(manager,(Type[])null, filter, orderby, limit, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(string filter, string orderby, int limit, params object[] filter_params)
+        {
+            return DirectEnumerator(RecordManager.Default, (Type[])null, filter, orderby, limit, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(RecordManager manager,string filter, string orderby, params object[] filter_params)
+        {
+            return DirectEnumerator(manager, filter, orderby, 0, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(string filter, string orderby, params object[] filter_params)
+        {
+            return DirectEnumerator(RecordManager.Default, filter, orderby, 0, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(RecordManager manager,string filter, params object[] filter_params)
+        {
+            return DirectEnumerator(manager, filter, string.Empty, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(string filter, params object[] filter_params)
+        {
+            return DirectEnumerator(RecordManager.Default, filter, string.Empty, filter_params);
+        }
+
+        static public RecordIterator<T> DirectEnumerator(RecordManager manager)
+        {
+            return DirectEnumerator(manager,string.Empty, string.Empty);
+        }
+
+        static public RecordIterator<T> DirectEnumerator()
+        {
+            return DirectEnumerator(RecordManager.Default);
+        }
+
+
+    }
+
    public class RecordSet<T>:IEnumerable,ICollection,IList,IDisposable
     {
         private Hashtable index = new Hashtable();
@@ -60,13 +233,12 @@ namespace Softlynx.RecordSet
 
         public RecordSet()
         {
-
             table = RecordManager.Default.ActiveRecordInfo(typeof(T));
         }
         
-       public RecordSet(RecordManager manager)
+       public RecordSet(RecordManager Manager)
         {
-            table=manager.ActiveRecordInfo(typeof(T));
+            table=Manager.ActiveRecordInfo(typeof(T));
          }
 
         public int Add(Object o)
@@ -202,127 +374,6 @@ namespace Softlynx.RecordSet
         }
 
        
-
-       public class RecordIterator : IEnumerable,IEnumerator,IDisposable
-       {
-           private ManagerTransaction transaction = null;
-           private InTable table = null;
-           private string cmd = string.Empty;
-           private object[] filter_params = null;
-           private DbDataReader reader = null;
-           private object[] cparams = null;
-           private ConstructorInfo ci = null;
-
-           internal RecordIterator(InTable _table, Type[] ptypes, string filter, string orderby, int limit, params object[] _filter_params)
-           {
-               table = _table;
-               if (table.IsVirtual)
-                   throw new Exception("Can't fill virual tables from database");
-
-               filter_params = _filter_params;
-
-               cmd += String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.manager.AsFieldName(table.Name));
-                   if (filter != string.Empty)
-                   {
-                       cmd += String.Format(" WHERE ({0})", filter);
-                   };
-
-                   if (orderby != string.Empty)
-                   {
-                       cmd += String.Format(" ORDER BY {0}", orderby);
-                   };
-
-
-                   if (limit > 0)
-                   {
-                       cmd += String.Format(" LIMIT {0}", limit);
-                   };
-
-                   cparams = new object[] { table.manager };
-                   ci = table.basetype.GetConstructor(new Type[] { typeof(RecordManager) });
-                   if (ci == null)
-                   {
-                       cparams = null;
-                       ci = table.basetype.GetConstructor(new Type[] { });
-                   };
-
-                   if (ci == null)
-                       throw new Exception(string.Format("Can't create instance of {0} without known constructor", table.basetype.Name));
-           }
-
-           public void Reset() 
-           {
-               if (reader != null)
-                   reader.Close();
-               if (transaction != null)
-                   transaction.Commit();
-
-               reader = null;
-               transaction = null;
-           }
-           
-           public object Current
-           {
-               get 
-               {
-                   T instance = (T)ci.Invoke(cparams);
-                   if ((cparams == null) && (instance is IRecordManagerDriven))
-                   {
-                       (instance as IRecordManagerDriven).Manager = table.manager;
-                   }
-                   int i = 0;
-                   foreach (InField field in table.fields)
-                   {
-                       Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                       i++;
-                       try
-                       {
-                           lock (field.prop)
-                           {
-                               Type pt = field.prop.PropertyType;
-                               field.prop.SetValue(instance, v, null);
-
-                           };
-                       }
-                       catch
-                       {
-                       }
-                   }
-                   return instance; 
-               }
-           }
-
-           public bool MoveNext() 
-           {
-               if (transaction == null)
-                   transaction = table.manager.BeginTransaction();
-               if (reader == null)
-                   reader = table.manager.CreateReader(cmd, filter_params);
-               return reader.Read();
-           }
-           
-           public void Dispose() 
-           {
-               Reset();
-           }
-
-           public IEnumerator GetEnumerator()
-           {
-               return this;
-           }
-           
-           public int Fill(IList list)
-           {
-               int count = 0;
-               foreach (object o in this)
-               {
-                   list.Add(o);
-                   count++;
-               }
-               return count;
-           }
-       }
-
        public void Fill(Type[] ptypes,string filter, string orderby, int limit, params object[] filter_params)
         {
            if (ClearBeforeFill)
@@ -331,7 +382,7 @@ namespace Softlynx.RecordSet
             index.Clear();
            }
 
-           foreach (T instance in DirectEnumerator(ptypes,filter,orderby,limit,filter_params))
+           foreach (T instance in RecordIterator<T>.DirectEnumerator(table.manager,ptypes,filter,orderby,limit,filter_params))
                    Add(instance);
        }
 
@@ -354,31 +405,6 @@ namespace Softlynx.RecordSet
         {
             Fill(string.Empty, string.Empty);
         }
-
-       public RecordIterator DirectEnumerator(Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
-       {
-           return new RecordIterator(table, ptypes, filter, orderby, limit, filter_params);
-       }
-
-       public RecordIterator DirectEnumerator(string filter, string orderby, int limit, params object[] filter_params)
-       {
-           return DirectEnumerator((Type[])null, filter, orderby, limit, filter_params);
-       }
-
-       public RecordIterator DirectEnumerator(string filter, string orderby, params object[] filter_params)
-       {
-           return DirectEnumerator(filter, orderby, 0, filter_params);
-       }
-
-       public RecordIterator DirectEnumerator(string filter, params object[] filter_params)
-       {
-           return DirectEnumerator(filter, string.Empty, filter_params);
-       }
-
-       public RecordIterator DirectEnumerator()
-       {
-           return DirectEnumerator(string.Empty, string.Empty);
-       }
 
         public void Sort()
         {
