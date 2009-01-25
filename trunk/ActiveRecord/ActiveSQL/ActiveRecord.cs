@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-
+using System.Threading;
 
 namespace Softlynx.ActiveSQL
 {
@@ -602,27 +602,33 @@ namespace Softlynx.ActiveSQL
         public event RecordOperation OnRecordWritten=null;
         public event RecordOperation OnRecordDeleted=null;
 
-        static RecordManager _default = null;
-
+        static Hashtable managers = new Hashtable();
+        
+        /// <summary>
+        /// Default record manager specific to each thread.
+        /// </summary>
         public static RecordManager Default
         {
             get
             {
+                RecordManager _default = (RecordManager)managers[Thread.CurrentThread];
                 if (_default == null)
                     throw new ApplicationException("Default Record Manager is not defined");
                 return _default;
             }
             set
             {
-                _default = value;
+                managers[Thread.CurrentThread] = value;
             }
         }
-
+        /// <summary>
+        /// Check the default Record manager for current thread is defined.
+        /// </summary>
         public static bool DefaultIsDefined
         {
             get
             {
-                return (_default != null);
+                return managers.ContainsKey(Thread.CurrentThread);
             }
         }
 
@@ -634,6 +640,9 @@ namespace Softlynx.ActiveSQL
         LinkedList<DbConnection> ConnectionPool = new LinkedList<DbConnection>();
         LinkedList<PooledConnection> ConnectionStack = new LinkedList<PooledConnection>();
 
+        /// <summary>
+        /// Try to close all unused extra connections from connection pool.
+        /// </summary>
         public void FlushConnectionPool()
         {
             lock (ConnectionPool)
@@ -711,10 +720,10 @@ namespace Softlynx.ActiveSQL
             }
         }
 
-        private static Hashtable tables = new Hashtable();
-        private static Hashtable table_names = new Hashtable();
+        private Hashtable tables = new Hashtable();
+        private Hashtable table_names = new Hashtable();
 
-        internal static void ClearRegistrations()
+        internal void ClearRegistrations()
         {
             tables.Clear();
             table_names.Clear();
@@ -899,10 +908,6 @@ namespace Softlynx.ActiveSQL
                     throw new Exception(string.Format("Replica is not supported on virtual table {0}", table.Name));
                 }
 
-                //if ((table.with_replica) && ((primary_fields.Count != 1) || (primary_fields[0].Name.ToLower() != "id")))
-                //    throw new Exception(string.Format("Define a property with ID name as primary index on {0} to be ready for replication", type.ToString()));
-
-
                 table.fields = fields.ToArray();
                 table.primary_fields = primary_fields.ToArray();
                 tables[type] = table;
@@ -943,16 +948,12 @@ namespace Softlynx.ActiveSQL
                             {
                                 if (update.Action == TableAction.Recreate)
                                 {
-
-//                                    if (table.with_replica)
-//                                        Session.replica.DropTableReplicaLogSchema(table.Name);
                                     string s = update.SQLCode;
                                     update.SQLCode = table.DropTableStatement();
                                     RunCommand(update.SQLCode);
                                     update.SQLCode = table.CreateTableStatement();
                                     RunCommand(update.SQLCode);
                                     update.SQLCode = s;
-//                                    if (table.with_replica) Session.replica.CreateTableReplicaLogSchema(table.Name);
                                 }
                                 if (
                                     (update.Action == TableAction.RunSQL)
