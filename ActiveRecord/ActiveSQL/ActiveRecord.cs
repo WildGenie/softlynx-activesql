@@ -153,7 +153,6 @@ namespace Softlynx.ActiveSQL
         internal bool IsAutoincrement = false;
         internal Type field_type = typeof(object);
         internal PropertyInfo prop = null;
-        //internal UntypedRecordSet foreign_key = null;
 
         internal String CreateColumnStatement(RecordManager manager)
         {
@@ -579,6 +578,27 @@ namespace Softlynx.ActiveSQL
 
     public class RecordManager
     {
+        public class PooledConnection : IDisposable
+        {
+            public event EventHandler Disposed = null;
+            internal DbConnection conn = null;
+            internal LinkedList<DbConnection> pool = null;
+            internal PooledConnection(DbConnection Connection, LinkedList<DbConnection> Pool)
+            {
+                conn = Connection;
+                pool = Pool;
+            }
+
+            public void Dispose()
+            {
+                if (pool!=null) 
+                lock (pool)
+                {
+                    pool.AddLast(conn);
+                    if (Disposed != null) Disposed(this, null);
+                }
+            }
+        }
         public event RecordOperation OnRecordWritten=null;
         public event RecordOperation OnRecordDeleted=null;
 
@@ -598,13 +618,97 @@ namespace Softlynx.ActiveSQL
             }
         }
 
+        public static bool DefaultIsDefined
+        {
+            get
+            {
+                return (_default != null);
+            }
+        }
+
+
         IProviderSpecifics specifics;
         internal DbTransaction transaction = null;
         internal int TransactionLevel=0;
 
+        LinkedList<DbConnection> ConnectionPool = new LinkedList<DbConnection>();
+        LinkedList<PooledConnection> ConnectionStack = new LinkedList<PooledConnection>();
+
+        public void FlushConnectionPool()
+        {
+            lock (ConnectionPool)
+            {
+                while (ConnectionPool.First != null)
+                {
+                    ConnectionPool.First.Value.Close();
+                    ConnectionPool.RemoveFirst();
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Emit all new SQL commands within new connection until returned object will not be disposed.
+        /// Disposing the returned object return to state before method call.
+        /// </summary>
+        /// <returns></returns>
+        public PooledConnection WithinSeparateConnection()
+        {
+            lock (ConnectionPool)
+            {
+                if (ConnectionPool.First == null)
+                {
+                    DbConnection NewConn = (DbConnection)Activator.CreateInstance(specifics.Connection.GetType());
+                    NewConn.ConnectionString = specifics.Connection.ConnectionString;
+                    NewConn.Open();
+                    ConnectionPool.AddLast(NewConn);
+                    NewConn.Disposed += new EventHandler(
+                        delegate (object sender, EventArgs e){
+                            lock (ConnectionPool)
+                            {
+                                ConnectionPool.Remove(sender as DbConnection);
+                            }
+                        });
+                }
+               
+                PooledConnection pc=new PooledConnection(ConnectionPool.First.Value,ConnectionPool);
+                ConnectionPool.RemoveFirst();
+                pc.Disposed += new EventHandler(
+                        delegate(object sender, EventArgs e)
+                        {
+                            lock (ConnectionStack)
+                            {
+                                ConnectionStack.Remove(sender as PooledConnection);
+                            }
+                        });
+                pc.conn.Disposed += new EventHandler(
+                        delegate(object sender, EventArgs e)
+                        {
+                            lock (ConnectionStack)
+                            {
+                                ConnectionStack.Remove(pc);
+                            }
+                            pc.pool = null;
+                        });
+
+                lock (ConnectionStack)
+                {
+                    ConnectionStack.AddLast(pc);
+                }
+
+                return pc;
+            }
+        }
+
+
         public DbConnection Connection
         { 
-            get {return specifics.Connection;}
+            get {
+                lock (ConnectionStack)
+                {
+                    return ConnectionStack.Last != null ? ConnectionStack.Last.Value.conn : specifics.Connection;
+                }
+            }
         }
 
         private static Hashtable tables = new Hashtable();
@@ -632,7 +736,7 @@ namespace Softlynx.ActiveSQL
             return CreateCommand(Command, new object[] { });
         }
 
-        public DbCommand CreateCommand(string command, params object[] parameters)
+        public DbCommand CreateCommand(string command, params object[] parameters )
         {
             DbCommand cmd = Connection.CreateCommand();
             cmd.CommandText = command;
@@ -924,22 +1028,6 @@ namespace Softlynx.ActiveSQL
 
             using (ManagerTransaction transaction = BeginTransaction())
             {
-                /*
-                bool needreplicationobjects = false;
-                foreach (Type t in types)
-                {
-                    if (t.IsDefined(typeof(WithReplica), true)) {
-                        Type[] ReplicaObjects=new Type[]{};
-                        foreach (Type ro in ReplicaObjects)
-                        {
-                            TryToRegisterAsActiveRecord(ro);
-                        }
-                        break;
-                    }
-                }
-                */
-
-
                 foreach (Type t in types)
                 {
                     TryToRegisterAsActiveRecord(t);

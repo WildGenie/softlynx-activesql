@@ -83,17 +83,34 @@ namespace ActiveRecordTester
             //RecordManager.Default.Write(dom);
             //RecordManager.Default.Write(dom);
             RecordManager.Default.Write(dom);
+            
+            dom = new DemoObject(RecordManager.Default);
+            dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7A}");
+            RecordManager.Default.Write(dom);
             //RecordManager.Default.Delete(dom);
 
-            //RecordManager.Default.Read(dom);
             RecordSet<DemoObject> drs = new RecordSet<DemoObject>();
             ArrayList l=new ArrayList();
-            foreach (DemoObject dobj in  drs.DirectEnumerator())
+            using (RecordManager.Default.WithinSeparateConnection())
             {
-                string s=dobj.ToString();
+                foreach (DemoObject dobj in RecordIterator<DemoObject>.DirectEnumerator())
+                {
+                    using (RecordManager.Default.WithinSeparateConnection())
+                    {
+                        string s = dobj.Name;
+                    }
+                    //                foreach (DemoObject dobj1 in drs.DirectEnumerator())
+                    //                {
+                    //                    string s1 = dobj.ToString();
+                    //                }
+
+                }
             }
+            RecordManager.Default.FlushConnectionPool();
             drs.Fill();
             drs.Clear();
+            RecordManager.Default = null;
+
             /*
             Session.AttachDatabase(@"c:\temp\ar.db3");
 
