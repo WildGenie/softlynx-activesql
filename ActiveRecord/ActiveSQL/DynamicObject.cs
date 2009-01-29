@@ -10,8 +10,6 @@ using System.Reflection;
 namespace Softlynx.ActiveSQL
 {
 
-
-
     public interface IIDObject
     {
         Guid ID { get; set;}
@@ -65,7 +63,7 @@ namespace Softlynx.ActiveSQL
         {
         if (ObjPropConstructor==null) 
         ObjPropConstructor=GetDynamicPropertyStorageClass();
-    if (Manager == null)
+    if ((Manager == null) && (RecordManager.DefaultIsDefined))
         Manager = RecordManager.Default;
         }
 

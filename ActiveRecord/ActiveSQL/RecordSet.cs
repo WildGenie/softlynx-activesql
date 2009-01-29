@@ -81,18 +81,8 @@ namespace Softlynx.RecordSet
                 {
                     Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
                     i++;
-                    try
-                    {
-                        lock (field.prop)
-                        {
-                            Type pt = field.prop.PropertyType;
-                            field.prop.SetValue(instance, v, null);
-
-                        };
-                    }
-                    catch
-                    {
-                    }
+                    Type pt = field.prop.PropertyType;
+                    field.prop.SetValue(instance, v, null);
                 }
                 return instance;
             }

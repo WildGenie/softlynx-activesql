@@ -24,6 +24,7 @@ namespace Softlynx.ActiveSQL.Postgres
             res[typeof(DateTime)] = new object[] { "Timestamptz", DbType.DateTime };
             res[typeof(Guid)] = new object[] { "Uuid", DbType.Guid };
             res[typeof(Object)] = new object[] { "bytea", DbType.Binary};
+            res[typeof(bool)] = new object[] { "boolean", DbType.Boolean };
             res[typeof(byte[])] = new object[] { "bytea", DbType.Binary};
             return res;
         }

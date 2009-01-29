@@ -215,14 +215,6 @@ namespace Softlynx.ActiveSQL
         {
         }
 
-        public ObjectProp(Guid objectID, PropType propertyID, object value)
-            : this()
-        {
-            ObjectID = objectID;
-            PropertyID = propertyID.ID;
-            Value = value;
-        }
-
         /// <summary>
         /// Уникальный ключ записи в нижлежащей БД
         /// </summary>

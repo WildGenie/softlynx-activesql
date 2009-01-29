@@ -290,7 +290,7 @@ namespace Softlynx.ActiveSQL
             s += String.Format("\n);\n");
             foreach (InField f in fields)
             {
-                if (f.IsIndexed) s += string.Format("CREATE INDEX {0}_idx on {1}({2});\n",f.Name, manager.AsFieldName(Name),manager.AsFieldName(f.Name));
+                if (f.IsIndexed) s += string.Format("CREATE INDEX {0}_idx on {1}({2});\n", Name+"_"+f.Name, manager.AsFieldName(Name), manager.AsFieldName(f.Name));
             }
             return s;
         }
@@ -515,6 +515,37 @@ namespace Softlynx.ActiveSQL
             if (TableVersionChanged != null)
                 TableVersionChanged(version);
         }
+    }
+
+    public class InVirtualTable : InTable
+    {
+
+        internal override bool IsVirtual
+        {
+            get { return true; }
+        }
+
+        internal override bool Read(object Record)
+        {
+            return false;
+        }
+
+        internal override int Delete(object Record)
+        {
+            return 0;
+        }
+
+        internal override int Insert(object Record)
+        {
+            return 0;
+        }
+
+        internal override int Update(object Record)
+        {
+            return 0;
+        }
+
+
     }
 
     [InTable]
@@ -1095,20 +1126,36 @@ namespace Softlynx.ActiveSQL
             return specifics.GetSqlType(f.FieldType);
         }
 
-        public DbParameter CreateParameter(InField f)
+        
+        internal DbParameter CreateParameter(InField f)
         {
             return specifics.CreateParameter(f.Name, f.FieldType);
         }
-        internal string AsFieldName(string s)
+
+        public DbParameter CreateParameter(string name, Type type)
+        {
+            return specifics.CreateParameter(name, type);
+        }
+
+        public string AsFieldName(string s)
         {
             return specifics.AsFieldName(s);
         }
 
-        internal string AsFieldParam(string s)
+        public string AsFieldParam(string s)
         {
             return specifics.AsFieldParam(s);
         }
 
+        public string WhereExpression(string field,string operation)
+        {
+            return string.Format("{0}{1}{2}", AsFieldName(field), operation, AsFieldParam(field));
+        }
+
+        public string WhereEqual(string field)
+        {
+            return WhereExpression(field, "=");
+        }
 
 
         internal string AdoptSelectCommand(string select, InField[] fields)
