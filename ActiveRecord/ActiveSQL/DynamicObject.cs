@@ -213,9 +213,9 @@ namespace Softlynx.ActiveSQL
                 if (ID != Guid.Empty)
                 {
                     v.Fill(
-                        string.Format("{0}={1} and {2}={3}",
-                           Manager.AsFieldName("ObjectID"), Manager.AsFieldParam("ObjectID"),
-                           Manager.AsFieldName("PropertyID"), Manager.AsFieldParam("PropertyID")),
+                        Manager.WhereEqual("ObjectID")+
+                        " and "+
+                        Manager.WhereEqual("PropertyID"),
                         string.Format("{0} DESC", Manager.AsFieldName("Created")),
                         1,
                         "ObjectID",ID,

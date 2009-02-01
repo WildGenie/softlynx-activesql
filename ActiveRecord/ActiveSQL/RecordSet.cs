@@ -61,7 +61,10 @@ namespace Softlynx.RecordSet
             if (reader != null)
                 reader.Close();
             if (transaction != null)
+            {
                 transaction.Commit();
+                transaction.Dispose();
+            }
 
             reader = null;
             transaction = null;
@@ -93,7 +96,12 @@ namespace Softlynx.RecordSet
             if (transaction == null)
                 transaction = table.manager.BeginTransaction();
             if (reader == null)
-                reader = table.manager.CreateReader(cmd, filter_params);
+            {
+                using (table.manager.WithinSeparateConnection())
+                {
+                    reader = table.manager.CreateReader(cmd, filter_params);
+                }
+            }
             return reader.Read();
         }
 
