@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActiveRecord.cs" />
+    <Compile Include="RecordCache.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="Replication.cs" />
     <Compile Include="DynamicObject.cs" />

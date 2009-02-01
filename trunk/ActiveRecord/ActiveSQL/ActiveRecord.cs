@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using Softlynx.RecordCache;
 
 namespace Softlynx.ActiveSQL
 {
@@ -398,11 +399,10 @@ namespace Softlynx.ActiveSQL
             FillCmd.Prepare();
 
         }
-
-
-
+        
         internal virtual bool Read(object Record)
         {
+            RecordManager.ReopenConnection(FillCmd);
             bool res = false;
             foreach (InField field in primary_fields)
             {
@@ -433,6 +433,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Update(object Record)
         {
+            RecordManager.ReopenConnection(UpdateCmd);
             foreach (InField field in fields)
             {
                 UpdateCmd.Parameters[field.Name].Value = field.prop.GetValue(Record, null);
@@ -442,6 +443,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Insert(object Record)
         {
+            RecordManager.ReopenConnection(InsertCmd);
             foreach (InField field in fields)
             {
                 if (!field.IsAutoincrement)
@@ -485,6 +487,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Delete(object Record)
         {
+            RecordManager.ReopenConnection(DeleteCmd);
             int res = 0;
             using (ManagerTransaction transaction = manager.BeginTransaction())
             {
@@ -577,13 +580,21 @@ namespace Softlynx.ActiveSQL
             manager = Manager;
             if (manager.TransactionLevel == 0)
             {
+                RecordManager.ReopenConnection(manager.Connection);
                 manager.transaction = manager.Connection.BeginTransaction();
             }
             manager.TransactionLevel++;
         }
 
+        ~ManagerTransaction()
+        {
+            Dispose();
+            //throw new ApplicationException("That has never to be happened! Check the transaction enclosing.");
+        }
+
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             manager.TransactionLevel--;
             if (manager.TransactionLevel == 0)
             {
@@ -607,7 +618,7 @@ namespace Softlynx.ActiveSQL
 
     public delegate void RecordOperation(RecordManager Manager, Object obj);
 
-    public class RecordManager
+    public class RecordManager:IDisposable
     {
         public class PooledConnection : IDisposable
         {
@@ -632,9 +643,43 @@ namespace Softlynx.ActiveSQL
         }
         public event RecordOperation OnRecordWritten=null;
         public event RecordOperation OnRecordDeleted=null;
+        
+        private CacheCollector cache = new CacheCollector();
 
         static Hashtable managers = new Hashtable();
-        
+
+        public CacheCollector Cache
+        {
+            get { return cache; }
+        }
+
+        public void Dispose()
+        {
+            cache.Dispose();
+        }
+
+        internal static void ReopenConnection(DbCommand cmd)
+        {
+            ReopenConnection(cmd.Connection);
+        }
+
+        internal static void ReopenConnection(DbConnection conn)
+        {
+            if (conn.State == ConnectionState.Open)
+                return;
+
+            if (conn.State == ConnectionState.Closed)
+                conn.Open();
+
+            if (conn.State == ConnectionState.Broken)
+            {
+                conn.Close();
+                conn.Open();
+            }
+
+        }
+
+
         /// <summary>
         /// Default record manager specific to each thread.
         /// </summary>
@@ -649,7 +694,10 @@ namespace Softlynx.ActiveSQL
             }
             set
             {
-                managers[Thread.CurrentThread] = value;
+                if (value == null)
+                    managers.Remove(Thread.CurrentThread);
+                else
+                    managers[Thread.CurrentThread] = value;
             }
         }
         /// <summary>
