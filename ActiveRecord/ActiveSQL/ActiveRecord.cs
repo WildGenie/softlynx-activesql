@@ -575,6 +575,7 @@ namespace Softlynx.ActiveSQL
     public class ManagerTransaction : IDisposable
     {
         RecordManager manager;
+        bool complete = false;
         internal ManagerTransaction(RecordManager Manager)
         {
             manager = Manager;
@@ -595,6 +596,8 @@ namespace Softlynx.ActiveSQL
         public void Dispose()
         {
             GC.SuppressFinalize(this);
+            if (!complete) 
+                Rollback();
             manager.TransactionLevel--;
             if (manager.TransactionLevel == 0)
             {
@@ -604,12 +607,14 @@ namespace Softlynx.ActiveSQL
 
         public void Commit()
         {
+            complete = true;
             if (manager.TransactionLevel==1)
                 manager.transaction.Commit();
         }
 
         public void Rollback()
         {
+            complete = true;
             if (manager.TransactionLevel==1) 
                 manager.transaction.Rollback();
         }
@@ -1112,10 +1117,15 @@ namespace Softlynx.ActiveSQL
                 {
                     TryToRegisterAsActiveRecord(t);
                 }
+                transaction.Commit();
+            }
+            using (ManagerTransaction transaction = BeginTransaction())
+            {
                 foreach (InTable t in tables.Values)
                     t.PostRegistrationEvent();
                 transaction.Commit();
             }
+
         }
 
         public bool Read(Object Record)
