@@ -6,7 +6,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using System.IO;
 using Softlynx.RecordCache;
+using System.Runtime.Serialization;
+using System.Xml;
+using System.Xml.Serialization;
+
 
 namespace Softlynx.ActiveSQL
 {
@@ -153,7 +158,61 @@ namespace Softlynx.ActiveSQL
         internal bool IsIndexed = false;
         internal bool IsAutoincrement = false;
         internal Type field_type = typeof(object);
-        internal PropertyInfo prop = null;
+        internal PropertyInfo _prop = null;
+        XmlSerializer serializer = null;
+        XmlWriterSettings ws = new XmlWriterSettings();
+
+        internal PropertyInfo prop
+        {
+            get { return _prop; }
+            set { 
+             
+                _prop=value;
+                SetupSerialization();
+            }
+        }
+
+        private void SetupSerialization()
+        {
+            serializer = null;
+
+            if (prop.CanWrite) 
+            {
+                serializer = new XmlSerializer(_prop.PropertyType, new XmlRootAttribute("VALUE"));
+                ws.CloseOutput = true;
+                ws.NewLineChars = "";
+                ws.NewLineHandling = NewLineHandling.None;
+                ws.NewLineOnAttributes = false;
+                ws.OmitXmlDeclaration = true;
+                ws.Indent = false;
+            };
+                
+        }
+
+        internal string GetValue(object obj)
+        {
+            MemoryStream ms = new MemoryStream();
+            object v = prop.GetValue(obj, null);
+            XmlWriter xw = XmlWriter.Create(ms, ws);
+            serializer.Serialize(xw, v);
+            MemoryStream ms1 = new MemoryStream(ms.ToArray());
+            XmlReader r = XmlReader.Create(ms1);
+            string xml=r.ReadElementString();
+            return xml;
+        }
+
+        internal void SetValue(object obj,string v)
+        {
+            MemoryStream ms = new MemoryStream();
+            XmlWriter xw = XmlWriter.Create(ms);
+            xw.WriteElementString("VALUE", v);
+            xw.Close();
+            MemoryStream ms1 = new MemoryStream(ms.ToArray());
+            object ov=serializer.Deserialize(ms1);
+            prop.SetValue(obj, ov, null);
+        }
+        
+        
 
         internal String CreateColumnStatement(RecordManager manager)
         {
@@ -190,7 +249,26 @@ namespace Softlynx.ActiveSQL
         private DbCommand FillCmd = null;
         internal bool with_replica = false;
 
-        internal InField[] fields;
+        private InField[] _fields;
+        private Hashtable hf = new Hashtable();
+        internal InField[] fields
+        {
+            get { return _fields; }
+            set { 
+                _fields = value; 
+                hf.Clear();
+                foreach (InField f in _fields)
+                {
+                    hf[f.Name] = f;
+                }
+            }
+        }
+
+        internal InField Field(string name)
+        {
+            return (InField)hf[name];
+        }
+
         internal InField[] primary_fields;
         internal Type basetype = default(Type);
         internal Hashtable foreign_keys = new Hashtable();
@@ -625,6 +703,8 @@ namespace Softlynx.ActiveSQL
 
     public class RecordManager:IDisposable
     {
+        public event EventHandler Disposed = null;
+
         public class PooledConnection : IDisposable
         {
             public event EventHandler Disposed = null;
@@ -653,6 +733,13 @@ namespace Softlynx.ActiveSQL
 
         static Hashtable managers = new Hashtable();
 
+        public static ICollection Managers
+        {
+            get
+            {
+                return managers.Values;
+            }
+        }
         public CacheCollector Cache
         {
             get { return cache; }
@@ -660,6 +747,7 @@ namespace Softlynx.ActiveSQL
 
         public void Dispose()
         {
+            if (Disposed != null) Disposed(this, null);
             cache.Dispose();
         }
 
@@ -841,9 +929,12 @@ namespace Softlynx.ActiveSQL
                 DbParameter p = specifics.CreateParameter(pname, pvalue);
                 cmd.Parameters.Add(p);
             }
-            
-            if (parameters.Length > 0) 
+
+            if (parameters.Length > 0)
+            {
+                ReopenConnection(cmd);
                 cmd.Prepare();
+            }
             
             return cmd;
         }
@@ -1119,6 +1210,7 @@ namespace Softlynx.ActiveSQL
                 }
                 transaction.Commit();
             }
+
             using (ManagerTransaction transaction = BeginTransaction())
             {
                 foreach (InTable t in tables.Values)
@@ -1184,6 +1276,17 @@ namespace Softlynx.ActiveSQL
             return specifics.GetSqlType(f.FieldType);
         }
 
+        public bool IsObjectExists(Type type, string statement, params object[] prm)
+        {
+            bool exist = false;
+            InTable t=ActiveRecordInfo(type);
+            using (DbDataReader rd = CreateReader("select 1 from " + AsFieldName(t.Name) + " where " + statement, prm))
+            {
+                exist=rd.Read();
+                rd.Close();
+            }
+            return exist;
+        }
         
         internal DbParameter CreateParameter(InField f)
         {
