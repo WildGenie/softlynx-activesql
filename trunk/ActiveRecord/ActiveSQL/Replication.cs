@@ -2,20 +2,24 @@
 using System.Collections;
 using System.Threading;
 using System.Text;
+using System.Xml;
 using System.Xml.Serialization;
 using System.Data;
 using System.Data.Common;
 using System.Collections.Generic;
 using System.IO;
 using Softlynx.ActiveSQL;
-
 using Softlynx.RecordSet;
 using System.Reflection;
 
 namespace Softlynx.ActiveSQL.Replication
 {
+
     public class ReplicaManager
     {
+    public delegate void ApplyReplicaEvent(ReplicaManager.ReplicaLog log, RecordManager manager);
+
+    public event ApplyReplicaEvent OnApplyReplica=null;
 
     [InTable]
     public class ReplicaPeer:IDObject
@@ -38,6 +42,7 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
         private Guid _ReplicaID = Guid.Empty;
+        [Indexed]
         public Guid ReplicaID
         {
             get { return _ReplicaID; }
@@ -45,8 +50,30 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
     }
+        private int SkipReplication = 0;
 
-    [InTable]
+        public class ReplicaContext : IDisposable
+        {
+            ReplicaManager manager=null;
+
+            internal ReplicaContext(ReplicaManager Manager)
+            {
+                manager = Manager;
+                manager.SkipReplication++;
+
+            }
+            public void Dispose()
+            {
+                manager.SkipReplication--;
+            }
+        }
+
+        public ReplicaContext DisableLogger
+        {
+            get { return new ReplicaContext(this); }
+        }
+
+        [InTable]
         public class ReplicaLog : IIDObject
     {
         public enum Operation {Write,Delete};
@@ -84,6 +111,15 @@ namespace Softlynx.ActiveSQL.Replication
             set { _AutorID = value; }
         }
 
+        private Guid _ObjectID = Guid.Empty;
+        [Indexed]
+        public Guid ObjectID
+        {
+            get { return _ObjectID; }
+            set { _ObjectID = value; }
+        }
+
+
         String _ObjectName = string.Empty;
         [Indexed]
         public String ObjectName
@@ -106,11 +142,15 @@ namespace Softlynx.ActiveSQL.Replication
             set { _Operation = value; }
         }
 
+
     }
 
-        Hashtable DBIDS = new Hashtable();
-        Hashtable RPIDS = new Hashtable();
-        Hashtable CMDS = new Hashtable();
+        private Hashtable DBIDS = new Hashtable();
+        private Hashtable RPIDS = new Hashtable();
+        private Hashtable CMDS = new Hashtable();
+        private Hashtable TESTCMDS = new Hashtable();
+
+        public int ReplicaBufferLimit = 1024 * 64;
 
         private Guid GetHashID(Hashtable ht, Guid gid, RecordManager Manager, bool generatenew)
         {
@@ -130,16 +170,33 @@ namespace Softlynx.ActiveSQL.Replication
             return rp.ReplicaID;
         }
 
+        public ReplicaPeer Peer(RecordManager manager,Guid ID)
+        {
+            ReplicaPeer peer = new ReplicaPeer();
+            peer.ID = ID;
+            manager.Read(peer);
+            return peer;
+        }
+
+        public ReplicaPeer Peer(Guid ID)
+        {
+            return Peer(RecordManager.Default, ID);
+        }
+
         public Guid DBSelfGuid(RecordManager Manager)
         {
             return GetHashID(DBIDS,ReplicaPeer.ID_DbInstance, Manager,true);
         }
+
+        public Guid DBSelfGuid() { return DBSelfGuid(RecordManager.Default); }
+
 
         public Guid DBSnapshot(RecordManager Manager)
         {
             return GetHashID(RPIDS, ReplicaPeer.ID_Snapshot, Manager, false);
         }
 
+        public Guid DBSnapshot() { return DBSnapshot(RecordManager.Default); }
 
         public void RegisterWithRecordManager()
         {
@@ -185,14 +242,100 @@ namespace Softlynx.ActiveSQL.Replication
             LogOperation(Manager, obj, ReplicaLog.Operation.Write);
         }
 
+        private string XmlStrFromBuffer(byte[] buf,int offset)
+        {
+            UTF8Encoding enc = new UTF8Encoding();
+            return enc.GetString(buf, offset, buf.Length - offset);
+        }
+
+        private string XmlStrFromBuffer(byte[] buf)
+        {
+            return XmlStrFromBuffer(buf, 0);
+        }
+        
+        public int ApplyReplicaBuffer(RecordManager Manager, byte[] buf)
+        {
+            int cnt = 0;
+            using (ManagerTransaction t = Manager.BeginTransaction())
+            {
+                MemoryStream ms = new MemoryStream(buf);
+                XmlReader xr = XmlReader.Create(ms);
+                xr.ReadStartElement();
+                while (logserializer.CanDeserialize(xr))
+                {
+                    Object o = null;
+                    o=logserializer.Deserialize(xr);
+                    if (o is ReplicaLog)
+                    {
+                        cnt+=ApplyOperation(Manager, o as ReplicaLog);
+                    }
+                };
+                t.Commit();
+            }
+            return cnt;   
+        }
+
+        public int ApplyReplicaBuffer(byte[] buf)
+        {
+           return ApplyReplicaBuffer(RecordManager.Default, buf);
+        }
+
+
+        XmlSerializer logserializer = new XmlSerializer(typeof(ReplicaLog));
+        XmlWriterSettings serializer_settings = new XmlWriterSettings();
+        XmlSerializerNamespaces serializer_ns = new XmlSerializerNamespaces();
+
+        public ReplicaManager()
+        {
+            serializer_settings.CloseOutput = false;
+            serializer_settings.NewLineChars = "";
+            serializer_settings.NewLineHandling = NewLineHandling.None;
+            serializer_settings.NewLineOnAttributes = false;
+            serializer_settings.OmitXmlDeclaration = true;
+            serializer_settings.Indent = false;
+            serializer_ns.Add("", "");
+        }
+
+
+        public Hashtable ExcludeAuthor = new Hashtable();
+        public byte[] BuildReplicaBuffer(RecordManager Manager,ref long lastknownid)
+        {
+            long logcnt = 0;
+            MemoryStream ms = new MemoryStream();
+            XmlWriter xw = XmlWriter.Create(ms, serializer_settings);
+            xw.WriteStartElement("ReplicaBuffer");
+            foreach (ReplicaLog l in RecordIterator<ReplicaLog>.DirectEnumerator(Manager, Manager.WhereExpression("SeqNO", ">"),Manager.AsFieldName("SeqNO"),"SeqNO",lastknownid))
+            {
+                lastknownid = l.SeqNO;
+                if (!ExcludeAuthor.ContainsKey(l.AutorID))
+                {
+                    logserializer.Serialize(xw,l,serializer_ns);
+                    logcnt++;
+                }
+                xw.Flush();
+                if (ms.Length > ReplicaBufferLimit) break;
+            }
+            xw.WriteEndElement();
+            xw.Close();
+            return  logcnt> 0 ? ms.ToArray() : null;
+        }
+
+        public byte[] BuildReplicaBuffer(ref long lastknownid)
+        {
+            return BuildReplicaBuffer(RecordManager.Default, ref lastknownid);
+        }
+
         private void LogOperation(RecordManager Manager, object obj, ReplicaLog.Operation operation)
         {
+            if (SkipReplication > 0) 
+                return;
             InTable aro = Manager.ActiveRecordInfo(obj.GetType());
             if (!aro.with_replica) return;
             ReplicaLog l = new ReplicaLog();
             l.ID = Guid.NewGuid();
             l.AutorID = DBSelfGuid(Manager);
             l.ObjectName = obj.GetType().Name;
+            l.ObjectID = (Guid)aro.PKEYValue(obj);
             l.ObjectValue=SerializeObject(aro, obj,operation);
             l.ObjectOperation = operation;
             DbCommand RemoveReplicaCmd = (DbCommand)CMDS[Manager];
@@ -200,76 +343,103 @@ namespace Softlynx.ActiveSQL.Replication
             {
                 RemoveReplicaCmd = Manager.CreateCommand(
                     "delete from " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
-                    "where " + Manager.AsFieldName("ObjectName") + "=" + Manager.AsFieldParam("ObjectName"),
-                    "ObjectName", l.ObjectName);
+                    "where " + Manager.WhereEqual("ObjectID"),
+                    "ObjectID", l.ObjectID);
                 CMDS[Manager] = RemoveReplicaCmd;
             }
             else
             {
-                RemoveReplicaCmd.Parameters[0].Value = l.ObjectName;
+                RemoveReplicaCmd.Parameters[0].Value = l.ObjectID;
             }
             RemoveReplicaCmd.ExecuteNonQuery();
             Manager.Write(l);
         }
 
-        XmlSerializer serializer = new XmlSerializer(typeof(ArrayList),"ActiveRecord");
-
         private string SerializeObject(InTable aro, object obj, ReplicaLog.Operation operation)
         {
-            ArrayList objs=new ArrayList();
+            MemoryStream ms = new MemoryStream();
+            XmlWriter xw = XmlWriter.Create(ms,serializer_settings);
             InField[] fld = (operation == ReplicaLog.Operation.Write) ? aro.fields : aro.primary_fields;
-            foreach (InField f in fld) {
-                object value=f.prop.GetValue(obj, null);
-                objs.Add(f.Name);
-                objs.Add(value);
+            xw.WriteStartDocument();
+            xw.WriteStartElement(aro.Name);
+            foreach (InField f in fld)
+            {
+                xw.WriteStartElement(f.Name);
+                xw.WriteValue(f.GetValue(obj));
+                xw.WriteEndElement();
             }
-            MemoryStream ms=new MemoryStream();
-            serializer.Serialize(ms, objs);
-            ms.Seek(0, SeekOrigin.Begin);
-            TextReader tr = new StreamReader(ms);
-            string data=tr.ReadToEnd();
+            xw.WriteEndElement();
+            xw.WriteEndDocument();
+            xw.Close();
+            string data = XmlStrFromBuffer(ms.ToArray(),3);
             return data;
+        }
+
+        public bool IsReplicaExists(RecordManager Manager,Guid ReplicaGuid)
+        {
+            DbCommand TestReplicaCmd = (DbCommand)TESTCMDS[Manager];
+            if (TestReplicaCmd == null)
+            {
+                TestReplicaCmd = Manager.CreateCommand(
+                    "select 1 from " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
+                    "where " + Manager.WhereEqual("ID"),
+                    "ID", ReplicaGuid);
+                TESTCMDS[Manager] = TestReplicaCmd;
+            }
+            else
+            {
+                TestReplicaCmd.Parameters[0].Value = ReplicaGuid;
+            }
+            return (TestReplicaCmd.ExecuteScalar() != null) ;
+        }
+
+        public bool IsReplicaExists(Guid ReplicaGuid)
+        {
+            return IsReplicaExists(RecordManager.Default, ReplicaGuid);
         }
 
         private int ApplyOperation(RecordManager Manager,ReplicaLog log)
         {
+
+            if (IsReplicaExists(Manager,log.ID)) return 0;
+
             Type rt = Manager.GetTypeFromTableName(log.ObjectName);
             InTable it = rt==null?null:Manager.ActiveRecordInfo(rt,false);
             if (it!=null)
             {
-                ArrayList objs = new ArrayList();
                 MemoryStream ms = new MemoryStream();
                 TextWriter tw = new StreamWriter(ms);
                 tw.Write(log.ObjectValue);
                 tw.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
-                object dobj=serializer.Deserialize(ms);
-                if (dobj is ArrayList)
-                {
-                    objs = (ArrayList)dobj;
-                    Hashtable vals=new Hashtable();
-                    while (objs.Count > 1)
-                    {
-                        vals[objs[0]] = objs[1];
-                        objs.RemoveRange(0, 2);
-                    }
-                    if (vals.Count>0) {
-                    Object instance = Activator.CreateInstance(rt);
-
-                    if (instance is IRecordManagerDriven)
-                        (instance as IRecordManagerDriven).Manager = Manager;
-
-                    foreach (InField f in it.fields)
-                    {
-                        object value = vals[f.Name];
-                        if (value != null)
-                            f.prop.SetValue(instance, value, null);
-                    }
-                        return (log.ObjectOperation==ReplicaLog.Operation.Delete)
-                            ?Manager.Delete(instance)
-                            :Manager.Write(instance);
-                    }
+                Object instance = Activator.CreateInstance(rt);
+                if (instance is IRecordManagerDriven)
+                    (instance as IRecordManagerDriven).Manager = Manager;
+                XmlReader xr = XmlReader.Create(ms);
+                xr.ReadStartElement();
+                while (!xr.EOF)
+               {
+                   if (xr.IsStartElement())
+                   {
+                       string fname = xr.Name;
+                       InField f = it.Field(fname);
+                       if (f != null)
+                       {
+                           xr.MoveToContent();
+                           string fvalue = xr.ReadElementString();
+                           f.SetValue(instance, fvalue);
+                       }
+                   }
+                   else xr.Read();
                 }
+                    using (DisableLogger)
+                    {
+                        if (OnApplyReplica != null)
+                            OnApplyReplica(log, Manager);
+                        return (log.ObjectOperation == ReplicaLog.Operation.Delete)
+                            ? Manager.Delete(instance)
+                            : Manager.Write(instance);
+                    }
             }
             return 0;
         }
