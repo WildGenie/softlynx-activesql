@@ -30,7 +30,7 @@ namespace ActiveRecordTester
         public DemoObject(RecordManager manager) : base(manager) { }
         public class Property
         {
-            static public PropType Name = new PropType("Name", "{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
+            static public PropType Name = new PropType<string>("Name","{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
         }
 
         [ExcludeFromTable]
@@ -51,6 +51,8 @@ namespace ActiveRecordTester
         [STAThread]
         static void Main()
         {
+        //    string xml=ValueFormatter<int>.Serialize(2345);
+        //    int a = ValueFormatter<int>.Deserialize(xml);
             
             SimpleConfig.FileName = @"c:\mycfg.xml";
             SimpleConfig.Pairs["drink"] = "1";
@@ -64,9 +66,9 @@ namespace ActiveRecordTester
             prov.ExtendConnectionString("User Id", "test");
             prov.ExtendConnectionString("Password", "test");
             
-            //prov = new SQLiteSpecifics();
-            //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
-            //prov.ExtendConnectionString("BinaryGUID","FALSE");
+            prov = new SQLiteSpecifics();
+            prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
+            prov.ExtendConnectionString("BinaryGUID","FALSE");
             
             prov.Connection.Open();
             RecordManager.Default = new RecordManager(prov, typeof(Program).Assembly.GetTypes());
@@ -75,7 +77,6 @@ namespace ActiveRecordTester
             DemoObject dom = new DemoObject(RecordManager.Default);
             //dom.ID = Guid.NewGuid();
             dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7B}");
-
             string n = dom.Name;
             dom.Name = "name " + dom.ID.ToString();
             //string ss2=r1.SerializeObject(dom);

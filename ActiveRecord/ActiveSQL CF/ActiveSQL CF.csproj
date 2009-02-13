@@ -58,6 +58,9 @@
     <Compile Include="..\ActiveSQL\DynamicObject.cs">
       <Link>DynamicObject.cs</Link>
     </Compile>
+    <Compile Include="..\ActiveSQL\RecordCache.cs">
+      <Link>RecordCache.cs</Link>
+    </Compile>
     <Compile Include="..\ActiveSQL\RecordSet.cs">
       <Link>RecordSet.cs</Link>
     </Compile>

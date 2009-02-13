@@ -20,7 +20,7 @@ namespace ActiveRecordTesterCE
         public DemoObject(RecordManager manager) : base(manager) { }
         public class Property
         {
-            static public PropType Name = new PropType("Name", "{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
+            static public PropType Name = new PropType<string>("Name","{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
         }
 
         public string Name
