@@ -291,10 +291,10 @@ namespace Softlynx.ActiveSQL
 
             v.Fill(string.Format("{0}={1} and {2}={3}",
                         Manager.AsFieldName("PropertyID"), Manager.AsFieldParam("PropertyID"),
-                        Manager.AsFieldName("ValueArray"), Manager.AsFieldParam("ValueArray")),
+                        Manager.AsFieldName("ValueText"), Manager.AsFieldParam("ValueText")),
                    string.Format("{0} DESC", Manager.AsFieldName("Created")),
                    "PropertyID",PropertyID.ID,
-                   "ValueArray",ValueFormatter.Serialize(value));
+                   "ValueText",ValueFormatter.Serialize(value));
 
             if (ActualOnly)
             {

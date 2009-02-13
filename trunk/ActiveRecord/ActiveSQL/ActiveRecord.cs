@@ -8,9 +8,6 @@ using System.Reflection;
 using System.Threading;
 using System.IO;
 using Softlynx.RecordCache;
-using System.Runtime.Serialization;
-using System.Xml;
-using System.Xml.Serialization;
 
 
 namespace Softlynx.ActiveSQL
@@ -159,8 +156,6 @@ namespace Softlynx.ActiveSQL
         internal bool IsAutoincrement = false;
         internal Type field_type = typeof(object);
         internal PropertyInfo _prop = null;
-        XmlSerializer serializer = null;
-        XmlWriterSettings ws = new XmlWriterSettings();
 
         internal PropertyInfo prop
         {
@@ -168,47 +163,17 @@ namespace Softlynx.ActiveSQL
             set { 
              
                 _prop=value;
-                SetupSerialization();
             }
-        }
-
-        private void SetupSerialization()
-        {
-            serializer = null;
-
-            if (prop.CanWrite) 
-            {
-                serializer = new XmlSerializer(_prop.PropertyType, new XmlRootAttribute("VALUE"));
-                ws.CloseOutput = true;
-                ws.NewLineChars = "";
-                ws.NewLineHandling = NewLineHandling.None;
-                ws.NewLineOnAttributes = false;
-                ws.OmitXmlDeclaration = true;
-                ws.Indent = false;
-            };
-                
         }
 
         internal string GetValue(object obj)
         {
-            MemoryStream ms = new MemoryStream();
-            object v = prop.GetValue(obj, null);
-            XmlWriter xw = XmlWriter.Create(ms, ws);
-            serializer.Serialize(xw, v);
-            MemoryStream ms1 = new MemoryStream(ms.ToArray());
-            XmlReader r = XmlReader.Create(ms1);
-            string xml=r.ReadElementString();
-            return xml;
+            return ValueFormatter.Serialize(prop.GetValue(obj, null));
         }
 
         internal void SetValue(object obj,string v)
         {
-            MemoryStream ms = new MemoryStream();
-            XmlWriter xw = XmlWriter.Create(ms);
-            xw.WriteElementString("VALUE", v);
-            xw.Close();
-            MemoryStream ms1 = new MemoryStream(ms.ToArray());
-            object ov=serializer.Deserialize(ms1);
+            object ov=ValueFormatter.Deserialize(field_type,v);
             prop.SetValue(obj, ov, null);
         }
         
@@ -668,7 +633,6 @@ namespace Softlynx.ActiveSQL
         ~ManagerTransaction()
         {
             Dispose();
-            //throw new ApplicationException("That has never to be happened! Check the transaction enclosing.");
         }
 
         public void Dispose()

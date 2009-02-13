@@ -242,17 +242,7 @@ namespace Softlynx.ActiveSQL.Replication
             LogOperation(Manager, obj, ReplicaLog.Operation.Write);
         }
 
-        private string XmlStrFromBuffer(byte[] buf,int offset)
-        {
-            UTF8Encoding enc = new UTF8Encoding();
-            return enc.GetString(buf, offset, buf.Length - offset);
-        }
-
-        private string XmlStrFromBuffer(byte[] buf)
-        {
-            return XmlStrFromBuffer(buf, 0);
-        }
-        
+       
         public int ApplyReplicaBuffer(RecordManager Manager, byte[] buf)
         {
             int cnt = 0;
@@ -371,7 +361,7 @@ namespace Softlynx.ActiveSQL.Replication
             xw.WriteEndElement();
             xw.WriteEndDocument();
             xw.Close();
-            string data = XmlStrFromBuffer(ms.ToArray(),3);
+            string data = ValueFormatter.XmlStrFromBuffer(ms.ToArray(),3);
             return data;
         }
 
