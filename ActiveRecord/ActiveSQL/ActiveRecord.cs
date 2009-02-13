@@ -1216,6 +1216,33 @@ namespace Softlynx.ActiveSQL
             };
             return res;
         }
+        /// <summary>
+        /// Сравнивает два объекта на равенства по полям отражаемым в ActiveRecord
+        /// </summary>
+        /// <param name="a">Первый объект</param>
+        /// <param name="b">Второй объект</param>
+        /// <returns></returns>
+        public bool Equal(Object a,Object b)
+        {
+            if (a.GetType() != b.GetType()) return false;
+            InTable table = ActiveRecordInfo(a.GetType());
+            bool res = true;
+            foreach (InField f in table.fields)
+            {
+                object av = f.prop.GetValue(a, null);
+                object bv = f.prop.GetValue(b, null);
+
+                if (av == bv) continue;
+                if ((av==null) || (bv==null)) {res = false; break;}
+                if (!av.Equals(bv))
+                {
+                    res = false;
+                    break;
+                }
+            }
+            return res;
+        }
+
 
 
         internal object PKEY(object Record)
