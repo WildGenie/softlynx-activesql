@@ -18,6 +18,7 @@ namespace Softlynx.RecordSet
         private DbDataReader reader = null;
         private object[] cparams = null;
         private ConstructorInfo ci = null;
+        private DbConnection inconnection = null;
 
         internal RecordIterator(InTable _table, Type[] ptypes, string filter, string orderby, int limit, params object[] _filter_params)
         {
@@ -60,6 +61,7 @@ namespace Softlynx.RecordSet
         {
             if (reader != null)
                 reader.Close();
+            
             if (transaction != null)
             {
                 transaction.Commit();
@@ -68,6 +70,11 @@ namespace Softlynx.RecordSet
 
             reader = null;
             transaction = null;
+            if (inconnection != null)
+            {
+                table.manager.ReleaseConnection(inconnection);
+                inconnection = null;
+            }
         }
 
         public object Current
@@ -97,10 +104,15 @@ namespace Softlynx.RecordSet
                 transaction = table.manager.BeginTransaction();
             if (reader == null)
             {
+
                 using (table.manager.WithinSeparateConnection())
                 {
                     reader = table.manager.CreateReader(cmd, filter_params);
+                    inconnection=table.manager.Connection;
                 }
+
+                table.manager.GrabConnection(inconnection);
+
             }
             return reader.Read();
         }

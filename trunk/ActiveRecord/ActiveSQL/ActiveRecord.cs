@@ -792,6 +792,16 @@ namespace Softlynx.ActiveSQL
         }
 
 
+        internal void GrabConnection(DbConnection conn) 
+        {
+            ConnectionPool.Remove(conn);
+        }
+
+        internal void ReleaseConnection(DbConnection conn)
+        {
+            ConnectionPool.AddLast(conn);
+        }
+
         /// <summary>
         /// Emit all new SQL commands within new connection until returned object will not be disposed.
         /// Disposing the returned object return to state before method call.
@@ -806,12 +816,14 @@ namespace Softlynx.ActiveSQL
                     DbConnection NewConn = (DbConnection)Activator.CreateInstance(specifics.Connection.GetType());
                     NewConn.ConnectionString = specifics.Connection.ConnectionString;
                     NewConn.Open();
-                    ConnectionPool.AddLast(NewConn);
+
+                    ReleaseConnection(NewConn);
+
                     NewConn.Disposed += new EventHandler(
                         delegate (object sender, EventArgs e){
                             lock (ConnectionPool)
                             {
-                                ConnectionPool.Remove(sender as DbConnection);
+                               GrabConnection(sender as DbConnection);
                             }
                         });
                 }
@@ -844,6 +856,7 @@ namespace Softlynx.ActiveSQL
                 return pc;
             }
         }
+
 
 
         public DbConnection Connection

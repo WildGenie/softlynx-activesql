@@ -39,7 +39,20 @@ namespace Softlynx.ActiveSQL
             set; 
         }
     }
-    abstract public class DynamicObject<T>: IIDObject,IComparable,IRecordManagerDriven
+
+    public interface IDynamicObject
+    {
+        bool IsNewObject
+        {
+            get;
+        }
+
+        bool HasChanges
+        {
+            get;
+        }
+    }
+    abstract public class DynamicObject<T>: IIDObject,IComparable,IRecordManagerDriven,IDynamicObject
     {
         RecordManager _manager;
         Guid _id = Guid.Empty;
@@ -209,26 +222,25 @@ namespace Softlynx.ActiveSQL
             }
             catch (KeyNotFoundException)
             {
-                RecordSet<T> v = new RecordSet<T>(Manager);
                 if (ID != Guid.Empty)
                 {
-                    v.Fill(
-                        Manager.WhereEqual("ObjectID")+
-                        " and "+
-                        Manager.WhereEqual("PropertyID"),
-                        string.Format("{0} DESC", Manager.AsFieldName("Created")),
-                        1,
-                        "ObjectID",ID,
-                        "PropertyID",PropertyID.ID);
+
+                    foreach (ObjectProp op in RecordIterator<T>.DirectEnumerator(Manager,
+                            Manager.WhereEqual("ObjectID") +
+                           " and " +
+                            Manager.WhereEqual("PropertyID"),
+                            string.Format("{0} DESC", Manager.AsFieldName("Created")),
+                            "ObjectID", ID,
+                            "PropertyID", PropertyID.ID))
+                    {
+                        r = op;
+                        break;
+                    }
                 }
 
-                if (v.Count == 0)
-                    r = PropInstance(ID, PropertyID, null);
-                else
-                {
+                if (r == null) r = PropInstance(ID, PropertyID, null);
+                    else
                     IsNewObject = false;
-                    r = (ObjectProp)v[0];
-                }
                 props_latest_value[PropertyID] = r;
             }
             return r;
