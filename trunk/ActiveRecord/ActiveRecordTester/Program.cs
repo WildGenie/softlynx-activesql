@@ -66,10 +66,13 @@ namespace ActiveRecordTester
             prov.ExtendConnectionString("User Id", "test");
             prov.ExtendConnectionString("Password", "test");
             
-            prov = new SQLiteSpecifics();
-            prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
-            prov.ExtendConnectionString("BinaryGUID","FALSE");
-            
+            //prov = new SQLiteSpecifics();
+            //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
+            //prov.ExtendConnectionString("BinaryGUID","FALSE");
+
+            prov.Connection.StateChange += new StateChangeEventHandler(Connection_StateChange);
+            //prov.Connection.Ev
+            //prov.Connection.ConnectionString
             prov.Connection.Open();
             RecordManager.Default = new RecordManager(prov, typeof(Program).Assembly.GetTypes());
             ReplicaManager r1 = new ReplicaManager();
@@ -86,27 +89,22 @@ namespace ActiveRecordTester
             RecordManager.Default.Write(dom);
             
             dom = new DemoObject(RecordManager.Default);
-            dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7A}");
+            //dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7A}");
+            dom.ID = Guid.NewGuid();
             RecordManager.Default.Write(dom);
             //RecordManager.Default.Delete(dom);
 
             RecordSet<DemoObject> drs = new RecordSet<DemoObject>();
             ArrayList l=new ArrayList();
-            using (RecordManager.Default.WithinSeparateConnection())
-            {
-                foreach (DemoObject dobj in RecordIterator<DemoObject>.DirectEnumerator())
+                foreach (DemoObject dobj in RecordIterator.Enum<DemoObject>())
                 {
-                    using (RecordManager.Default.WithinSeparateConnection())
-                    {
                         string s = dobj.Name;
-                    }
-                    //                foreach (DemoObject dobj1 in drs.DirectEnumerator())
-                    //                {
-                    //                    string s1 = dobj.ToString();
-                    //                }
-
+                                    foreach (DemoObject dobj1 in RecordIterator.Enum<DemoObject>())
+                                    {
+                                        string s1 = dobj.ToString();
+                                    }
                 }
-            }
+
             RecordManager.Default.FlushConnectionPool();
             drs.Fill();
             drs.Clear();
@@ -129,6 +127,11 @@ namespace ActiveRecordTester
             Application.Run(new ActiveRecordTest());
              */
             prov.Connection.Close();
+        }
+
+        static void Connection_StateChange(object sender, StateChangeEventArgs e)
+        {
+            ConnectionState cs = e.CurrentState;
         }
     }
      

@@ -225,7 +225,7 @@ namespace Softlynx.ActiveSQL
                 if (ID != Guid.Empty)
                 {
 
-                    foreach (ObjectProp op in RecordIterator<T>.DirectEnumerator(Manager,
+                    foreach (ObjectProp op in RecordIterator.Enum<T>(Manager,
                             Manager.WhereEqual("ObjectID") +
                            " and " +
                             Manager.WhereEqual("PropertyID"),

@@ -651,14 +651,22 @@ namespace Softlynx.ActiveSQL
         {
             complete = true;
             if (manager.TransactionLevel==1)
-                manager.transaction.Commit();
+                try
+                {
+                    manager.transaction.Commit();
+                }
+                catch { }
         }
 
         public void Rollback()
         {
             complete = true;
-            if (manager.TransactionLevel==1) 
-                manager.transaction.Rollback();
+            if (manager.TransactionLevel==1)
+                try
+                {
+                    manager.transaction.Rollback();
+                }
+                catch { }
         }
 
     }
@@ -669,27 +677,6 @@ namespace Softlynx.ActiveSQL
     {
         public event EventHandler Disposed = null;
 
-        public class PooledConnection : IDisposable
-        {
-            public event EventHandler Disposed = null;
-            internal DbConnection conn = null;
-            internal LinkedList<DbConnection> pool = null;
-            internal PooledConnection(DbConnection Connection, LinkedList<DbConnection> Pool)
-            {
-                conn = Connection;
-                pool = Pool;
-            }
-
-            public void Dispose()
-            {
-                if (pool!=null) 
-                lock (pool)
-                {
-                    pool.AddLast(conn);
-                    if (Disposed != null) Disposed(this, null);
-                }
-            }
-        }
         public event RecordOperation OnRecordWritten=null;
         public event RecordOperation OnRecordDeleted=null;
         
@@ -713,6 +700,17 @@ namespace Softlynx.ActiveSQL
         {
             if (Disposed != null) Disposed(this, null);
             cache.Dispose();
+            FlushConnectionPool();
+        }
+
+        public void FlushConnectionPool()
+        {
+            foreach (DbConnection c in ConnectionPool.Values)
+            {
+                c.Close();
+                c.Dispose();
+            }
+            ConnectionPool.Clear();
         }
 
         internal static void ReopenConnection(DbCommand cmd)
@@ -773,100 +771,47 @@ namespace Softlynx.ActiveSQL
         internal DbTransaction transaction = null;
         internal int TransactionLevel=0;
 
-        LinkedList<DbConnection> ConnectionPool = new LinkedList<DbConnection>();
-        LinkedList<PooledConnection> ConnectionStack = new LinkedList<PooledConnection>();
+        internal Hashtable ConnectionPool = new Hashtable();
+
 
         /// <summary>
-        /// Try to close all unused extra connections from connection pool.
-        /// </summary>
-        public void FlushConnectionPool()
-        {
-            lock (ConnectionPool)
-            {
-                while (ConnectionPool.First != null)
-                {
-                    ConnectionPool.First.Value.Close();
-                    ConnectionPool.RemoveFirst();
-                }
-            }
-        }
-
-
-        internal void GrabConnection(DbConnection conn) 
-        {
-            ConnectionPool.Remove(conn);
-        }
-
-        internal void ReleaseConnection(DbConnection conn)
-        {
-            ConnectionPool.AddLast(conn);
-        }
-
-        /// <summary>
-        /// Emit all new SQL commands within new connection until returned object will not be disposed.
-        /// Disposing the returned object return to state before method call.
+        /// Get connection from pool or create a new one if pool is empty
         /// </summary>
         /// <returns></returns>
-        public PooledConnection WithinSeparateConnection()
+        public DbConnection PooledConnection
         {
-            lock (ConnectionPool)
+            get
             {
-                if (ConnectionPool.First == null)
+                DbConnection res = null;
+                lock (ConnectionPool)
                 {
-                    DbConnection NewConn = (DbConnection)Activator.CreateInstance(specifics.Connection.GetType());
-                    NewConn.ConnectionString = specifics.Connection.ConnectionString;
-                    NewConn.Open();
-
-                    ReleaseConnection(NewConn);
-
-                    NewConn.Disposed += new EventHandler(
-                        delegate (object sender, EventArgs e){
-                            lock (ConnectionPool)
-                            {
-                               GrabConnection(sender as DbConnection);
-                            }
-                        });
-                }
-               
-                PooledConnection pc=new PooledConnection(ConnectionPool.First.Value,ConnectionPool);
-                ConnectionPool.RemoveFirst();
-                pc.Disposed += new EventHandler(
-                        delegate(object sender, EventArgs e)
+                    if (ConnectionPool.Count == 0)
+                    {
+                        DbConnection NewConn = (DbConnection)Activator.CreateInstance(specifics.Connection.GetType());
+                        NewConn.ConnectionString = specifics.Connection.ConnectionString;
+                        NewConn.Open();
+                        res = NewConn;
+                    }
+                    else
+                    {
+                        foreach (DbConnection c in ConnectionPool.Values)
                         {
-                            lock (ConnectionStack)
-                            {
-                                ConnectionStack.Remove(sender as PooledConnection);
-                            }
-                        });
-                pc.conn.Disposed += new EventHandler(
-                        delegate(object sender, EventArgs e)
-                        {
-                            lock (ConnectionStack)
-                            {
-                                ConnectionStack.Remove(pc);
-                            }
-                            pc.pool = null;
-                        });
-
-                lock (ConnectionStack)
-                {
-                    ConnectionStack.AddLast(pc);
+                            res=c;
+                            break;
+                        }
+                        ConnectionPool.Remove(res);
+                    }
+                    return res;
                 }
-
-                return pc;
             }
         }
-
 
 
         public DbConnection Connection
         { 
             get {
-                lock (ConnectionStack)
-                {
-                    return ConnectionStack.Last != null ? ConnectionStack.Last.Value.conn : specifics.Connection;
+                    return  specifics.Connection;
                 }
-            }
         }
 
         private Hashtable tables = new Hashtable();
@@ -891,12 +836,24 @@ namespace Softlynx.ActiveSQL
 
         public DbCommand CreateCommand(string Command)
         {
-            return CreateCommand(Command, new object[] { });
+            return CreateCommand(false, Command);
         }
 
-        public DbCommand CreateCommand(string command, params object[] parameters )
+        public DbCommand CreateCommand(bool pooled,string Command)
         {
-            DbCommand cmd = Connection.CreateCommand();
+            return CreateCommand(pooled,Command, new object[] { });
+        }
+
+        public DbCommand CreateCommand(string command, params object[] parameters)
+        {
+            return CreateCommand(false, command, parameters);
+        }
+        public DbCommand CreateCommand(bool pooled,string command, params object[] parameters )
+        {
+            DbConnection conn = pooled ?  PooledConnection :  Connection;
+            ReopenConnection(conn);
+            DbCommand cmd = conn.CreateCommand();
+
             cmd.CommandText = command;
             int i = 0;
             while (i < parameters.Length)
@@ -909,7 +866,6 @@ namespace Softlynx.ActiveSQL
 
             if (parameters.Length > 0)
             {
-                ReopenConnection(cmd);
                 cmd.Prepare();
             }
             
@@ -927,11 +883,95 @@ namespace Softlynx.ActiveSQL
             using (DbCommand cmd = CreateCommand(command, parameters))
                 return cmd.ExecuteScalar();
         }
+  
+        internal class PooledDataReader : DbDataReader
+        {
+            DbDataReader r=null;
+            RecordManager m = null;
+            DbConnection c = null;
 
+            internal event EventHandler OnClose = null;
+
+            internal PooledDataReader(DbDataReader reader, DbConnection conn, RecordManager manager) { r = reader; c = conn; m = manager; }
+
+            public override int Depth { get { return r.Depth; } }
+            public override int FieldCount { get { return r.FieldCount; } }
+            public override bool HasRows { get { return r.HasRows; } }
+            public override bool IsClosed { get { return r.IsClosed; } }
+            public override int RecordsAffected { get { return r.RecordsAffected; } }
+            public override int VisibleFieldCount { get { return r.VisibleFieldCount; } }
+            public override object this[int ordinal] { get { return r[ordinal]; } }
+            public override object this[string name] { get { return r[name]; } }
+            public override void Close() {
+                r.Close();
+                m.ReturnConnectionToPool(c);
+                if (OnClose != null)
+                {
+                    OnClose(this, null);
+                }
+            }
+            ~PooledDataReader()
+            {
+                r.Dispose();
+                r = null;
+            }
+            public override bool GetBoolean(int ordinal) { return r.GetBoolean(ordinal); }
+            public override byte GetByte(int ordinal) { return r.GetByte(ordinal); }
+            public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
+                { return r.GetBytes(ordinal,dataOffset,buffer,bufferOffset,length ); }
+            public override char GetChar(int ordinal) { return r.GetChar(ordinal); }
+            public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
+            { return r.GetChars(ordinal,dataOffset,buffer,bufferOffset,length); }
+            public new DbDataReader GetData(int ordinal) { NotImplemented(); return null; }
+            public override string GetDataTypeName(int ordinal) { return r.GetDataTypeName(ordinal) ; }
+            public override DateTime GetDateTime(int ordinal){ return r.GetDateTime(ordinal) ; }
+            protected override DbDataReader GetDbDataReader(int ordinal) { NotImplemented(); return null; }
+            public override decimal GetDecimal(int ordinal){ return r.GetDecimal(ordinal) ; }
+            public override double GetDouble(int ordinal){ return r.GetDouble(ordinal) ; }
+            public override IEnumerator GetEnumerator() { return (r as IEnumerable).GetEnumerator(); }
+            public override Type GetFieldType(int ordinal) { return r.GetFieldType(ordinal) ; }
+            public override float GetFloat(int ordinal) { return r.GetFloat(ordinal) ; }
+            public override Guid GetGuid(int ordinal) { return r.GetGuid(ordinal) ; }
+            public override short GetInt16(int ordinal){ return r.GetInt16(ordinal) ; }
+            public override int GetInt32(int ordinal){ return r.GetInt32(ordinal) ; }
+            public override long GetInt64(int ordinal){ return r.GetInt64(ordinal) ; }
+            public override string GetName(int ordinal) { return r.GetName(ordinal) ; }
+            public override int GetOrdinal(string name){ return r.GetOrdinal(name); }
+            public override Type GetProviderSpecificFieldType(int ordinal){
+                NotImplemented();
+                return null;
+            }
+            public override object GetProviderSpecificValue(int ordinal) { NotImplemented(); return null; }
+            public override int GetProviderSpecificValues(object[] values) { NotImplemented(); return 0; }
+            public override DataTable GetSchemaTable() { return r.GetSchemaTable(); }
+            public override string GetString(int ordinal) { return r.GetString(ordinal) ; }
+            public override object GetValue(int ordinal) { return r.GetValue(ordinal) ; }
+            public override int GetValues(object[] values) { return r.GetValues(values); }
+            public override bool IsDBNull(int ordinal) { return r.IsDBNull(ordinal); }
+            public override bool NextResult() { return r.NextResult(); }
+            public override bool Read() { return r.Read(); }
+            private void NotImplemented()
+            {
+                throw new Exception("The method or operation is not implemented.");
+            }
+        }
+
+        public void ReturnConnectionToPool(DbConnection conn)
+        {
+            ConnectionPool.Add(conn, conn);
+        }
+    
+        /// <summary>
+        /// Create a reader instance running separate pooled connection
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         public DbDataReader CreateReader(string command, params object[] parameters)
         {
-            using (DbCommand cmd = CreateCommand(command, parameters))
-                return cmd.ExecuteReader();
+            DbCommand cmd = CreateCommand(true, command, parameters);
+            DbConnection conn=cmd.Connection;
+            return new PooledDataReader(cmd.ExecuteReader(),conn,this);
         }
 
         public IEnumerable RegisteredTypes

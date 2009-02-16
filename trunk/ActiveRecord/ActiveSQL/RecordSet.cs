@@ -9,16 +9,16 @@ using Softlynx.ActiveSQL;
 
 namespace Softlynx.RecordSet
 {
-    public class RecordIterator <T>: IEnumerable, IEnumerator, IDisposable
+   
+    public class RecordIterator : IEnumerable, IEnumerator, IDisposable
     {
-        private ManagerTransaction transaction = null;
+       // private ManagerTransaction transaction = null;
         private InTable table = null;
         private string cmd = string.Empty;
         private object[] filter_params = null;
         private DbDataReader reader = null;
         private object[] cparams = null;
         private ConstructorInfo ci = null;
-        private DbConnection inconnection = null;
 
         internal RecordIterator(InTable _table, Type[] ptypes, string filter, string orderby, int limit, params object[] _filter_params)
         {
@@ -61,27 +61,14 @@ namespace Softlynx.RecordSet
         {
             if (reader != null)
                 reader.Close();
-            
-            if (transaction != null)
-            {
-                transaction.Commit();
-                transaction.Dispose();
-            }
-
-            reader = null;
-            transaction = null;
-            if (inconnection != null)
-            {
-                table.manager.ReleaseConnection(inconnection);
-                inconnection = null;
-            }
+                reader = null;
         }
 
         public object Current
         {
             get
             {
-                T instance = (T)ci.Invoke(cparams);
+                object instance = ci.Invoke(cparams);
                 if ((cparams == null) && (instance is IRecordManagerDriven))
                 {
                     (instance as IRecordManagerDriven).Manager = table.manager;
@@ -100,19 +87,10 @@ namespace Softlynx.RecordSet
 
         public bool MoveNext()
         {
-            if (transaction == null)
-                transaction = table.manager.BeginTransaction();
+
             if (reader == null)
             {
-
-                using (table.manager.WithinSeparateConnection())
-                {
                     reader = table.manager.CreateReader(cmd, filter_params);
-                    inconnection=table.manager.Connection;
-                }
-
-                table.manager.GrabConnection(inconnection);
-
             }
             return reader.Read();
         }
@@ -138,56 +116,109 @@ namespace Softlynx.RecordSet
             return count;
         }
 
-        static public RecordIterator<T> DirectEnumerator(RecordManager manager, Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
+        static public RecordIterator Enum(Type T,RecordManager manager, Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
         {
-            InTable t = manager.ActiveRecordInfo(typeof(T));
-            return new RecordIterator<T>(t, ptypes, filter, orderby, limit, filter_params);
+            InTable t = manager.ActiveRecordInfo(T);
+            return new RecordIterator(t, ptypes, filter, orderby, limit, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
+        static public RecordIterator Enum<T>(RecordManager manager, Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
         {
-            return DirectEnumerator(RecordManager.Default, ptypes, filter, orderby, limit, filter_params);
+            return Enum(typeof(T), manager, ptypes, filter, orderby, limit, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(RecordManager manager, string filter, string orderby, int limit, params object[] filter_params)
+
+        static public RecordIterator Enum<T>(Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
         {
-            return DirectEnumerator(manager,(Type[])null, filter, orderby, limit, filter_params);
+            return Enum<T>(RecordManager.Default, ptypes, filter, orderby, limit, filter_params);
+
+        }
+        static public RecordIterator Enum(Type T,Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
+        {
+            return Enum(T,RecordManager.Default, ptypes, filter, orderby, limit, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(string filter, string orderby, int limit, params object[] filter_params)
+
+        static public RecordIterator Enum<T>(RecordManager manager, string filter, string orderby, int limit, params object[] filter_params)
         {
-            return DirectEnumerator(RecordManager.Default, (Type[])null, filter, orderby, limit, filter_params);
+            return Enum<T>(manager, (Type[])null, filter, orderby, limit, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(RecordManager manager,string filter, string orderby, params object[] filter_params)
+        static public RecordIterator Enum(Type T,RecordManager manager, string filter, string orderby, int limit, params object[] filter_params)
         {
-            return DirectEnumerator(manager, filter, orderby, 0, filter_params);
+            return Enum(T, manager, (Type[])null, filter, orderby, limit, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(string filter, string orderby, params object[] filter_params)
+        static public RecordIterator Enum<T>(string filter, string orderby, int limit, params object[] filter_params)
         {
-            return DirectEnumerator(RecordManager.Default, filter, orderby, 0, filter_params);
+            return Enum<T>(RecordManager.Default, (Type[])null, filter, orderby, limit, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(RecordManager manager,string filter, params object[] filter_params)
+        static public RecordIterator Enum(Type T,string filter, string orderby, int limit, params object[] filter_params)
         {
-            return DirectEnumerator(manager, filter, string.Empty, filter_params);
+            return Enum(T, RecordManager.Default, (Type[])null, filter, orderby, limit, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(string filter, params object[] filter_params)
+        static public RecordIterator Enum<T>(RecordManager manager, string filter, string orderby, params object[] filter_params)
         {
-            return DirectEnumerator(RecordManager.Default, filter, string.Empty, filter_params);
+            return Enum<T>(manager, filter, orderby, 0, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator(RecordManager manager)
+        static public RecordIterator Enum(Type T,RecordManager manager, string filter, string orderby, params object[] filter_params)
         {
-            return DirectEnumerator(manager,string.Empty, string.Empty);
+            return Enum(T,manager, filter, orderby, 0, filter_params);
         }
 
-        static public RecordIterator<T> DirectEnumerator()
+        static public RecordIterator Enum<T>(string filter, string orderby, params object[] filter_params)
         {
-            return DirectEnumerator(RecordManager.Default);
+            return Enum<T>(RecordManager.Default, filter, orderby, 0, filter_params);
         }
+
+        static public RecordIterator Enum(Type T,string filter, string orderby, params object[] filter_params)
+        {
+            return Enum(T,RecordManager.Default, filter, orderby, 0, filter_params);
+        }
+
+        static public RecordIterator Enum<T>(RecordManager manager, string filter, params object[] filter_params)
+        {
+            return Enum<T>(manager, filter, string.Empty, filter_params);
+        }
+
+        static public RecordIterator Enum(Type T,RecordManager manager, string filter, params object[] filter_params)
+        {
+            return Enum(T,manager, filter, string.Empty, filter_params);
+        }
+
+        static public RecordIterator Enum<T>(string filter, params object[] filter_params)
+        {
+            return Enum<T>(RecordManager.Default, filter, string.Empty, filter_params);
+        }
+
+        static public RecordIterator Enum(Type T,string filter, params object[] filter_params)
+        {
+            return Enum(T,RecordManager.Default, filter, string.Empty, filter_params);
+        }
+
+        static public RecordIterator Enum<T>(RecordManager manager)
+        {
+            return Enum<T>(manager, string.Empty, string.Empty);
+        }
+
+        static public RecordIterator Enum(Type T,RecordManager manager)
+        {
+            return Enum(T,manager, string.Empty, string.Empty);
+        }
+
+        static public RecordIterator Enum(Type T)
+        {
+            return Enum(T,RecordManager.Default);
+        }
+
+        static public RecordIterator Enum<T>()
+        {
+            return Enum<T>(RecordManager.Default);
+        }
+
 
 
     }
@@ -392,7 +423,7 @@ namespace Softlynx.RecordSet
             index.Clear();
            }
 
-           foreach (T instance in RecordIterator<T>.DirectEnumerator(table.manager,ptypes,filter,orderby,limit,filter_params))
+           foreach (T instance in RecordIterator.Enum<T>(table.manager,ptypes,filter,orderby,limit,filter_params))
                    Add(instance);
        }
 

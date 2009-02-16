@@ -294,7 +294,7 @@ namespace Softlynx.ActiveSQL.Replication
             MemoryStream ms = new MemoryStream();
             XmlWriter xw = XmlWriter.Create(ms, serializer_settings);
             xw.WriteStartElement("ReplicaBuffer");
-            foreach (ReplicaLog l in RecordIterator<ReplicaLog>.DirectEnumerator(Manager, Manager.WhereExpression("SeqNO", ">"),Manager.AsFieldName("SeqNO"),"SeqNO",lastknownid))
+            foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager, Manager.WhereExpression("SeqNO", ">"), Manager.AsFieldName("SeqNO"), "SeqNO", lastknownid))
             {
                 lastknownid = l.SeqNO;
                 if (!ExcludeAuthor.ContainsKey(l.AutorID))
