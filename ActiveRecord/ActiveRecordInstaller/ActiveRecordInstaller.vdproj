@@ -27,6 +27,24 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_14153A3C179F4849FF16FA48161D502E"
+        "OwnerKey" = "8:_A9F9E76D87A84EFB8C6C1701E1E10EB3"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_14153A3C179F4849FF16FA48161D502E"
+        "OwnerKey" = "8:_223C1E8E696A4839BF99D13F13BE2E59"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_14153A3C179F4849FF16FA48161D502E"
+        "OwnerKey" = "8:_5F95777A57834D6E86A6EFAAB47FCCB4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_223C1E8E696A4839BF99D13F13BE2E59"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -39,26 +57,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
-        "OwnerKey" = "8:_223C1E8E696A4839BF99D13F13BE2E59"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
-        "OwnerKey" = "8:_5F95777A57834D6E86A6EFAAB47FCCB4"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
-        "OwnerKey" = "8:_A9F9E76D87A84EFB8C6C1701E1E10EB3"
+        "MsmKey" = "8:_5355C62796263477AEA238C00E2FA3DB"
+        "OwnerKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_5355C62796263477AEA238C00E2FA3DB"
-        "OwnerKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
+        "OwnerKey" = "8:_14153A3C179F4849FF16FA48161D502E"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -124,6 +130,12 @@
         "Entry"
         {
         "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
+        "OwnerKey" = "8:_14153A3C179F4849FF16FA48161D502E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
         "OwnerKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -149,6 +161,12 @@
         {
         "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
         "OwnerKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
+        "OwnerKey" = "8:_14153A3C179F4849FF16FA48161D502E"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -191,6 +209,12 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_B2C837F4C3694846B67AE0148CB87F1F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_14153A3C179F4849FF16FA48161D502E"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -263,12 +287,6 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_223C1E8E696A4839BF99D13F13BE2E59"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -384,11 +402,6 @@
             "AssemblyAsmDisplayName" = "8:System.Data.SQLite, Version=1.0.60.0, Culture=neutral, PublicKeyToken=1fdb50b1b62b4c84, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_0738CAABA1CD9D24D0639A75E3E94FAC"
-                    {
-                    "Name" = "8:System.Data.SQLite.dll"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:System.Data.SQLite.dll"
             "TargetName" = "8:"
@@ -439,14 +452,14 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_14153A3C179F4849FF16FA48161D502E"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.68.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.69.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+                    "_14153A3C179F4849FF16FA48161D502E"
                     {
                     "Name" = "8:Softlynx.ActiveSQL.dll"
                     "Attributes" = "3:512"
@@ -702,14 +715,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Softlynx.ActiveSQL"
-        "ProductCode" = "8:{4AB442F8-86F8-4ABD-97B8-F2908B7EC2A6}"
-        "PackageCode" = "8:{0A20CDE0-EE15-46C4-AFAB-33793B4EF7DE}"
+        "ProductCode" = "8:{EA175790-F5C9-4D83-8099-3ED3519EA80A}"
+        "PackageCode" = "8:{04447461-18B2-4114-A949-8DCCDAAD18D8}"
         "UpgradeCode" = "8:{3E756E92-D2D8-49F5-977E-74F2FFED98FF}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.2.67"
+        "ProductVersion" = "8:1.2.69"
         "Manufacturer" = "8:SoftLynx"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"

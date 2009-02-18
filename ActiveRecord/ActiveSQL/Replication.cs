@@ -15,9 +15,68 @@ using System.Reflection;
 namespace Softlynx.ActiveSQL.Replication
 {
 
-    public class ReplicaManager
+    public class ReplicaManager:IDisposable
     {
-    public delegate void ApplyReplicaEvent(ReplicaManager.ReplicaLog log, RecordManager manager);
+        private Hashtable CMDS = new Hashtable();
+
+        internal class CmdSet:IDisposable
+        {
+            internal DbCommand CleanReplicaCmd = null;
+            internal DbCommand ExistReplicaCmd = null;
+            internal DbCommand ConflictReplicaCmd = null;
+            internal CmdSet(RecordManager Manager)
+            {
+
+                CleanReplicaCmd = Manager.CreateCommand(
+                   "update " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
+                   " set " + Manager.WhereEqual("Actual") +
+                   " where " + Manager.WhereEqual("ObjectID"),
+                   "ObjectID", Guid.Empty,
+                   "Actual", false);
+
+                ExistReplicaCmd = Manager.CreateCommand(
+                   "select 1 from " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
+                   "where " + Manager.WhereEqual("ID"),
+                   "ID", Guid.Empty);
+
+                ConflictReplicaCmd = Manager.CreateCommand(
+                "select 1 from " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
+                " where " + Manager.WhereEqual("ObjectID")+
+                " and " + Manager.WhereExpression("Created",">="),
+                "ObjectID", Guid.Empty,
+                "Created", DateTime.Now
+                );
+
+            }
+
+            public void Dispose()
+            {
+                CleanReplicaCmd.Dispose();
+                ExistReplicaCmd.Dispose();
+            }
+
+        }
+
+        private CmdSet Commands(RecordManager Manager)
+        {
+            CmdSet res = (CmdSet)CMDS[Manager];
+            if (res == null)
+            {
+                res = new CmdSet(Manager);
+                CMDS[Manager] = res;
+            }
+            return res;
+        }
+
+        public void Dispose()
+        {
+            RecordManager m = RecordManager.Default;
+            CmdSet res = (CmdSet)CMDS[m];
+            if (res != null) res.Dispose();
+            CMDS.Remove(m);
+        }
+    
+        public delegate void ApplyReplicaEvent(ReplicaManager.ReplicaLog log, RecordManager manager);
 
     public event ApplyReplicaEvent OnApplyReplica=null;
 
@@ -48,7 +107,6 @@ namespace Softlynx.ActiveSQL.Replication
             get { return _ReplicaID; }
             set { _ReplicaID = value; }
         }
-
     }
         private int SkipReplication = 0;
 
@@ -74,6 +132,7 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
         [InTable]
+        [TableVersion(1, TableAction.Recreate)]
         public class ReplicaLog : IIDObject
     {
         public enum Operation {Write,Delete};
@@ -142,13 +201,28 @@ namespace Softlynx.ActiveSQL.Replication
             set { _Operation = value; }
         }
 
+        private bool _Actual = true;
+        [Indexed]
+        public bool Actual
+        {
+            get { return _Actual; }
+            set { _Actual = value; }
+        }
+
+        private bool _PotentialConflict = false;
+        [Indexed]
+        public bool PotentialConflict
+        {
+            get { return _PotentialConflict; }
+            set { _PotentialConflict = value; }
+        }
+
+
 
     }
 
         private Hashtable DBIDS = new Hashtable();
         private Hashtable RPIDS = new Hashtable();
-        private Hashtable CMDS = new Hashtable();
-        private Hashtable TESTCMDS = new Hashtable();
 
         public int ReplicaBufferLimit = 1024 * 64;
 
@@ -294,7 +368,7 @@ namespace Softlynx.ActiveSQL.Replication
             MemoryStream ms = new MemoryStream();
             XmlWriter xw = XmlWriter.Create(ms, serializer_settings);
             xw.WriteStartElement("ReplicaBuffer");
-            foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager, Manager.WhereExpression("SeqNO", ">"), Manager.AsFieldName("SeqNO"), "SeqNO", lastknownid))
+            foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager, Manager.WhereExpression("SeqNO", ">") + " and " + Manager.WhereEqual("Actual"), Manager.AsFieldName("SeqNO"), "SeqNO", lastknownid,"Actual",true))
             {
                 lastknownid = l.SeqNO;
                 if (!ExcludeAuthor.ContainsKey(l.AutorID))
@@ -328,20 +402,10 @@ namespace Softlynx.ActiveSQL.Replication
             l.ObjectID = (Guid)aro.PKEYValue(obj);
             l.ObjectValue=SerializeObject(aro, obj,operation);
             l.ObjectOperation = operation;
-            DbCommand RemoveReplicaCmd = (DbCommand)CMDS[Manager];
-            if (RemoveReplicaCmd == null)
-            {
-                RemoveReplicaCmd = Manager.CreateCommand(
-                    "delete from " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
-                    "where " + Manager.WhereEqual("ObjectID"),
-                    "ObjectID", l.ObjectID);
-                CMDS[Manager] = RemoveReplicaCmd;
-            }
-            else
-            {
-                RemoveReplicaCmd.Parameters[0].Value = l.ObjectID;
-            }
-            RemoveReplicaCmd.ExecuteNonQuery();
+            l.Actual = true;
+            DbCommand CleanReplicaCmd = Commands(Manager).CleanReplicaCmd;
+            CleanReplicaCmd.Parameters[0].Value = l.ObjectID;
+            CleanReplicaCmd.ExecuteNonQuery();
             Manager.Write(l);
         }
 
@@ -367,19 +431,8 @@ namespace Softlynx.ActiveSQL.Replication
 
         public bool IsReplicaExists(RecordManager Manager,Guid ReplicaGuid)
         {
-            DbCommand TestReplicaCmd = (DbCommand)TESTCMDS[Manager];
-            if (TestReplicaCmd == null)
-            {
-                TestReplicaCmd = Manager.CreateCommand(
-                    "select 1 from " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
-                    "where " + Manager.WhereEqual("ID"),
-                    "ID", ReplicaGuid);
-                TESTCMDS[Manager] = TestReplicaCmd;
-            }
-            else
-            {
-                TestReplicaCmd.Parameters[0].Value = ReplicaGuid;
-            }
+            DbCommand TestReplicaCmd = Commands(Manager).ExistReplicaCmd;
+            TestReplicaCmd.Parameters[0].Value = ReplicaGuid;
             return (TestReplicaCmd.ExecuteScalar() != null) ;
         }
 
@@ -424,8 +477,13 @@ namespace Softlynx.ActiveSQL.Replication
                 }
                     using (DisableLogger)
                     {
+                        DbCommand TestConflict = Commands(Manager).ConflictReplicaCmd;
+                        TestConflict.Parameters[0].Value = log.ObjectID;
+                        TestConflict.Parameters[1].Value = log.Created;
+                        log.PotentialConflict = (TestConflict.ExecuteScalar() != null);
                         if (OnApplyReplica != null)
                             OnApplyReplica(log, Manager);
+                        if (log.PotentialConflict) return 0;
                         return (log.ObjectOperation == ReplicaLog.Operation.Delete)
                             ? Manager.Delete(instance)
                             : Manager.Write(instance);
