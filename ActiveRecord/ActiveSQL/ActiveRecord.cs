@@ -699,7 +699,9 @@ namespace Softlynx.ActiveSQL
         public void Dispose()
         {
             if (Disposed != null) Disposed(this, null);
+            managers.Remove(Thread.CurrentThread);
             cache.Dispose();
+            Connection.Close();
             FlushConnectionPool();
         }
 
