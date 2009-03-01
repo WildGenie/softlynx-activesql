@@ -1356,7 +1356,7 @@ namespace Softlynx.ActiveSQL
 
         public string WhereExpression(string field,string operation)
         {
-            return string.Format("{0}{1}{2}", AsFieldName(field), operation, AsFieldParam(field));
+            return string.Format("{0} {1} {2}", AsFieldName(field), operation, AsFieldParam(field));
         }
 
         public string WhereEqual(string field)

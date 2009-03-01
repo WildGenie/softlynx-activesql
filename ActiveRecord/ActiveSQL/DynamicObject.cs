@@ -51,48 +51,115 @@ namespace Softlynx.ActiveSQL
         {
             get;
         }
+
+        ObjectProp GetPropertyWithLastValue(PropType PropertyID);
+        bool SetPropertyLastValue(PropType PropertyID, object value);
+
     }
-    abstract public class DynamicObject<T>: IIDObject,IComparable,IRecordManagerDriven,IDynamicObject
+
+    public enum PropertyMatch { Exact = 0, IgnoreCase = 1, Pattern = 2 }  ;
+
+    public class PropertyIterator : IEnumerable, IEnumerator, IDisposable
     {
-        RecordManager _manager;
-        Guid _id = Guid.Empty;
-        bool _isnewobject = true;
+        RecordManager manager = null;
+        private IEnumerator records=null;
+        private Hashtable tracking = new Hashtable();
+        private object cur = null;
+        internal Type returnobjtype = null;
 
-        static internal ConstructorInfo GetDynamicPropertyStorageClass()
+        internal PropertyIterator(IEnumerator Records)
+        {
+            records = Records;
+            if (records is IRecordManagerDriven)
             {
-                Type PropertyStorageType=typeof(T);
-                if (!typeof(ObjectProp).IsAssignableFrom(PropertyStorageType))
-                    throw new Exception("Can not use class " + PropertyStorageType.FullName + " as property storage object. Inherit it from ObjectProp.");
-
-                ConstructorInfo constr = PropertyStorageType.GetConstructor(new Type[] { });
-                if (constr == null)
-                    throw new Exception(PropertyStorageType.FullName + " does not implement parameterless constructoras property storage object.");
-                return constr;
+                manager = (records as IRecordManagerDriven).Manager;
             }
-
-        static private ConstructorInfo ObjPropConstructor = null;
-
-        public DynamicObject()
-        {
-        if (ObjPropConstructor==null) 
-        ObjPropConstructor=GetDynamicPropertyStorageClass();
-    if ((Manager == null) && (RecordManager.DefaultIsDefined))
-        Manager = RecordManager.Default;
+            else
+                manager = RecordManager.Default;
         }
 
-        public DynamicObject(RecordManager manager):this()
+        public void Dispose()
         {
-            if (manager!=null)
-                Manager = manager;
+            if (records is IDisposable)
+            {
+                (records as IDisposable).Dispose();
+            }
+            tracking.Clear();
+            tracking = null;
+            records = null;
         }
-        private ObjectProp PropInstance(Guid ObjectID, PropType PropertyID, object value)
+
+        public void Reset()
         {
-            ObjectProp res = ObjPropConstructor.Invoke(null) as ObjectProp;
-            res.ObjectID = ID;
-            res.PropertyID = PropertyID.ID;
-            res.Value = value;
-            return res;
+            records.Reset();
+            tracking.Clear();
         }
+
+        public object Current
+        {
+            get
+            {
+                return cur;
+            }
+        }
+
+        public bool MoveNext()
+        {
+            while (records.MoveNext())
+            {
+               cur = records.Current;
+               ObjectProp op = cur as ObjectProp;
+
+               
+                    if ((returnobjtype != null) && (op!=null))
+                    {
+                        IDynamicObject o = Activator.CreateInstance(returnobjtype) as IDynamicObject;
+                        if (o is IRecordManagerDriven)
+                            (o as IRecordManagerDriven).Manager = manager;
+                        if (o is IIDObject)
+                            (o as IIDObject).ID = op.ObjectID;
+
+                        if (!manager.Read(o)) continue;
+                        if (o.GetPropertyWithLastValue(op.Property).ID!=op.ID) continue;
+                        cur = o;
+                    }
+                return true;
+            }
+            return false;
+        }
+        
+        public IEnumerator GetEnumerator()
+        {
+            return this;
+        }
+
+        public PropertyIterator For(Type t)
+        {
+            returnobjtype = t;
+            return this;
+        }
+
+        public PropertyIterator For<T>()
+        {
+            return For(typeof(T));
+        }
+
+
+    }
+    abstract public class DynamicObject : IIDObject, IComparable, IDynamicObject
+    {
+        protected RecordManager _manager;
+        protected Guid _id = Guid.Empty;
+        protected bool _isnewobject = true;
+
+        protected Dictionary<PropType, ObjectProp> changed_values = new Dictionary<PropType, ObjectProp>();
+        protected Dictionary<PropType, ObjectProp> props_latest_value = new Dictionary<PropType, ObjectProp>();
+
+        int IComparable.CompareTo(object other)
+        {
+            return ToString().CompareTo(other.ToString());
+        }
+
 
         [ExcludeFromTable]
         public bool IsNewObject
@@ -131,14 +198,6 @@ namespace Softlynx.ActiveSQL
                 }
             }
         }
-        private Dictionary<PropType, ObjectProp> changed_values = new Dictionary<PropType, ObjectProp>();
-        private Dictionary<PropType, ObjectProp> props_latest_value = new Dictionary<PropType, ObjectProp>();
-
-        int IComparable.CompareTo(object other)
-        {
-            return ToString().CompareTo(other.ToString());
-        }
-
 
         /// <summary>
         /// Возвращает признак ниличия изменеий в свойствах объекта
@@ -147,6 +206,56 @@ namespace Softlynx.ActiveSQL
         {
             get { return changed_values.Values.Count > 0; }
         }
+
+        [AfterRecordManagerRead]
+        protected void WhenRead()
+        {
+            IsNewObject = false;
+        }
+
+        public abstract ObjectProp GetPropertyWithLastValue(PropType PropertyID);
+        public abstract bool SetPropertyLastValue(PropType PropertyID, object value);
+
+    }
+    abstract public class DynamicObject<T> : DynamicObject,   IRecordManagerDriven
+    {
+
+        static internal ConstructorInfo GetDynamicPropertyStorageClass()
+            {
+                Type PropertyStorageType=typeof(T);
+                if (!typeof(ObjectProp).IsAssignableFrom(PropertyStorageType))
+                    throw new Exception("Can not use class " + PropertyStorageType.FullName + " as property storage object. Inherit it from ObjectProp.");
+
+                ConstructorInfo constr = PropertyStorageType.GetConstructor(new Type[] { });
+                if (constr == null)
+                    throw new Exception(PropertyStorageType.FullName + " does not implement parameterless constructoras property storage object.");
+                return constr;
+            }
+
+        static private ConstructorInfo ObjPropConstructor = null;
+
+        public DynamicObject()
+        {
+        if (ObjPropConstructor==null) 
+        ObjPropConstructor=GetDynamicPropertyStorageClass();
+    if ((Manager == null) && (RecordManager.DefaultIsDefined))
+        Manager = RecordManager.Default;
+        }
+
+        public DynamicObject(RecordManager manager):this()
+        {
+            if (manager!=null)
+                Manager = manager;
+        }
+        private ObjectProp PropInstance(Guid ObjectID, PropType PropertyID, object value)
+        {
+            ObjectProp res = ObjPropConstructor.Invoke(null) as ObjectProp;
+            res.ObjectID = ID;
+            res.PropertyID = PropertyID.ID;
+            res.Value = value;
+            return res;
+        }
+       
 
         [BeforeRecordManagerWrite]
         protected void ActiveRecordWrite(RecordManager manager,ref bool handled)
@@ -162,50 +271,6 @@ namespace Softlynx.ActiveSQL
             }
         }
 
-        [AfterRecordManagerRead]
-        protected void WhenRead()
-        {
-            IsNewObject = false;
-        }
-
-        /// <summary>
-        /// Возвращает для объекта историю изменения его свойства PropertyID
-        /// Если PropertyID=Guid.Empty то возвращается история изменения всех свойств.
-        /// </summary>
-        /// <param name="PropertyID">Тип свойства по которому следует ограничить список</param>
-        /// <returns>Массив моделей T </returns>
-        public RecordSet<T> GetPropertyChangeHistory(PropType PropertyID)
-        {
-            RecordSet<T> r = new RecordSet<T>();
-            if (PropertyID == null)
-            {
-                r.Fill(
-                    string.Format("{0}={1}",
-                        Manager.AsFieldName("ObjectID"), Manager.AsFieldParam("ObjectID")),
-                    string.Format("{0} DESC", Manager.AsFieldName("Created")),
-                    "ObjectID", ID);
-            }
-            else
-            {
-                r.Fill(
-                    string.Format("{0}={1} and {2}={3}",
-                        Manager.AsFieldName("ObjectID"),Manager.AsFieldParam("ObjectID"),
-                        Manager.AsFieldName("PropertyID"),Manager.AsFieldParam("PropertyID")),
-                    string.Format("{0} DESC", Manager.AsFieldName("Created")),
-                    "ObjectID",ID,
-                    "PropertyID",PropertyID.ID);
-            }
-            return r;
-        }
-
-        /// <summary>
-        /// Возвращается история изменения всех свойств.
-        /// </summary>
-        /// <returns>Массив моделей T</returns>
-        public RecordSet<T> GetPropertyChangeHistory()
-        {
-            return GetPropertyChangeHistory(null);
-        }
 
         /// <summary>
         /// Получить модель описывающую для объекта последнее значение свойства с типом 
@@ -213,7 +278,7 @@ namespace Softlynx.ActiveSQL
         /// </summary>
         /// <param name="PropertyID">Тип запрашиваемого свойства</param>
         /// <returns>Модель T из базы либо вновь созданная модель</returns>
-        public ObjectProp GetPropertyWithLastValue(PropType PropertyID)
+        public override ObjectProp GetPropertyWithLastValue(PropType PropertyID)
         {
             ObjectProp r = null;
             try
@@ -252,7 +317,7 @@ namespace Softlynx.ActiveSQL
         /// <param name="PropertyID">Тип устанавливаемого свойства</param>
         /// <param name="value">Новое значение</param>
         /// <returns>Признак того поменялось ли значение свойства объекта</returns>
-        public bool SetPropertyLastValue(PropType PropertyID, object value)
+        public override bool SetPropertyLastValue(PropType PropertyID, object value)
         {
             bool changed = false;
             ObjectProp r = GetPropertyWithLastValue(PropertyID);
@@ -290,111 +355,108 @@ namespace Softlynx.ActiveSQL
             return GetPropertyWithLastValue(PropertyID).Value;
         }
 
-        /// <summary>
-        /// Выбирает все записи об изменении свойства объекта с указанным сначением
-        /// </summary>
-        /// <param name="PropertyID">Искомое свойство</param>
-        /// <param name="value">Искомое значение</param>
-        /// <param name="ActualOnly">Указывает будет ли итоговый recordSet содержать все изменения или только те значения которые актуальны на текущий момент (последнее присвоенное)</param>
-        /// <returns>RecordSet найденных записей по убыванию времени присвоения</returns>
-        static public RecordSet<T> FindPropertiesWithValue(RecordManager Manager, PropType PropertyID, Object value, bool ActualOnly)
+        public static PropertyIterator Query(RecordManager Manager, DynamicObject obj)
         {
-            RecordSet<T> v = new RecordSet<T>(Manager);
-
-            v.Fill(string.Format("{0}={1} and {2}={3}",
-                        Manager.AsFieldName("PropertyID"), Manager.AsFieldParam("PropertyID"),
-                        Manager.AsFieldName("ValueText"), Manager.AsFieldParam("ValueText")),
-                   string.Format("{0} DESC", Manager.AsFieldName("Created")),
-                   "PropertyID",PropertyID.ID,
-                   "ValueText",ValueFormatter.Serialize(value));
-
-            if (ActualOnly)
-            {
-                RecordSet<T> rv = new RecordSet<T>(Manager);
-                Hashtable pf = new Hashtable();
-                foreach (ObjectProp op in v)
-                {
-                    if (pf[op.ObjectID] == null)
-                    {
-                        rv.Add(op);
-                        pf[op.ObjectID] = op;
-                    }
-                }
-                v = rv;
-            }
-            return v;
+            RecordIterator ri = RecordIterator.Enum<T>(Manager,
+            Manager.WhereEqual("ObjectID"),
+            string.Format("{0} DESC", Manager.AsFieldName("Created")),
+            "ObjectID", obj.ID);
+            return new PropertyIterator(ri);
         }
 
-        /// <summary>
-        /// Выбирает все записи об изменении свойства объекта с указанным сначением
-        /// </summary>
-        /// <param name="PropertyID">Искомое свойство</param>
-        /// <param name="value">Искомое значение</param>
-        /// <param name="ActualOnly">Указывает будет ли итоговый recordSet содержать все изменения или только те значения которые актуальны на текущий момент (последнее присвоенное)</param>
-        /// <returns>RecordSet найденных записей по убыванию времени присвоения</returns>
-          static public RecordSet<T> FindPropertiesWithValue(PropType PropertyID, Object value, bool ActualOnly)
+        public static PropertyIterator Query(DynamicObject obj)
         {
-            return FindPropertiesWithValue(RecordManager.Default, PropertyID, value, ActualOnly);
+            return Query(RecordManager.Default, obj);
         }
 
 
-        /// <summary>
-        /// Выбирает все записи c актуальным значением свойства объекта
-        /// </summary>
-        /// <param name="PropertyID">Искомое свойство</param>
-        /// <param name="value">Искомое значение</param>
-        /// <returns>RecordSet найденных записей по убыванию времени присвоения</returns>
-        static public RecordSet<T> FindPropertiesWithValue(RecordManager Manager, PropType PropertyID, Object value)
+        public static PropertyIterator Query(RecordManager Manager, PropType PropertyID, Object value, string  matching)
         {
-            return FindPropertiesWithValue(Manager,PropertyID, value, true);
+            string cmpop = matching;
+
+            string v = ValueFormatter.Serialize(value);
+
+            /*
+            if ((matching & PropertyMatch.Pattern) != 0)
+            {
+                if ((matching & PropertyMatch.IgnoreCase) != 0)
+                cmpop = " ILIKE ";
+                else
+                cmpop = " LIKE ";
+            }
+            */
+
+            RecordIterator ri=RecordIterator.Enum<T>(Manager,
+            Manager.WhereEqual("PropertyID")+" and "+Manager.WhereExpression("ValueText",cmpop),
+            string.Format("{0} DESC", Manager.AsFieldName("Created")),
+            "PropertyID", PropertyID.ID,
+            "ValueText", v);
+            return new PropertyIterator(ri);
         }
 
-        static public RecordSet<T> FindPropertiesWithValue(PropType PropertyID, Object value)
+        public static PropertyIterator Query(RecordManager Manager, PropType PropertyID, Object value)
         {
-            return FindPropertiesWithValue(RecordManager.Default, PropertyID, value, true);
+            return Query(Manager, PropertyID, value, "=");
         }
 
-        public static class Query<QT>
+        public static IEnumerable Query<QT>(RecordManager Manager, PropType PropertyID, Object value, string matching)
         {
-            public static RecordSet<QT> FetchAll(RecordManager manager, PropType PropertyID, Object value, bool ActualOnly)
-            {
-                RecordSet<T> IdProps = DynamicObject<T>.FindPropertiesWithValue(manager,PropertyID, value, ActualOnly);
-                RecordSet<QT> res = new RecordSet<QT>(manager);
-                foreach (ObjectProp op in IdProps)
-                {
-                    Type TT = typeof(QT);
-                    ConstructorInfo ci = typeof(QT).GetConstructor(new Type[0]);
-                    DynamicObject<T> instance = ci.Invoke(null) as DynamicObject<T>;
-                    instance.ID = op.ObjectID;
-                    if (manager.Read(instance))
-                    {
-                        if (ActualOnly)
-                        {
-                            object v = instance.GetPropertyLastValue(PropertyID);
-                            if ((v == null) || !v.Equals(value)) continue;
-                        }
-                        res.Add(instance);
-                    }
-                }
-                return res;
-            }
-
-            public static RecordSet<QT> FetchAll(PropType PropertyID, Object value, bool ActualOnly)
-            {
-                return FetchAll(RecordManager.Default, PropertyID, value, ActualOnly);
-            }
-
-
-            public static RecordSet<QT> FetchAll(PropType PropertyID, Object value)
-            {
-                return FetchAll(PropertyID, value, true);
-            }
-
-            public static RecordSet<QT> FetchAll(RecordManager manager, PropType PropertyID, Object value)
-            {
-                return FetchAll(manager, PropertyID, value, true);
-            }
-
+            return Query(Manager, PropertyID, value, matching).For<QT>();
         }
+
+        public static IEnumerable Query<QT>(PropType PropertyID, Object value, string matching)
+        {
+            return Query(PropertyID, value, matching).For<QT>();
+        }
+
+        public static IEnumerable Query<QT>(RecordManager Manager, PropType PropertyID, Object value)
+        {
+            return Query(Manager, PropertyID, value).For<QT>();
+        }
+
+
+        public static PropertyIterator Query(PropType PropertyID, Object value)
+        {
+            return Query(RecordManager.Default,PropertyID, value);
+        }
+
+        public static IEnumerable Query<QT>(PropType PropertyID, Object value)
+        {
+            return Query(PropertyID, value).For<QT>();
+        }
+
+
+        public static PropertyIterator Query(PropType PropertyID, Object value, string matching)
+        {
+            return Query(RecordManager.Default, PropertyID, value, matching);
+        }
+
+        public static LT Locate<LT>(RecordManager Manager, PropType PropertyID, Object value, string matching)
+        {
+            LT r = default(LT);
+            foreach (LT o in Query<LT>(Manager, PropertyID, value,matching))
+            {
+                r = o;
+                break;
+            }
+            return r;
+        }
+
+        public static LT Locate<LT>(PropType PropertyID, Object value, string matching)
+        {
+            return Locate<LT>(RecordManager.Default, PropertyID, value, matching);
+        }
+
+
+        public static LT Locate<LT>(RecordManager Manager, PropType PropertyID, Object value)
+        {
+            return Locate<LT>(Manager, PropertyID, value, "=");
+        }
+
+        public static LT Locate<LT>(PropType PropertyID, Object value)
+        {
+            return Locate<LT>(RecordManager.Default, PropertyID, value);
+        }
+       
     }
 }

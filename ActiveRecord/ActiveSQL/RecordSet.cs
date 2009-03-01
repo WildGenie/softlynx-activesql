@@ -19,6 +19,7 @@ namespace Softlynx.RecordSet
         private DbDataReader reader = null;
         private object[] cparams = null;
         private ConstructorInfo ci = null;
+        
 
         internal RecordIterator(InTable _table, Type[] ptypes, string filter, string orderby, int limit, params object[] _filter_params)
         {
