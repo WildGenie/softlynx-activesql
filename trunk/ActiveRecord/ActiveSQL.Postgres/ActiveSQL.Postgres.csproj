@@ -43,16 +43,15 @@
     <Compile Include="Specifics.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ActiveSQL\ActiveSQL.csproj">
-      <Project>{97168E99-75E4-4ACD-A2FC-3D95C7B8D74B}</Project>
-      <Name>ActiveSQL</Name>
-      <Private>False</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\AlexeiVolkov.snk">
       <Link>AlexeiVolkov.snk</Link>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ActiveSQL\ActiveSQL.csproj">
+      <Project>{97168E99-75E4-4ACD-A2FC-3D95C7B8D74B}</Project>
+      <Name>ActiveSQL</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

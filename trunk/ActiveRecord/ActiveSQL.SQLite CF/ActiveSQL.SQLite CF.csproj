@@ -62,16 +62,15 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ActiveSQL CF\ActiveSQL CF.csproj">
-      <Project>{706E294B-9999-45BC-B459-E4686F97BB64}</Project>
-      <Name>ActiveSQL CF</Name>
-      <Private>False</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\AlexeiVolkov.snk">
       <Link>AlexeiVolkov.snk</Link>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ActiveSQL CF\ActiveSQL CF.csproj">
+      <Project>{706E294B-9999-45BC-B459-E4686F97BB64}</Project>
+      <Name>ActiveSQL CF</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Condition="'$(TargetFrameworkVersion)' == 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.v1.targets" />
   <Import Condition="'$(TargetFrameworkVersion)' == 'v2.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
