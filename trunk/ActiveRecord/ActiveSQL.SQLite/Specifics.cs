@@ -25,6 +25,7 @@ namespace Softlynx.ActiveSQL.SQLite
             res[typeof(Guid)] = new object[] { "GUID", DbType.Guid };
             res[typeof(Object)] = new object[] { "BLOB", DbType.Binary};
             res[typeof(bool)] = new object[] { "boolean", DbType.Boolean};
+            res[typeof(decimal)] = new object[] { "numeric", DbType.Decimal };
             res[typeof(byte[])] = new object[] { "BLOB", DbType.Binary};
             return res;
         }
