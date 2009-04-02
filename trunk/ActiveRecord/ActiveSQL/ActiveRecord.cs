@@ -35,6 +35,8 @@ namespace Softlynx.ActiveSQL
 
     #region Common attributes
     public enum TableAction { None, RunSQL, Recreate };
+    public enum ColumnAction {Insert,Remove,ChangeType,Recreate};
+
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public class ExcludeFromTable : Attribute { }
 
@@ -105,7 +107,9 @@ namespace Softlynx.ActiveSQL
         }
 
         private string _sql_code;
+        private string _column=null;
         private TableAction _table_action = TableAction.None;
+        private ColumnAction _column_action = ColumnAction.Insert;
 
         public string SQLCode
         {
@@ -113,10 +117,22 @@ namespace Softlynx.ActiveSQL
             set { _sql_code = value; }
         }
 
+        public string ColumnName
+        {
+            get { return _column; }
+            set { _column = value; }
+        }
+
         public TableAction Action
         {
             get { return _table_action; }
             set { _table_action = value; }
+        }
+
+        public ColumnAction ColumnAction
+        {
+            get { return _column_action; }
+            set { _column_action = value; }
         }
 
         public TableVersion(int version, string sql_code)
@@ -138,6 +154,24 @@ namespace Softlynx.ActiveSQL
             Version = version;
             Action = action;
             SQLCode = sql_code;
+        }
+
+        public TableVersion(int version, ColumnAction action, string column_name,string sql_code)
+        {
+            Version = version;
+            ColumnAction = action;
+            ColumnName = column_name;
+            SQLCode = sql_code;
+            Action = TableAction.RunSQL;
+        }
+
+        public TableVersion(int version, ColumnAction action, string column_name)
+        {
+            Version = version;
+            ColumnAction = action;
+            ColumnName = column_name;
+            SQLCode = null;
+            Action = TableAction.None;
         }
 
         public int CompareTo(TableVersion obj)
@@ -1149,6 +1183,44 @@ namespace Softlynx.ActiveSQL
                                     RunCommand(update.SQLCode);
                                     update.SQLCode = s;
                                 }
+                                if (update.ColumnName != null)
+                                {
+                                    InField colf=table.Field(update.ColumnName);
+                                    if ((colf==null) && (update.ColumnAction!=ColumnAction.Remove))
+                                        throw new ApplicationException("Update reference not existing column " + update.ColumnName);
+                                    string code = "ALTER TABLE " + AsFieldName(table.Name);
+                                    switch (update.ColumnAction)
+                                    {
+                                        case ColumnAction.Remove:
+                                            code += " DROP COLUMN " + AsFieldName(update.ColumnName);
+                                            break;
+                                        
+                                        case ColumnAction.Recreate:
+                                            code += " DROP COLUMN " + AsFieldName(colf.Name);
+                                            code += ", ";
+                                            code += " ADD COLUMN " + AsFieldName(colf.Name) +  SqlType(colf);
+                                            break;
+
+                                        case ColumnAction.Insert:
+                                            code+=" ADD COLUMN "+AsFieldName(colf.Name)+SqlType(colf);
+                                            break;
+
+                                        case ColumnAction.ChangeType:
+                                            code += " ALTER COLUMN " + AsFieldName(colf.Name) + " TYPE " + SqlType(colf);
+                                            break;
+
+                                        default: code = null;
+                                            break;
+                                    }
+                                    if (code != null)
+                                    {
+                                        string s = update.SQLCode;
+                                        update.SQLCode = code;
+                                        RunCommand(code);
+                                        update.SQLCode = s;
+                                    }
+                                }
+
                                 if (
                                     (update.Action == TableAction.RunSQL)
                                     ||
@@ -1156,6 +1228,7 @@ namespace Softlynx.ActiveSQL
                                     &&
                                     (update.SQLCode != string.Empty)
                                     )
+                                    
                                 RunCommand(update.SQLCode);
 
                             table.DoTableVersionChanged(update.Version);

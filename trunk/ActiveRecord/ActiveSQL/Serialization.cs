@@ -19,16 +19,28 @@ namespace Softlynx.ActiveSQL
         private Guid _id = Guid.Empty;
         private string _name = string.Empty;
         private Type _type = null;
+        private bool anonymous = false;
+        
+        public bool Anonymous
+        {
+            get { return anonymous; }
+        }
 
         internal PropType(Type type, string Name, string id)
         {
-            ID = new Guid(id);
+            if (id == null)
+            {
+                anonymous = true;
+                ID = Guid.NewGuid();
+            } else 
+                ID = new Guid(id);
+
             PropType prevreg = (PropType)propreg[ID];
             if (prevreg != null)
                 throw new Exception(string.Format("PropType {0}:{1} already registered under {2}:{3}",
                     Name, ID, prevreg.Name, prevreg.ID));
             propreg[ID] = this;
-            _name = Name;
+            _name = Name??string.Empty;
             _type=type;
            
 
@@ -36,7 +48,7 @@ namespace Softlynx.ActiveSQL
 
         override public string ToString()
         {
-            return string.Format("{0}", Name);
+            return string.Format("{0}",(Anonymous?"(ANONYMOUS) ":string.Empty)+Name+":"+ID.ToString());
         }
 
         override public bool Equals(Object obj)
@@ -81,32 +93,33 @@ namespace Softlynx.ActiveSQL
     
     public class PropType<T> : PropType
     {
+        /// <summary>
+        /// Резистрирует постоянное свойство с заданным ID.
+        /// Применимо как для работы с DynamicObject, так и для 
+        /// PropertySet.
+        /// </summary>
+        /// <param name="Name">Имя свойства</param>
+        /// <param name="id">Его постоянный идентификатор</param>
         public PropType(string Name, string id):base(typeof(T),Name,id) {}
+
+        /// <summary>
+        /// Резистрирует анонимное свойство, используемое только в runtime для 
+        /// работы с PropertySet.
+        /// Недопускается использование анонимных свойств для работы с БД через 
+        /// DynamicObject.
+        public PropType() : base(typeof(T), null, null) { }
+
+        /// <summary>
+        /// Резистрирует анонимное свойство, используемое только в runtime для 
+        /// работы с PropertySet.
+        /// Недопускается использование анонимных свойств для работы с БД через 
+        /// DynamicObject
+        public PropType(string Name) : base(typeof(T), Name, null) { }
     }
 
     public static class ValueFormatter
     {
         internal static Hashtable serializers = new Hashtable();
-        //internal static XmlWriterSettings serializers_settings = null;
-        //internal static XmlSerializerNamespaces serializers_ns = null;
-
-
-        /*
-        static ValueFormatter()
-        {
-
-            serializers_settings = new XmlWriterSettings();
-            serializers_settings.CloseOutput = true;
-            serializers_settings.NewLineChars = "";
-            serializers_settings.NewLineHandling = NewLineHandling.None;
-            serializers_settings.NewLineOnAttributes = false;
-            serializers_settings.OmitXmlDeclaration = true;
-            serializers_settings.Indent = false;
-
-            serializers_ns = new XmlSerializerNamespaces();
-            serializers_ns.Add("", "");
-        }
-        */
 
         static private XmlSerializer GetSerializer(Type t)
         {
@@ -123,7 +136,6 @@ namespace Softlynx.ActiveSQL
         public static string Serialize(object o)
         {
             if (o == null) return null;
-            //return "";
             XmlSerializer xs = GetSerializer(o.GetType());
             MemoryStream ms = new MemoryStream();
             xs.Serialize(ms, o);
@@ -136,7 +148,6 @@ namespace Softlynx.ActiveSQL
         {
             if (v == null) return null;
             XmlSerializer xs = GetSerializer(t);
-            
             MemoryStream ms = new MemoryStream();
             XmlWriter xw = XmlWriter.Create(ms);
             xw.WriteElementString("VALUE", v);
