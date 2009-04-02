@@ -15,15 +15,170 @@ namespace Softlynx.ActiveSQL
         Guid ID { get; set;}
     }
 
-    public class IDObject:IIDObject
+
+    public delegate T DefaultValueDelegate<T>();
+    public delegate void PropertyValueChanged(PropType property, object Value);
+
+    /// <summary>
+    /// Объект управляет динамическим набором свойств.
+    /// </summary>
+    public abstract class PropertySet:ICloneable
     {
-        private Guid _ID;
+        Hashtable snapshot = new Hashtable();
+        Hashtable changes = new Hashtable();
+        Hashtable values = new Hashtable();
+
+        public event PropertyValueChanged OnPropertyValueChanged = null;
+        /// <summary>
+        /// Задает новое значение свойства
+        /// </summary>
+        /// <typeparam name="T">Тип свойства</typeparam>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <param name="NewValue">Новое значение</param>
+        /// <returns>Было ли значение изменено</returns>
+        protected bool SetValue<T>(PropType property, T NewValue)
+        {
+            if (!NewValue.Equals(values[property.ID]))
+            {
+                values[property.ID] = NewValue;
+                if (!NewValue.Equals(snapshot[property.ID]))
+                    changes[property.ID] = NewValue;
+                PropertyChanged(property,NewValue);
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual void PropertyChanged(PropType property, object Value)
+        {
+            if (OnPropertyValueChanged != null)
+                OnPropertyValueChanged(property, Value);
+        }
+
+
+        protected T GetValue<T>(PropType property, T DefaultValue)
+        {
+            return GetValue<T>(property, new DefaultValueDelegate<T>(delegate { return DefaultValue; }));
+        }
+
+        protected T GetValue<T>(PropType property, DefaultValueDelegate<T> DefaultValue) 
+        {
+            object obj = values[property.ID];
+            if (typeof(T).IsInstanceOfType(obj))
+                return (T)obj;
+            T res = DefaultValue();
+            return res;
+        }
+
+        /// <summary>
+        /// Фиксирует текущие значения свойств для отслеживания изменений
+        /// </summary>
+        public void Snapshot()
+        {
+            snapshot.Clear();
+            changes.Clear();
+            foreach (DictionaryEntry de in values)
+            {
+                snapshot[de.Key] = (de.Value is ICloneable) ? (de.Value as ICloneable).Clone() : de.Value;
+            }
+        }
+
+        public bool HasChanges
+        {
+            get {return changes.Count>0;}
+        }
+
+        public PropType[] ChangedProperties
+        {
+            get 
+            {
+                PropType[] res = new PropType[changes.Count];
+                int cnt = 0;
+                foreach (Guid id in changes.Keys) 
+                    res[cnt++] = PropType.ByID(id);
+                return res;
+            }
+        }
+
+        public bool IsChanged(PropType property)
+        {
+            return changes.ContainsKey(property.ID);
+        }
+
+        public void CopyTo(PropertySet target)
+        {
+            target.values=(Hashtable)values.Clone();
+            target.snapshot = (Hashtable)snapshot.Clone();
+            target.changes = (Hashtable)changes.Clone();
+        }
+
+        public void CopyFrom(PropertySet source)
+        {
+            source.CopyTo(this);
+        }
+
+        public object Clone()
+        {
+            PropertySet res = Activator.CreateInstance(this.GetType()) as PropertySet;
+            res.CopyFrom(this);
+            return res;
+        }
+
+        /// <summary>
+        /// Поэлементно сравнивает значения объектов из values
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object obj)
+        {
+            if (obj is PropertySet)
+            {
+                PropertySet source = obj as PropertySet;
+
+                if (!source.GetType().IsAssignableFrom(this.GetType()))
+                    return false;
+                
+                if (source.values.Count != values.Count) 
+                    return false;
+
+                foreach (DictionaryEntry de in values)
+                {
+                    if (!de.Value.Equals(source.values[de.Key])) 
+                        return false;
+                }
+                return true;
+            } else 
+            return base.Equals(obj);
+        }
+        
+        /// <summary>
+        /// Возвращает хеш код с учетом всех значений values
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            int hc = 0;
+            foreach (object o in values.Values)
+            {
+                hc ^= o.GetHashCode();
+            }
+            return hc;
+        }
+    }
+
+    public class IDObject:PropertySet,IIDObject
+    {
+
+        public class Property
+        {
+            static public PropType ID = new PropType<Guid>("IDObject identifier");
+        }
 
         [PrimaryKey]
         public Guid ID
         {
-            get { return _ID; }
-            set { _ID = value; }
+            get { return GetValue<Guid>(Property.ID,Guid.Empty); }
+            set { SetValue<Guid>(Property.ID,value); }
         }
     }
 
@@ -249,6 +404,9 @@ namespace Softlynx.ActiveSQL
         }
         private ObjectProp PropInstance(Guid ObjectID, PropType PropertyID, object value)
         {
+            if (PropertyID.Anonymous)
+                throw new ApplicationException("Can't use Anumymous property " + PropertyID.ToString() + " with DynamicObjects.");
+
             ObjectProp res = ObjPropConstructor.Invoke(null) as ObjectProp;
             res.ObjectID = ID;
             res.PropertyID = PropertyID.ID;

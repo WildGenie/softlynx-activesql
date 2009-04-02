@@ -24,6 +24,7 @@ namespace ActiveRecordTester
 
     [InTable]
     [WithReplica]
+    [TableVersion(4,ColumnAction.Remove,"C1")]
     class DemoObject:DynamicObject<DemoProperty>
     {
         public DemoObject() : base() { }
@@ -40,7 +41,35 @@ namespace ActiveRecordTester
             set { SetPropertyLastValue(Property.Name,value); }
         }
         
-     
+        int c1=0;
+
+    }
+
+    public class O1 : PropertySet
+    {
+        public class Property
+        {
+            static public PropType Name1 = new PropType<string>();
+            static public PropType Name2 = new PropType<string>();
+        }
+
+        public string Name1
+        {
+            get { return GetValue<string>(Property.Name1,string.Empty); }
+            set { SetValue<string>(Property.Name1,value); }
+        }
+
+        public string Name2
+        {
+            get { return GetValue<string>(Property.Name2,string.Empty); }
+            set { SetValue<string>(Property.Name2, value); }
+        }
+
+    }
+
+    public class O2 : O1
+    {
+    
     }
 
     static class Program
@@ -51,6 +80,23 @@ namespace ActiveRecordTester
         [STAThread]
         static void Main()
         {
+
+            O1 o1 = new O1();
+            O2 o2 = new O2();
+            o1.OnPropertyValueChanged += new PropertyValueChanged(o1_OnPropertyValueChanged);
+            string ss = o1.Name1;
+            o1.Name1 = "123";
+            o1.Name2 = "345";
+            o2.Name1 = "123";
+            o2.Name2 = "345";
+            if (o2.Equals(o2))
+            {
+                PropType[] cp1 = o1.ChangedProperties;
+            }
+            
+            PropType[] cp = o1.ChangedProperties;
+
+            return;
         //    string xml=ValueFormatter<int>.Serialize(2345);
         //    int a = ValueFormatter<int>.Deserialize(xml);
             
@@ -127,6 +173,11 @@ namespace ActiveRecordTester
             Application.Run(new ActiveRecordTest());
              */
             prov.Connection.Close();
+        }
+
+        static void o1_OnPropertyValueChanged(PropType property, object Value)
+        {
+            object o = Value;
         }
 
         static void Connection_StateChange(object sender, StateChangeEventArgs e)

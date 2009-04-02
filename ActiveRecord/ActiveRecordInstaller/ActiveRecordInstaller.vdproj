@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
+        "OwnerKey" = "8:_A9F9E76D87A84EFB8C6C1701E1E10EB3"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_0FB7980F3E8E4A60CA337F9FC46435DA"
         "OwnerKey" = "8:_223C1E8E696A4839BF99D13F13BE2E59"
         "MsmSig" = "8:_UNDEFINED"
@@ -87,12 +93,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_65CB2FE399F6EC23FB7712BA2078FD17"
-        "OwnerKey" = "8:_A9F9E76D87A84EFB8C6C1701E1E10EB3"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_66BE16ED528EE8FB9C558241848738B8"
         "OwnerKey" = "8:_5F95777A57834D6E86A6EFAAB47FCCB4"
         "MsmSig" = "8:_UNDEFINED"
@@ -124,7 +124,7 @@
         "Entry"
         {
         "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
-        "OwnerKey" = "8:_65CB2FE399F6EC23FB7712BA2078FD17"
+        "OwnerKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -160,7 +160,7 @@
         "Entry"
         {
         "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
-        "OwnerKey" = "8:_65CB2FE399F6EC23FB7712BA2078FD17"
+        "OwnerKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -208,7 +208,7 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_65CB2FE399F6EC23FB7712BA2078FD17"
+        "OwnerKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -377,6 +377,37 @@
         }
         "File"
         {
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_0738CAABA1CD9D24D0639A75E3E94FAC"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:System.Data.SQLite, Version=1.0.60.0, Culture=neutral, PublicKeyToken=1fdb50b1b62b4c84, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_0738CAABA1CD9D24D0639A75E3E94FAC"
+                    {
+                    "Name" = "8:System.Data.SQLite.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:System.Data.SQLite.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_0FB7980F3E8E4A60CA337F9FC46435DA"
             {
             "AssemblyRegister" = "3:1"
@@ -412,7 +443,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.72.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.73.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_3AD3714C19B5B7FDD469DFD57F9DCAFB"
@@ -467,37 +498,6 @@
             "PackageAs" = "3:1"
             "Register" = "3:1"
             "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_65CB2FE399F6EC23FB7712BA2078FD17"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:System.Data.SQLite, Version=1.0.60.0, Culture=neutral, PublicKeyToken=1fdb50b1b62b4c84, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_65CB2FE399F6EC23FB7712BA2078FD17"
-                    {
-                    "Name" = "8:System.Data.SQLite.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:System.Data.SQLite.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
@@ -702,14 +702,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Softlynx.ActiveSQL"
-        "ProductCode" = "8:{C076A16A-CA8F-4A59-8AE6-F45FC87B7315}"
-        "PackageCode" = "8:{E5D490FB-ADB9-4B7B-B97C-4B0792178A03}"
+        "ProductCode" = "8:{73A9E112-C162-4B74-82BE-EB0968B4E93C}"
+        "PackageCode" = "8:{BFB57AF7-82D1-4A5F-9A10-8DCCAF93144D}"
         "UpgradeCode" = "8:{3E756E92-D2D8-49F5-977E-74F2FFED98FF}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.2.73"
+        "ProductVersion" = "8:1.2.74"
         "Manufacturer" = "8:SoftLynx"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
