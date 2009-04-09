@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.IO;
+using System.Text;
 using Softlynx.ActiveSQL;
 using Softlynx.ActiveSQL.Postgres;
 using Softlynx.ActiveSQL.SQLite;
@@ -51,6 +52,7 @@ namespace ActiveRecordTester
         {
             static public PropType Name1 = new PropType<string>();
             static public PropType Name2 = new PropType<string>();
+            static public PropType ID = new PropType<Guid>();
         }
 
         public string Name1
@@ -63,6 +65,11 @@ namespace ActiveRecordTester
         {
             get { return GetValue<string>(Property.Name2,string.Empty); }
             set { SetValue<string>(Property.Name2, value); }
+        }
+
+        public Guid ID
+        {
+            get { return GetValue<Guid>(Property.ID, Guid.NewGuid()); }
         }
 
     }
@@ -85,11 +92,11 @@ namespace ActiveRecordTester
             O2 o2 = new O2();
             o1.OnPropertyValueChanged += new PropertyValueChanged(o1_OnPropertyValueChanged);
             string ss = o1.Name1;
-            o1.Name1 = "123";
-            o1.Name2 = "345";
-            o2.Name1 = "123";
-            o2.Name2 = "345";
-            if (o2.Equals(o2))
+            //o1.Name1 = "123";
+            //o1.Name2 = "345";
+            //o2.Name1 = "123";
+            //o2.Name2 = "345";
+            if (o2.Equals(o1))
             {
                 PropType[] cp1 = o1.ChangedProperties;
             }
@@ -99,7 +106,7 @@ namespace ActiveRecordTester
             return;
         //    string xml=ValueFormatter<int>.Serialize(2345);
         //    int a = ValueFormatter<int>.Deserialize(xml);
-            
+
             SimpleConfig.FileName = @"c:\mycfg.xml";
             SimpleConfig.Pairs["drink"] = "1";
             SimpleConfig.Pairs["vehicle"] = "bike";

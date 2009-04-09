@@ -51,6 +51,7 @@
     <ProjectReference Include="..\ActiveSQL\ActiveSQL.csproj">
       <Project>{97168E99-75E4-4ACD-A2FC-3D95C7B8D74B}</Project>
       <Name>ActiveSQL</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
