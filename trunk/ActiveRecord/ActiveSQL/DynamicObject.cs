@@ -67,6 +67,7 @@ namespace Softlynx.ActiveSQL
             if (typeof(T).IsInstanceOfType(obj))
                 return (T)obj;
             T res = DefaultValue();
+            SetValue<T>(property, res);
             return res;
         }
 

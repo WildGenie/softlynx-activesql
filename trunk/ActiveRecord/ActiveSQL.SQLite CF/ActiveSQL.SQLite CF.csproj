@@ -70,6 +70,7 @@
     <ProjectReference Include="..\ActiveSQL CF\ActiveSQL CF.csproj">
       <Project>{706E294B-9999-45BC-B459-E4686F97BB64}</Project>
       <Name>ActiveSQL CF</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Condition="'$(TargetFrameworkVersion)' == 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.v1.targets" />
