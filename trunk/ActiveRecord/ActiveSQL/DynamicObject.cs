@@ -16,7 +16,7 @@ namespace Softlynx.ActiveSQL
     }
 
 
-    public delegate T DefaultValueDelegate<T>();
+    public delegate T DefaultValueDelegate<T>(PropType property);
     public delegate void PropertyValueChanged(PropType property, object Value);
 
     /// <summary>
@@ -49,26 +49,64 @@ namespace Softlynx.ActiveSQL
             return false;
         }
 
+        /// <summary>
+        /// Виртуальный метод вызывается в случае изменения значения свойства
+        /// </summary>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <param name="Value">Его новое значение</param>
         protected virtual void PropertyChanged(PropType property, object Value)
         {
             if (OnPropertyValueChanged != null)
                 OnPropertyValueChanged(property, Value);
         }
 
-
+        /// <summary>
+        /// Запрашивается текущее значение свойства, если оно отсутвует то 
+        /// ему присваеевается значение DefaultValue и оно же возвращается.
+        /// </summary>
+        /// <typeparam name="T">Тип результата</typeparam>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <param name="DefaultValue">Значение по умолчанию</param>
+        /// <returns>Значение запрашиваемого свойства</returns>
         protected T GetValue<T>(PropType property, T DefaultValue)
         {
             return GetValue<T>(property, new DefaultValueDelegate<T>(delegate { return DefaultValue; }));
         }
 
+        /// <summary>
+        /// Запрашивается текущее значение свойства, если оно отсутвует то 
+        /// ему присваеевается значение результата работы делегата DefaultValueDelegate
+        /// и оно же возвращается.
+        /// </summary>
+        /// <typeparam name="T">Тип результата</typeparam>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <param name="DefaultValueDelegate">Делегат для получения значения по умолчанию</param>
+        /// <returns>Значение запрашиваемого свойства</returns>
         protected T GetValue<T>(PropType property, DefaultValueDelegate<T> DefaultValue) 
         {
             object obj = values[property.ID];
             if (typeof(T).IsInstanceOfType(obj))
                 return (T)obj;
-            T res = DefaultValue();
+            T res = DefaultValue(property);
             SetValue<T>(property, res);
             return res;
+        }
+        
+        /// <summary>
+        /// Удаляет текущее значение свойства и если изменения сделаны,
+        /// вызывает цепочку событий связанное с его изменением
+        /// </summary>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <returns>Было ло свойство определено до удаления</returns>
+        public bool DeleteProperty(PropType property)
+        {
+            if (values.Contains(property.ID))
+            {
+                values.Remove(property.ID);
+                PropertyChanged(property, null);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -84,6 +122,11 @@ namespace Softlynx.ActiveSQL
             }
         }
 
+        /// <summary>
+        /// Возвращает признак изменения свойств относительного сделаного ранее 
+        /// snapshot или если снапшота небыло, то относительно первоначального 
+        /// состояния объекта
+        /// </summary>
         public bool HasChanges
         {
             get {return changes.Count>0;}
@@ -183,10 +226,6 @@ namespace Softlynx.ActiveSQL
         }
     }
 
-
-    /// <summary>
-    /// Базовый класс для любого объекта который должен хранить историю измения его свойств
-    /// </summary>
     public interface IRecordManagerDriven
     {
         RecordManager Manager
@@ -196,6 +235,10 @@ namespace Softlynx.ActiveSQL
         }
     }
 
+
+    /// <summary>
+    /// Базовый класс для любого объекта который должен хранить историю измения его свойств
+    /// </summary>
     public interface IDynamicObject
     {
         bool IsNewObject
