@@ -1,0 +1,10 @@
+#summary Typical code templates.
+#labels Phase-Implementation
+
+= Code samples =
+
+ * [Attaching] [RecordManager]
+ * [Reflection Reflect an object] to [RecordManager]
+ * [Iterators Iterate over reflected objects]
+ * [Transactioning]
+ * [CustomQueries Custom queries]
