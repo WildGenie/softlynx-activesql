@@ -11,8 +11,7 @@ using Softlynx.ActiveSQL.Replication;
 
 using Softlynx.RecordSet;
 using Softlynx.SimpleConfig;
-
-using System.Data;
+//using System.Data;
 using System.Data.Common;
 
 namespace ActiveRecordTester
@@ -25,7 +24,7 @@ namespace ActiveRecordTester
 
     [InTable]
     [WithReplica]
-    [TableVersion(4,ColumnAction.Remove,"C1")]
+    //[TableVersion(4,ColumnAction.Remove,"C1")]
     class DemoObject:DynamicObject<DemoProperty>
     {
         public DemoObject() : base() { }
@@ -125,13 +124,14 @@ namespace ActiveRecordTester
                 //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
                 //prov.ExtendConnectionString("BinaryGUID","FALSE");
 
-                prov.Connection.StateChange += new StateChangeEventHandler(Connection_StateChange);
                 //prov.Connection.Ev
                 //prov.Connection.ConnectionString
                 prov.Connection.Open();
                 return new RecordManager(prov, typeof(Program).Assembly.GetTypes());
             });
-
+            RecordManager rm = RecordManager.Default;
+            RecordManager.Default = null;
+            RecordManager.Default = rm;
             ReplicaManager r1 = new ReplicaManager();
             r1.RegisterWithRecordManager(RecordManager.Default);
             DemoObject dom = new DemoObject(RecordManager.Default);
@@ -191,10 +191,6 @@ namespace ActiveRecordTester
             object o = Value;
         }
 
-        static void Connection_StateChange(object sender, StateChangeEventArgs e)
-        {
-            ConnectionState cs = e.CurrentState;
-        }
     }
      
 }

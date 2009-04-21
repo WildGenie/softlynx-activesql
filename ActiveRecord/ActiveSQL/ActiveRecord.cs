@@ -710,23 +710,44 @@ namespace Softlynx.ActiveSQL
 
     public class RecordManager:IDisposable
     {
+        /// <summary>
+        /// Event handler called on RecordManager instance disposed
+        /// </summary>
         public event EventHandler Disposed = null;
 
+        /// <summary>
+        /// Event handler called on RecordManager object were stored or updated to DB
+        /// </summary>
         public event RecordOperation OnRecordWritten=null;
+
+        /// <summary>
+        /// Event handler called on RecordManager object were deleted from DB
+        /// </summary>
         public event RecordOperation OnRecordDeleted=null;
-        public static RecordManagerProvider ProviderDelegate = null;
+        
         
         private CacheCollector cache = new CacheCollector();
 
         static Hashtable managers = new Hashtable();
-
+        static Hashtable providers = new Hashtable();
+        
+        /// <summary>
+        /// Return the collection of system wide RecordManagers
+        /// defined for running threads.
+        /// </summary>
         public static ICollection Managers
         {
             get
             {
-                return managers.Values;
+                ArrayList list = new ArrayList();
+                lock (managers.SyncRoot) {
+                foreach (object o in managers.Values)
+                    if (o is RecordManager) list.Add(o);
+                }
+                return list;
             }
         }
+
         public CacheCollector Cache
         {
             get { return cache; }
@@ -735,7 +756,12 @@ namespace Softlynx.ActiveSQL
         public void Dispose()
         {
             if (Disposed != null) Disposed(this, null);
-            managers.Remove(Thread.CurrentThread);
+            lock (managers.SyncRoot)
+            {
+                object pkey = managers[this];
+                if (pkey != null) managers.Remove(pkey);
+                managers.Remove(this);
+            }
             cache.Dispose();
             Connection.Close();
             FlushConnectionPool();
@@ -772,9 +798,26 @@ namespace Softlynx.ActiveSQL
 
         }
 
+        /// <summary>
+        /// Default thread specific RecordManager provider delegate for lazy binding.
+        /// Once the delegate works and returns RecordManager instance it resets back to null
+        /// like ProviderDelegate=null were called next.
+        /// </summary>
+        public static RecordManagerProvider ProviderDelegate
+        {
+            get {
+                return (RecordManagerProvider)providers[Thread.CurrentThread];
+               }
+            set {
+                if (value == null)
+                    providers.Remove(Thread.CurrentThread);
+                else
+                    providers[Thread.CurrentThread] = value;
+            }
+        }
 
         /// <summary>
-        /// Default record manager specific to each thread.
+        /// Default thread specific record manager.
         /// </summary>
         public static RecordManager Default
         {
@@ -785,6 +828,8 @@ namespace Softlynx.ActiveSQL
                 {
                     _default = ProviderDelegate();
                     Default = _default;
+                    if (_default!=null) 
+                        ProviderDelegate = null;
                 }
                 if (_default == null)
                     throw new ApplicationException("Default Record Manager is not defined");
@@ -792,10 +837,22 @@ namespace Softlynx.ActiveSQL
             }
             set
             {
-                if (value == null)
-                    managers.Remove(Thread.CurrentThread);
-                else
-                    managers[Thread.CurrentThread] = value;
+                lock (managers.SyncRoot)
+                {
+                    if (value == null)
+                    {
+                        object pkey = managers[Thread.CurrentThread];
+                        if (pkey!=null)  managers.Remove(pkey);
+                        managers.Remove(Thread.CurrentThread);
+                    }
+                    else
+                    {
+                        object pkey = managers[value];
+                        if (pkey!=null) managers.Remove(pkey);
+                        managers[value] = Thread.CurrentThread;
+                        managers[Thread.CurrentThread] = value;
+                    }
+                }
             }
         }
         /// <summary>
