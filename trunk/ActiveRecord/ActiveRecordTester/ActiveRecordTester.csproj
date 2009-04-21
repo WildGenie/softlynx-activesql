@@ -88,4 +88,9 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PreBuildEvent>svnrevision $(ProjectDir)
+svnrevision $(ProjectDir) ../$(ProjectName)CF/Properties/AssemblyInfo.cs
+</PreBuildEvent>
+  </PropertyGroup>
 </Project>
