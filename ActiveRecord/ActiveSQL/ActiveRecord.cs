@@ -706,6 +706,7 @@ namespace Softlynx.ActiveSQL
     }
 
     public delegate void RecordOperation(RecordManager Manager, Object obj);
+    public delegate RecordManager RecordManagerProvider();
 
     public class RecordManager:IDisposable
     {
@@ -713,6 +714,7 @@ namespace Softlynx.ActiveSQL
 
         public event RecordOperation OnRecordWritten=null;
         public event RecordOperation OnRecordDeleted=null;
+        public static RecordManagerProvider ProviderDelegate = null;
         
         private CacheCollector cache = new CacheCollector();
 
@@ -779,6 +781,11 @@ namespace Softlynx.ActiveSQL
             get
             {
                 RecordManager _default = (RecordManager)managers[Thread.CurrentThread];
+                if ((_default == null) && (ProviderDelegate != null))
+                {
+                    _default = ProviderDelegate();
+                    Default = _default;
+                }
                 if (_default == null)
                     throw new ApplicationException("Default Record Manager is not defined");
                 return _default;

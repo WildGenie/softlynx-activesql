@@ -103,7 +103,7 @@ namespace ActiveRecordTester
             
             PropType[] cp = o1.ChangedProperties;
 
-            return;
+            //return;
         //    string xml=ValueFormatter<int>.Serialize(2345);
         //    int a = ValueFormatter<int>.Deserialize(xml);
 
@@ -113,21 +113,25 @@ namespace ActiveRecordTester
             SimpleConfig.Save();
             SimpleConfig.Load();
 
-            IProviderSpecifics prov = new PgSqlSpecifics();
-            prov.ExtendConnectionString("Database", "test");
-            prov.ExtendConnectionString("Host", "localhost");
-            prov.ExtendConnectionString("User Id", "test");
-            prov.ExtendConnectionString("Password", "test");
-            
-            //prov = new SQLiteSpecifics();
-            //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
-            //prov.ExtendConnectionString("BinaryGUID","FALSE");
+            RecordManager.ProviderDelegate = new RecordManagerProvider(delegate
+            {
+                IProviderSpecifics prov = new PgSqlSpecifics();
+                prov.ExtendConnectionString("Database", "test");
+                prov.ExtendConnectionString("Host", "localhost");
+                prov.ExtendConnectionString("User Id", "test");
+                prov.ExtendConnectionString("Password", "test");
 
-            prov.Connection.StateChange += new StateChangeEventHandler(Connection_StateChange);
-            //prov.Connection.Ev
-            //prov.Connection.ConnectionString
-            prov.Connection.Open();
-            RecordManager.Default = new RecordManager(prov, typeof(Program).Assembly.GetTypes());
+                //prov = new SQLiteSpecifics();
+                //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
+                //prov.ExtendConnectionString("BinaryGUID","FALSE");
+
+                prov.Connection.StateChange += new StateChangeEventHandler(Connection_StateChange);
+                //prov.Connection.Ev
+                //prov.Connection.ConnectionString
+                prov.Connection.Open();
+                return new RecordManager(prov, typeof(Program).Assembly.GetTypes());
+            });
+
             ReplicaManager r1 = new ReplicaManager();
             r1.RegisterWithRecordManager(RecordManager.Default);
             DemoObject dom = new DemoObject(RecordManager.Default);
@@ -179,7 +183,7 @@ namespace ActiveRecordTester
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new ActiveRecordTest());
              */
-            prov.Connection.Close();
+            //prov.Connection.Close();
         }
 
         static void o1_OnPropertyValueChanged(PropType property, object Value)
