@@ -24,27 +24,26 @@ namespace Softlynx.RecordCache
     /// <param name="instance">The removed object instance</param>
     public delegate void ObjectPurgedDelegate(object instance);
 
-    internal class CacheableObject
+    public class CacheableObject
     {
-
         public static TimeSpan DefautlSlideTimeout = TimeSpan.FromMinutes(1);
         public static TimeSpan DefautlAbsoluteTimeout = TimeSpan.MaxValue;
 
-        public TimeSpan SlideTimeout = DefautlSlideTimeout;
-        public TimeSpan AbsoluteTimeout = DefautlAbsoluteTimeout;
-        internal object key  = null;
+        internal TimeSpan SlideTimeout = DefautlSlideTimeout;
+        internal TimeSpan AbsoluteTimeout = DefautlAbsoluteTimeout;
+        internal object key = null;
 
         internal DateTime LastAccess = DateTime.Now;
         internal DateTime Created = DateTime.Now;
         private Object data = null;
         internal DataProviderDelegate provider = null;
 
-        public object Key
+        internal object Key
         {
             get { return key; }
         }
 
-        public Object Data
+        internal Object Data
         {
             get
             {
@@ -59,13 +58,13 @@ namespace Softlynx.RecordCache
             }
         }
 
-        public bool IsTimedOut(DateTime timepoint)
+        internal bool IsTimedOut(DateTime timepoint)
         {
             return ((timepoint - LastAccess > SlideTimeout) ||
                     (timepoint - Created > AbsoluteTimeout));
         }
 
-        public bool IsTimedOut()
+        internal bool IsTimedOut()
         {
             return IsTimedOut(DateTime.Now);
         }
@@ -73,14 +72,32 @@ namespace Softlynx.RecordCache
 
     public class CacheCollector:IDisposable
     {
+        public TimeSpan DefautlSlideTimeout = CacheableObject.DefautlSlideTimeout;
+        public TimeSpan DefautlAbsoluteTimeout = CacheableObject.DefautlAbsoluteTimeout;
+
         static Hashtable allcaches = new Hashtable();
 
         private Hashtable heap = new Hashtable();
         public event ObjectPurgedDelegate OnObjectPurge = null;
 
+        public CacheCollector(TimeSpan SlideTimeout, TimeSpan AbsoluteTimeout):this()
+        {
+            DefautlSlideTimeout = SlideTimeout;
+            DefautlAbsoluteTimeout = AbsoluteTimeout;
+        }
+
+        public CacheCollector(TimeSpan SlideTimeout)
+            : this()
+        {
+            DefautlSlideTimeout = SlideTimeout;
+        }
+
         public void Clear()
         {
-            heap.Clear();
+            lock (heap.SyncRoot)
+            {
+                heap.Clear();
+            }
         }
 
         public void Purge()
@@ -96,16 +113,15 @@ namespace Softlynx.RecordCache
                 }
                 foreach (CacheableObject co in candidates)
                 {
-                    heap.Remove(co.key);
-                    if (OnObjectPurge != null) OnObjectPurge(co.Data);
+                    Forget(co.Key);
                 }
                 candidates.Clear();
             }
         }
 
-        public CacheCollector()
+        public CacheCollector():base()
         {
-            lock (allcaches)
+            lock (allcaches.SyncRoot)
             {
                 allcaches[this]=this;
             }
@@ -113,7 +129,7 @@ namespace Softlynx.RecordCache
 
         public void Dispose()
         {
-            lock (allcaches)
+            lock (allcaches.SyncRoot)
             {
                 allcaches.Remove(this);
             }
@@ -121,9 +137,9 @@ namespace Softlynx.RecordCache
         
         public static void ClearAll()
         {
-            lock (allcaches)
+            lock (allcaches.SyncRoot)
             {
-                foreach (CacheCollector cc in allcaches.Values)
+                foreach (CacheCollector cc in new ArrayList(allcaches.Values))
                 {
                     cc.Clear();
                 }
@@ -132,9 +148,9 @@ namespace Softlynx.RecordCache
 
         public static void PurgeAll()
         {
-            lock (allcaches)
+            lock (allcaches.SyncRoot)
             {
-                foreach (CacheCollector cc in allcaches.Values)
+                foreach (CacheCollector cc in new ArrayList(allcaches.Values))
                 {
                     cc.Purge();
                 }
@@ -143,36 +159,46 @@ namespace Softlynx.RecordCache
 
         public object Provide(object key, DataProviderDelegate provider, TimeSpan SlideTimeout, TimeSpan AbsoluteTimeout)
         {
+            CacheableObject co = null;
             lock (heap.SyncRoot)
+                co = (CacheableObject)heap[key];
+
+            if (co == null)
             {
-                CacheableObject co = (CacheableObject)heap[key];
-                if (co == null)
-                {
-                    co = new CacheableObject();
-                    co.AbsoluteTimeout = AbsoluteTimeout;
-                    co.SlideTimeout = SlideTimeout;
-                    co.key = key;
-                    co.provider = provider;
+                co = new CacheableObject();
+                co.AbsoluteTimeout = AbsoluteTimeout;
+                co.SlideTimeout = SlideTimeout;
+                co.key = key;
+                co.provider = provider;
+                lock (heap.SyncRoot)
                     heap[key] = co;
-                }
-                return co.Data;
             }
+            return co.Data;
         }
 
         public object Provide(object key, DataProviderDelegate provider, TimeSpan SlideTimeout)
         {
-            return Provide(key, provider, SlideTimeout, CacheableObject.DefautlAbsoluteTimeout);
+            return Provide(key, provider, SlideTimeout, DefautlAbsoluteTimeout);
         }
 
         public object Provide(object key, DataProviderDelegate provider)
         {
-            return Provide(key, provider, CacheableObject.DefautlSlideTimeout,CacheableObject.DefautlAbsoluteTimeout);
+            return Provide(key, provider, DefautlSlideTimeout, DefautlAbsoluteTimeout);
         }
 
 
         public void Forget(object key)
         {
-            heap.Remove(key);
+            lock (heap.SyncRoot)
+            {
+                object o = heap[key];
+                if (o is CacheableObject)
+                {
+                    if (OnObjectPurge != null) 
+                        OnObjectPurge((o as CacheableObject).Data);
+                    heap.Remove(key);
+                }
+            }
         }
 
         public bool Exists(object key)

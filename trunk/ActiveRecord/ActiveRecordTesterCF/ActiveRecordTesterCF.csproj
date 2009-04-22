@@ -69,6 +69,7 @@
     <ProjectReference Include="..\ActiveSQL CF\ActiveSQL CF.csproj">
       <Project>{706E294B-9999-45BC-B459-E4686F97BB64}</Project>
       <Name>ActiveSQL CF</Name>
+      <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\ActiveSQL.SQLite CF\ActiveSQL.SQLite CF.csproj">
       <Project>{1274B129-346A-43BC-93C3-AD8D2652A11F}</Project>
