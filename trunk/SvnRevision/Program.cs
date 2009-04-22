@@ -9,6 +9,44 @@ namespace SvnRevision
 {
     class Program
     {
+        static int SourceRevision(string folder, out bool hasmodifications, string arguments)
+        {
+            hasmodifications = false;
+            ProcessStartInfo pi = new ProcessStartInfo();
+            pi.RedirectStandardOutput = true;
+            pi.WorkingDirectory = folder;
+            pi.FileName = "svnversion";
+            pi.Arguments = arguments;
+            pi.CreateNoWindow = true;
+            pi.UseShellExecute = false;
+            Process proc = System.Diagnostics.Process.Start(pi);
+            int version = 0;
+            while (!proc.StandardOutput.EndOfStream)
+            {
+                string[] vals = proc.StandardOutput.ReadLine().Split(':');
+                string line = vals[vals.Length - 1];
+                if (line.EndsWith("M", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasmodifications = true;
+                }
+                int.TryParse(line.Trim('M'), out version);
+            }
+            proc.WaitForExit();
+            if (version == 0)
+            {
+                throw new ApplicationException("Can't parse svnversion output");
+            }
+            if (hasmodifications) version++;
+            return version;
+        }
+
+        static int SourceRevision(string folder, out bool hasmodifications)
+        {
+            return SourceRevision(folder, out hasmodifications, string.Empty);
+        }
+
+
+
         static int Main(string[] args)
         {
             if (args.Length < 1)
@@ -18,34 +56,14 @@ namespace SvnRevision
             }
             try
             {
-                ProcessStartInfo pi = new ProcessStartInfo();
-                pi.RedirectStandardOutput = true;
-                pi.WorkingDirectory = args[0];
-                pi.FileName = "svnversion";
-                pi.CreateNoWindow = true;
-                pi.UseShellExecute = false;
-                Process proc = System.Diagnostics.Process.Start(pi);
-                int version = 0;
-                int delta = 0;
-                while (!proc.StandardOutput.EndOfStream)
-                {
-                    string[] vals = proc.StandardOutput.ReadLine().Split(':');
-                    string line = vals[vals.Length - 1];
-                    if (line.EndsWith("M", StringComparison.OrdinalIgnoreCase))
-                        delta += 1;
-                    int.TryParse(line.Trim('M'), out version);
-                }
-                proc.WaitForExit();
-                if (version == 0)
-                {
-                    throw new ApplicationException("Can't parse svnversion output");
-                }
-                version += delta;
+                string folder = args[0];
+                bool modified = false;
+                int version = SourceRevision(folder, out modified, "-c");
+                if (modified) version = SourceRevision(folder, out modified);
                 Console.WriteLine(version.ToString());
-                string subfile=Path.Combine(pi.WorkingDirectory, args.Length>1?args[1]:@"Properties\assemblyinfo.cs");
+                string subfile = Path.Combine(folder, args.Length > 1 ? args[1] : @"Properties\assemblyinfo.cs");
                 string[] lines=File.ReadAllLines(subfile,Encoding.UTF8);
                 List<string> outlines = new List<string>();
-                bool modified = false;
                 Regex pattern = new Regex(@"(AssemblyVersion|AssemblyFileVersion)\(""(.*)""\)",
                     RegexOptions.Compiled);
                 foreach (string code in lines)
