@@ -797,7 +797,6 @@ namespace Softlynx.ActiveSQL
             }
 
         }
-
         /// <summary>
         /// Default thread specific RecordManager provider delegate for lazy binding.
         /// Once the delegate works and returns RecordManager instance it resets back to null
@@ -806,13 +805,13 @@ namespace Softlynx.ActiveSQL
         public static RecordManagerProvider ProviderDelegate
         {
             get {
-                return (RecordManagerProvider)providers[Thread.CurrentThread];
+                return (RecordManagerProvider)providers[Thread.CurrentThread.ManagedThreadId];
                }
             set {
                 if (value == null)
-                    providers.Remove(Thread.CurrentThread);
+                    providers.Remove(Thread.CurrentThread.ManagedThreadId);
                 else
-                    providers[Thread.CurrentThread] = value;
+                    providers[Thread.CurrentThread.ManagedThreadId] = value;
             }
         }
 
@@ -823,7 +822,7 @@ namespace Softlynx.ActiveSQL
         {
             get
             {
-                RecordManager _default = (RecordManager)managers[Thread.CurrentThread];
+                RecordManager _default = (RecordManager)managers[Thread.CurrentThread.ManagedThreadId];
                 if ((_default == null) && (ProviderDelegate != null))
                 {
                     _default = ProviderDelegate();
@@ -841,16 +840,16 @@ namespace Softlynx.ActiveSQL
                 {
                     if (value == null)
                     {
-                        object pkey = managers[Thread.CurrentThread];
+                        object pkey = managers[Thread.CurrentThread.ManagedThreadId];
                         if (pkey!=null)  managers.Remove(pkey);
-                        managers.Remove(Thread.CurrentThread);
+                        managers.Remove(Thread.CurrentThread.ManagedThreadId);
                     }
                     else
                     {
                         object pkey = managers[value];
                         if (pkey!=null) managers.Remove(pkey);
-                        managers[value] = Thread.CurrentThread;
-                        managers[Thread.CurrentThread] = value;
+                        managers[value] = Thread.CurrentThread.ManagedThreadId;
+                        managers[Thread.CurrentThread.ManagedThreadId] = value;
                     }
                 }
             }
@@ -862,7 +861,7 @@ namespace Softlynx.ActiveSQL
         {
             get
             {
-                return managers.ContainsKey(Thread.CurrentThread);
+                return managers.ContainsKey(Thread.CurrentThread.ManagedThreadId);
             }
         }
 

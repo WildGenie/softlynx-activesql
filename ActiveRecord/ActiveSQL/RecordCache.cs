@@ -10,6 +10,7 @@ using Softlynx.ActiveSQL;
 namespace Softlynx.RecordCache
 {
     public delegate object DataProviderDelegate();
+    public delegate object ObjectPurgedDelegate(object instance);
 
     public class CacheableObject
     {
@@ -63,6 +64,7 @@ namespace Softlynx.RecordCache
         static Hashtable allcaches = new Hashtable();
 
         private Hashtable heap = new Hashtable();
+        public event ObjectPurgedDelegate OnObjectPurge = null;
 
         public void Clear()
         {
@@ -71,18 +73,22 @@ namespace Softlynx.RecordCache
 
         public void Purge()
         {
-            DateTime now = DateTime.Now;
-            List<CacheableObject> candidates = new List<CacheableObject>();
-            foreach (CacheableObject co in heap.Values)
+            lock (heap.SyncRoot)
             {
-                if (co.IsTimedOut(now))
-                    candidates.Add(co);
+                DateTime now = DateTime.Now;
+                List<CacheableObject> candidates = new List<CacheableObject>();
+                foreach (CacheableObject co in heap.Values)
+                {
+                    if (co.IsTimedOut(now))
+                        candidates.Add(co);
+                }
+                foreach (CacheableObject co in candidates)
+                {
+                    heap.Remove(co.key);
+                    if (OnObjectPurge != null) OnObjectPurge(co.Data);
+                }
+                candidates.Clear();
             }
-            foreach (CacheableObject co in candidates)
-            {
-                heap.Remove(co.key);
-            }
-            candidates.Clear();
         }
 
         public CacheCollector()
@@ -123,18 +129,34 @@ namespace Softlynx.RecordCache
             }
         }
 
+        public object Provide(object key, DataProviderDelegate provider, TimeSpan SlideTimeout, TimeSpan AbsoluteTimeout)
+        {
+            lock (heap.SyncRoot)
+            {
+                CacheableObject co = (CacheableObject)heap[key];
+                if (co == null)
+                {
+                    co = new CacheableObject();
+                    co.AbsoluteTimeout = AbsoluteTimeout;
+                    co.SlideTimeout = SlideTimeout;
+                    co.key = key;
+                    co.provider = provider;
+                    heap[key] = co;
+                }
+                return co.Data;
+            }
+        }
+
+        public object Provide(object key, DataProviderDelegate provider, TimeSpan SlideTimeout)
+        {
+            return Provide(key, provider, SlideTimeout, CacheableObject.DefautlAbsoluteTimeout);
+        }
+
         public object Provide(object key, DataProviderDelegate provider)
         {
-            CacheableObject co = (CacheableObject)heap[key];
-            if (co == null)
-            {
-                co = new CacheableObject();
-                co.key = key;
-                co.provider = provider;
-                heap[key] = co;
-            }
-            return co.Data;
+            return Provide(key, provider, CacheableObject.DefautlSlideTimeout,CacheableObject.DefautlAbsoluteTimeout);
         }
+
 
         public void Forget(object key)
         {
