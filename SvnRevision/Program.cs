@@ -29,12 +29,17 @@ namespace SvnRevision
                 int delta = 0;
                 while (!proc.StandardOutput.EndOfStream)
                 {
-                    string line = proc.StandardOutput.ReadLine();
+                    string[] vals = proc.StandardOutput.ReadLine().Split(':');
+                    string line = vals[vals.Length - 1];
                     if (line.EndsWith("M", StringComparison.OrdinalIgnoreCase))
                         delta += 1;
                     int.TryParse(line.Trim('M'), out version);
                 }
                 proc.WaitForExit();
+                if (version == 0)
+                {
+                    throw new ApplicationException("Can't parse svnversion output");
+                }
                 version += delta;
                 Console.WriteLine(version.ToString());
                 string subfile=Path.Combine(pi.WorkingDirectory, args.Length>1?args[1]:@"Properties\assemblyinfo.cs");
@@ -51,10 +56,12 @@ namespace SvnRevision
                     {
                         List<string> components = new List<string>(m.Groups[2].Value.Split('.'));
                         while (components.Count < 4) components.Add(string.Empty);
-                        components[2] = version.ToString();
-                        s = m.Result("$`$1(\"" + string.Join(".", components.ToArray()) + "\")$'");
-                        if (s!=code)
+                        if (components[2] != version.ToString())
+                        {
+                            components[2] = version.ToString();
                             modified = true;
+                        };
+                        s = m.Result("$`$1(\"" + string.Join(".", components.ToArray()) + "\")$'");
                     }
                     outlines.Add(s);
                 }
