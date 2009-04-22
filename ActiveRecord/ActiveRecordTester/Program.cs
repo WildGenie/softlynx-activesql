@@ -8,10 +8,10 @@ using Softlynx.ActiveSQL;
 using Softlynx.ActiveSQL.Postgres;
 using Softlynx.ActiveSQL.SQLite;
 using Softlynx.ActiveSQL.Replication;
-
 using Softlynx.RecordSet;
+using Softlynx.RecordCache;
 using Softlynx.SimpleConfig;
-//using System.Data;
+using System.Threading;
 using System.Data.Common;
 
 namespace ActiveRecordTester
@@ -78,15 +78,18 @@ namespace ActiveRecordTester
     
     }
 
+    
     static class Program
     {
+        static CacheCollector cache = new CacheCollector(TimeSpan.FromMilliseconds(100));
+
+        
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main()
         {
-
             O1 o1 = new O1();
             O2 o2 = new O2();
             o1.OnPropertyValueChanged += new PropertyValueChanged(o1_OnPropertyValueChanged);
@@ -111,7 +114,7 @@ namespace ActiveRecordTester
             SimpleConfig.Pairs["vehicle"] = "bike";
             SimpleConfig.Save();
             SimpleConfig.Load();
-
+            /*
             RecordManager.ProviderDelegate = new RecordManagerProvider(delegate
             {
                 IProviderSpecifics prov = new PgSqlSpecifics();
@@ -129,6 +132,48 @@ namespace ActiveRecordTester
                 prov.Connection.Open();
                 return new RecordManager(prov, typeof(Program).Assembly.GetTypes());
             });
+            */
+            cache.OnObjectPurge += new ObjectPurgedDelegate(cache_OnObjectPurge);
+            WaitCallback st = new WaitCallback(delegate
+            {
+                Random r = new Random();
+                while (true)
+                {
+                    RecordManager data = (RecordManager)cache.Provide(Thread.CurrentThread.ManagedThreadId, new DataProviderDelegate(
+                        delegate
+                        {
+                            IProviderSpecifics prov = new PgSqlSpecifics();
+                            prov.ExtendConnectionString("Database", "test");
+                            prov.ExtendConnectionString("Host", "localhost");
+                            prov.ExtendConnectionString("User Id", "test");
+                            prov.ExtendConnectionString("Password", "test");
+                            prov.ExtendConnectionString("Pooling", "false");
+                            prov.Connection.Open();
+                            //return prov;
+                            return new RecordManager(prov, typeof(Program).Assembly.GetTypes());
+                        }));
+                    int delay = 110 + r.Next(30);
+                    Thread.Sleep(delay);
+                }
+            });
+            
+
+            //for (int i = 0; i < 10; i++)
+            ThreadPool.QueueUserWorkItem(st);
+            //ThreadPool.
+            //    new Thread(st).Start();
+            //st();
+
+            while (true)
+        {
+            CacheCollector.PurgeAll();
+            Thread.Sleep(10);
+        }
+
+
+            return;
+
+
             RecordManager rm = RecordManager.Default;
             RecordManager.Default = null;
             RecordManager.Default = rm;
@@ -184,6 +229,11 @@ namespace ActiveRecordTester
             Application.Run(new ActiveRecordTest());
              */
             //prov.Connection.Close();
+        }
+
+        static void cache_OnObjectPurge(object instance)
+        {
+            (instance as RecordManager).Dispose();
         }
 
         static void o1_OnPropertyValueChanged(PropType property, object Value)
