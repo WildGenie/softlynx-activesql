@@ -9,10 +9,22 @@ using Softlynx.ActiveSQL;
 
 namespace Softlynx.RecordCache
 {
+    /// <summary>
+    /// Called each time CacheCollector cant find the data for supplied key.
+    /// Should return the instance of any object.
+    /// </summary>
+    /// <returns></returns>
     public delegate object DataProviderDelegate();
-    public delegate object ObjectPurgedDelegate(object instance);
 
-    public class CacheableObject
+    /// <summary>
+    ///
+    /// Called each time CacheCollector removes the object from it's cache
+    /// Should return the instance of any object.
+    /// </summary>
+    /// <param name="instance">The removed object instance</param>
+    public delegate void ObjectPurgedDelegate(object instance);
+
+    internal class CacheableObject
     {
 
         public static TimeSpan DefautlSlideTimeout = TimeSpan.FromMinutes(1);
