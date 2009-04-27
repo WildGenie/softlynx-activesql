@@ -82,6 +82,9 @@ namespace Softlynx.RecordSet
                     Type pt = field.prop.PropertyType;
                     field.prop.SetValue(instance, v, null);
                 }
+
+                table.FireAfterReadEvent(instance);
+                    
                 return instance;
             }
         }

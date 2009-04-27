@@ -476,7 +476,12 @@ namespace Softlynx.ActiveSQL
             FillCmd.Prepare();
 
         }
-        
+
+        internal void FireAfterReadEvent(object record)
+        {
+            if (AfterRecordManagerRead != null)
+                AfterRecordManagerRead(record);
+        }
         internal virtual bool Read(object Record)
         {
             RecordManager.ReopenConnection(FillCmd);
@@ -502,8 +507,8 @@ namespace Softlynx.ActiveSQL
             }
             if (Record is IRecordManagerDriven)
                 (Record as IRecordManagerDriven).Manager = manager;
-            if (res && (AfterRecordManagerRead != null))
-                AfterRecordManagerRead(Record);
+            if (res) FireAfterReadEvent(Record);
+
             return res;
         }
 
