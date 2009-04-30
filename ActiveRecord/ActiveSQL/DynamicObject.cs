@@ -437,15 +437,22 @@ namespace Softlynx.ActiveSQL
         {
         if (ObjPropConstructor==null) 
         ObjPropConstructor=GetDynamicPropertyStorageClass();
-    if ((Manager == null) && (RecordManager.DefaultIsDefined))
-        Manager = RecordManager.Default;
+            if (RecordManager.ProviderDelegate!=null)
+                Manager=RecordManager.Default;
+            else 
+                if (RecordManager.DefaultIsDefined)
+                    Manager = RecordManager.Default;
         }
 
-        public DynamicObject(RecordManager manager):this()
+        public DynamicObject(RecordManager manager)
         {
+            if (ObjPropConstructor == null)
+                ObjPropConstructor = GetDynamicPropertyStorageClass();
+
             if (manager!=null)
                 Manager = manager;
         }
+
         private ObjectProp PropInstance(Guid ObjectID, PropType PropertyID, object value)
         {
             if (PropertyID.Anonymous)
