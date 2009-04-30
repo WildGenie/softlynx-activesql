@@ -734,7 +734,6 @@ namespace Softlynx.ActiveSQL
         private CacheCollector cache = new CacheCollector();
 
         static Hashtable managers = new Hashtable();
-        static Hashtable providers = new Hashtable();
         
         /// <summary>
         /// Return the collection of system wide RecordManagers
@@ -802,6 +801,8 @@ namespace Softlynx.ActiveSQL
             }
 
         }
+
+        private static RecordManagerProvider RM_Provider=null;
         /// <summary>
         /// Default thread specific RecordManager provider delegate for lazy binding.
         /// Once the delegate works and returns RecordManager instance it resets back to null
@@ -810,13 +811,10 @@ namespace Softlynx.ActiveSQL
         public static RecordManagerProvider ProviderDelegate
         {
             get {
-                return (RecordManagerProvider)providers[Thread.CurrentThread.ManagedThreadId];
+                return RM_Provider;
                }
             set {
-                if (value == null)
-                    providers.Remove(Thread.CurrentThread.ManagedThreadId);
-                else
-                    providers[Thread.CurrentThread.ManagedThreadId] = value;
+                RM_Provider = value;
             }
         }
 
@@ -827,20 +825,22 @@ namespace Softlynx.ActiveSQL
         {
             get
             {
-                RecordManager _default = (RecordManager)managers[Thread.CurrentThread.ManagedThreadId];
-                if ((_default == null) && (ProviderDelegate != null))
-                {
+                RecordManager _default=null;
+                
+                if (ProviderDelegate != null)
                     _default = ProviderDelegate();
-                    Default = _default;
-                    if (_default!=null) 
-                        ProviderDelegate = null;
-                }
+                else
+                    _default = (RecordManager)managers[Thread.CurrentThread.ManagedThreadId];
+
                 if (_default == null)
                     throw new ApplicationException("Default Record Manager is not defined");
                 return _default;
             }
             set
             {
+                if (ProviderDelegate != null)
+                    throw new ApplicationException("Can't set Default Record Manager while ProviderDelegate is defined.");
+
                 lock (managers.SyncRoot)
                 {
                     if (value == null)
@@ -866,6 +866,8 @@ namespace Softlynx.ActiveSQL
         {
             get
             {
+                if (ProviderDelegate != null)
+                    throw new ApplicationException("Can't determine is Default Record Manager defined when ProviderDelegate used.");
                 return managers.ContainsKey(Thread.CurrentThread.ManagedThreadId);
             }
         }
