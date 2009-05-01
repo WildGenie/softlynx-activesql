@@ -45,13 +45,25 @@ namespace SvnRevision
             return SourceRevision(folder, out hasmodifications, string.Empty);
         }
 
-
+        static bool FixVersion(ref string value, int newversion)
+        {
+            bool modified = false;
+            List<string> components = new List<string>(value.Split('.'));
+            while (components.Count < 3) components.Add(string.Empty);
+            if (components[2] != newversion.ToString())
+            {
+                components[2] = newversion.ToString();
+                modified = true;
+                value = string.Join(".", components.ToArray());
+            };
+            return modified;
+        }
 
         static int Main(string[] args)
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("Usage: SvnRevision.exe <folder> [path to AssemblyInfo.cs]");
+                Console.WriteLine("Usage: SvnRevision.exe <folder> [path to AssemblyInfo.cs or .vdproj]");
                 return -1;
             }
             try
@@ -66,23 +78,50 @@ namespace SvnRevision
                 List<string> outlines = new List<string>();
                 Regex pattern = new Regex(@"(AssemblyVersion|AssemblyFileVersion)\(""(.*)""\)",
                     RegexOptions.Compiled);
+                Regex prodcode = new Regex(@"(""ProductCode"" = ""8:)({.*\})("".*)",
+    RegexOptions.Compiled);
+                Regex productversion = new Regex(@"(""ProductVersion"" = ""8):(.*)("".*)",
+RegexOptions.Compiled);
+
+                string NewProdCodeLine = null;
+                int UpgradeProdLineNumber = 0;
+                bool ChangeProdCode = false;
                 foreach (string code in lines)
                 {
                     string s=code;
                     Match m = pattern.Match(s);
                     if (m.Success)
                     {
-                        List<string> components = new List<string>(m.Groups[2].Value.Split('.'));
-                        while (components.Count < 4) components.Add(string.Empty);
-                        if (components[2] != version.ToString())
+                        string t = m.Groups[2].Value;
+                        if (FixVersion(ref t, version))
                         {
-                            components[2] = version.ToString();
                             modified = true;
-                        };
-                        s = m.Result("$`$1(\"" + string.Join(".", components.ToArray()) + "\")$'");
+                            s = m.Result("$`$1(\"" + t + "\")$'");
+                        }
                     }
+                    m = prodcode.Match(s);
+                    if (m.Success)
+                    {
+                        NewProdCodeLine = m.Result("$`$1{"+ Guid.NewGuid().ToString().ToUpper()+"}$3$'");
+                        UpgradeProdLineNumber = outlines.Count;
+                    }
+                    m = productversion.Match(s);
+                    if (m.Success)
+                    {
+                        string t = m.Groups[2].Value;
+                        if (FixVersion(ref t, version))
+                           {
+                           s = m.Result("$`$1:" + t + "$3$'");
+                           modified = true;
+                           ChangeProdCode = true;
+                           }
+                    }
+
+                
                     outlines.Add(s);
                 }
+                if (ChangeProdCode && (NewProdCodeLine != string.Empty))
+                    outlines[UpgradeProdLineNumber] = NewProdCodeLine;
                 if (modified)
                     File.WriteAllLines(subfile, outlines.ToArray(), Encoding.UTF8);
                 return 0;
