@@ -81,6 +81,9 @@ namespace ActiveRecordTester
     
     static class Program
     {
+        [ThreadStatic]
+        static RecordManager RM = null;
+
         static CacheCollector cache = new CacheCollector(TimeSpan.FromMilliseconds(100));
 
         
@@ -114,104 +117,18 @@ namespace ActiveRecordTester
             SimpleConfig.Pairs["vehicle"] = "bike";
             SimpleConfig.Save();
             SimpleConfig.Load();
-            /*
-            RecordManager.ProviderDelegate = new RecordManagerProvider(delegate
-            {
-                IProviderSpecifics prov = new PgSqlSpecifics();
-                prov.ExtendConnectionString("Database", "test");
-                prov.ExtendConnectionString("Host", "localhost");
-                prov.ExtendConnectionString("User Id", "test");
-                prov.ExtendConnectionString("Password", "test");
 
-                //prov = new SQLiteSpecifics();
-                //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
-                //prov.ExtendConnectionString("BinaryGUID","FALSE");
 
-                //prov.Connection.Ev
-                //prov.Connection.ConnectionString
-                prov.Connection.Open();
-                return new RecordManager(prov, typeof(Program).Assembly.GetTypes());
-            });
-            */
-            cache.OnObjectPurge += new ObjectPurgedDelegate(cache_OnObjectPurge);
-            WaitCallback st = new WaitCallback(delegate
-            {
-                Random r = new Random();
-                while (true)
-                {
-                    RecordManager data = (RecordManager)cache.Provide(Thread.CurrentThread.ManagedThreadId, new DataProviderDelegate(
-                        delegate
-                        {
-                            IProviderSpecifics prov = new PgSqlSpecifics();
-                            prov.ExtendConnectionString("Database", "test");
-                            prov.ExtendConnectionString("Host", "localhost");
-                            prov.ExtendConnectionString("User Id", "test");
-                            prov.ExtendConnectionString("Password", "test");
-                            prov.ExtendConnectionString("Pooling", "false");
-                            prov.Connection.Open();
-                            //return prov;
-                            return new RecordManager(prov, typeof(Program).Assembly.GetTypes());
-                        }));
-                    int delay = 110 + r.Next(30);
-                    Thread.Sleep(delay);
-                }
-            });
+            RecordManager.ProviderDelegate=new RecordManagerProvider(ProvideRecordManager);
+
+            Thread t = new Thread(new ThreadStart(RunTests));
+            t.Name = "Test run";
+            t.Start();
+            t.Join();
+            t = null;
+            GC.WaitForPendingFinalizers();
+            RM = null;
             
-
-            //for (int i = 0; i < 10; i++)
-            ThreadPool.QueueUserWorkItem(st);
-            //ThreadPool.
-            //    new Thread(st).Start();
-            //st();
-
-            while (true)
-        {
-            CacheCollector.PurgeAll();
-            Thread.Sleep(10);
-        }
-
-
-            return;
-
-
-            RecordManager rm = RecordManager.Default;
-            RecordManager.Default = null;
-            RecordManager.Default = rm;
-            ReplicaManager r1 = new ReplicaManager();
-            r1.RegisterWithRecordManager(RecordManager.Default);
-            DemoObject dom = new DemoObject(RecordManager.Default);
-            //dom.ID = Guid.NewGuid();
-            dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7B}");
-            string n = dom.Name;
-            dom.Name = "name " + dom.ID.ToString();
-            //string ss2=r1.SerializeObject(dom);
-            //RecordManager.Default.Read(dom);
-            //RecordManager.Default.Write(dom);
-            //RecordManager.Default.Write(dom);
-            RecordManager.Default.Write(dom);
-            
-            dom = new DemoObject(RecordManager.Default);
-            //dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7A}");
-            dom.ID = Guid.NewGuid();
-            RecordManager.Default.Write(dom);
-            //RecordManager.Default.Delete(dom);
-
-            RecordSet<DemoObject> drs = new RecordSet<DemoObject>();
-            ArrayList l=new ArrayList();
-                foreach (DemoObject dobj in RecordIterator.Enum<DemoObject>())
-                {
-                        string s = dobj.Name;
-                                    foreach (DemoObject dobj1 in RecordIterator.Enum<DemoObject>())
-                                    {
-                                        string s1 = dobj.ToString();
-                                    }
-                }
-
-            RecordManager.Default.FlushConnectionPool();
-            drs.Fill();
-            drs.Clear();
-            RecordManager.Default = null;
-
             /*
             Session.AttachDatabase(@"c:\temp\ar.db3");
 
@@ -230,6 +147,70 @@ namespace ActiveRecordTester
              */
             //prov.Connection.Close();
         }
+
+        static RecordManager ProvideRecordManager()
+        {
+            if (RM==null) {
+                IProviderSpecifics prov = new PgSqlSpecifics();
+                prov.ExtendConnectionString("Database", "test");
+                prov.ExtendConnectionString("Host", "localhost");
+                prov.ExtendConnectionString("User Id", "test");
+                prov.ExtendConnectionString("Password", "test");
+
+                //prov = new SQLiteSpecifics();
+                //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
+                //prov.ExtendConnectionString("BinaryGUID","FALSE");
+
+                //prov.Connection.Ev
+                //prov.Connection.ConnectionString
+                prov.Connection.Open();
+                RM = new RecordManager(prov, typeof(Program).Assembly.GetTypes());
+                ReplicaManager r1 = new ReplicaManager();
+                r1.RegisterWithRecordManager(RM);
+                }
+        return RM;
+        }
+
+    static void RunTests()
+    {
+
+                //RecordManager rm = RecordManager.Default;
+                //RecordManager.Default = null;
+                //RecordManager.Default = rm;
+                DemoObject dom = new DemoObject(RecordManager.Default);
+                //dom.ID = Guid.NewGuid();
+                dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7B}");
+                string n = dom.Name;
+                dom.Name = "name " + dom.ID.ToString();
+                //string ss2=r1.SerializeObject(dom);
+                //RecordManager.Default.Read(dom);
+                //RecordManager.Default.Write(dom);
+                //RecordManager.Default.Write(dom);
+                RecordManager.Default.Write(dom);
+
+                dom = new DemoObject(RecordManager.Default);
+                //dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7A}");
+                dom.ID = Guid.NewGuid();
+                RecordManager.Default.Write(dom);
+                RecordManager.Default.Delete(dom);
+
+                RecordSet<DemoObject> drs = new RecordSet<DemoObject>();
+                ArrayList l = new ArrayList();
+                foreach (DemoObject dobj in RecordIterator.Enum<DemoObject>())
+                {
+                    string s = dobj.Name;
+                    foreach (DemoObject dobj1 in RecordIterator.Enum<DemoObject>())
+                    {
+                        string s1 = dobj1.Name;
+                    }
+                }
+
+                RecordManager.Default.FlushConnectionPool();
+                drs.Fill();
+                drs.Clear();
+
+            }
+
 
         static void cache_OnObjectPurge(object instance)
         {

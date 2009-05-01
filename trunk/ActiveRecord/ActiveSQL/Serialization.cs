@@ -194,9 +194,8 @@ namespace Softlynx.ActiveSQL
     /// Автор изменения AuthorID
     /// </summary>
 
-    public abstract class ObjectProp
+    public abstract class ObjectProp:IDObject
     {
-        Guid _id = Guid.NewGuid();
         Guid _object_id = Guid.Empty;
         Guid _property_id = Guid.Empty;
         DateTime _created = DateTime.Now;
@@ -208,17 +207,9 @@ namespace Softlynx.ActiveSQL
         /// </summary>
         public ObjectProp()
         {
+            SetValue<Guid>(IDObject.Property.ID, new Guid());
         }
 
-        /// <summary>
-        /// Уникальный ключ записи в нижлежащей БД
-        /// </summary>
-        [PrimaryKey]
-        public Guid ID
-        {
-            get { return _id; }
-            set { _id = value; }
-        }
 
         /// <summary>
         /// Привязка к изменяемому объекту
@@ -344,6 +335,26 @@ namespace Softlynx.ActiveSQL
 
         }
 
+        public override bool Equals(object obj)
+        {
+            if (obj is ObjectProp)
+            {
+                if (Value==null) 
+                 if ((obj as ObjectProp).Value==null) 
+                     return true;
+                     else
+                     return false;
+                return Value.Equals((obj as ObjectProp).Value);
+            }
+            else
+                return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            if (Value==null) return 0;
+            return Value.GetHashCode();
+        }
     }
 
 }

@@ -549,7 +549,7 @@ namespace Softlynx.ActiveSQL
                     r = Update(Record);
                     if (r == 0) r = Insert(Record);
                 };
-                if (AfterRecordManagerWrite != null) AfterRecordManagerWrite(Record);
+                if ((AfterRecordManagerWrite != null)  && (r>0)) AfterRecordManagerWrite(Record);
                 t.Commit();
                 return r;
             }
@@ -583,7 +583,7 @@ namespace Softlynx.ActiveSQL
                     DeleteCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
                 }
                 res = DeleteCmd.ExecuteNonQuery();
-                if (AfterRecordManagerDelete != null) AfterRecordManagerDelete(Record);
+                if ((AfterRecordManagerDelete != null) && (res>0)) AfterRecordManagerDelete(Record);
                 transaction.Commit();
             }
             return res;
@@ -759,6 +759,8 @@ namespace Softlynx.ActiveSQL
 
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
+            
             if (Disposed != null) Disposed(this, null);
             lock (managers.SyncRoot)
             {
@@ -771,6 +773,17 @@ namespace Softlynx.ActiveSQL
             FlushConnectionPool();
         }
 
+        /// <summary>
+        /// Release all the resourses, close all DB connections
+        /// </summary>
+         ~RecordManager()
+        {
+            Dispose();
+        }
+
+        /// <summary>
+        /// Release all the created connection used for interator loops.
+        /// </summary>
         public void FlushConnectionPool()
         {
             foreach (DbConnection c in ConnectionPool.Values)
@@ -1396,7 +1409,8 @@ namespace Softlynx.ActiveSQL
             using (ManagerTransaction t = BeginTransaction())
             {
                 res = table.Write(Record);
-                if (OnRecordWritten != null) OnRecordWritten(this, Record);
+                if ((OnRecordWritten != null) && (res>0))
+                     OnRecordWritten(this, Record);
                 t.Commit();
             }
             return res;

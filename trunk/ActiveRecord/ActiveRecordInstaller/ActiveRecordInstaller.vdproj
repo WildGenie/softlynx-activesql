@@ -566,7 +566,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.96.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.98.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_ACF8056F769556178AD8A4ADB35853A7"
@@ -761,14 +761,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Softlynx.ActiveSQL"
-        "ProductCode" = "8:{D72FA2E1-3421-499C-97DE-19EFF6FCCC9E}"
-        "PackageCode" = "8:{A57159E7-F3FE-4B41-BBA2-93630F45D9A6}"
+        "ProductCode" = "8:{757AE3A9-8FCA-4932-A4E9-9E215CB0D360}"
+        "PackageCode" = "8:{71924C77-66C9-4F5A-AD1F-5530594EE1BD}"
         "UpgradeCode" = "8:{3E756E92-D2D8-49F5-977E-74F2FFED98FF}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.2.96"
+        "ProductVersion" = "8:1.2.100"
         "Manufacturer" = "8:SoftLynx"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://code.google.com/p/softlynx-activesql/"
@@ -783,7 +783,7 @@
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
         "TargetPlatform" = "3:0"
-        "PreBuildEvent" = "8:"
+        "PreBuildEvent" = "8:svnrevision $(ProjectDir).. $(ProjectDir)ActiveRecordInstaller.vdproj "
         "PostBuildEvent" = "8:"
         "RunPostBuildEvent" = "3:0"
         }
