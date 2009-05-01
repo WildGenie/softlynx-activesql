@@ -24,7 +24,7 @@ namespace Softlynx.ActiveSQL
     /// </summary>
     public abstract class PropertySet:ICloneable
     {
-        Hashtable snapshot = new Hashtable();
+        //Hashtable snapshot = new Hashtable();
         Hashtable changes = new Hashtable();
         Hashtable values = new Hashtable();
 
@@ -41,8 +41,8 @@ namespace Softlynx.ActiveSQL
             if (!NewValue.Equals(values[property.ID]))
             {
                 values[property.ID] = NewValue;
-                if (!NewValue.Equals(snapshot[property.ID]))
-                    changes[property.ID] = NewValue;
+                //if (!NewValue.Equals(snapshot[property.ID]))
+                changes[property.ID] = NewValue;
                 PropertyChanged(property,NewValue);
                 return true;
             }
@@ -91,7 +91,23 @@ namespace Softlynx.ActiveSQL
             SetValue<T>(property, res);
             return res;
         }
-        
+
+        /// <summary>
+        /// Возвращает текущее значение объекта с указанным свойством, если само значение определено и имеет 
+        /// указанный тип T
+        /// </summary>
+        /// <typeparam name="T">Проверяемый тип</typeparam>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <returns>Значение объекта или null если не существует</returns>
+        protected bool ValueExists<T>(PropType property,out object result)
+        {
+            result= values[property.ID];
+            if (typeof(T).IsInstanceOfType(result))
+                result = true;
+            result = null;
+            return false;
+        }
+
         /// <summary>
         /// Удаляет текущее значение свойства и если изменения сделаны,
         /// вызывает цепочку событий связанное с его изменением
@@ -103,6 +119,7 @@ namespace Softlynx.ActiveSQL
             if (values.Contains(property.ID))
             {
                 values.Remove(property.ID);
+                ClearChanges(property);
                 PropertyChanged(property, null);
                 return true;
             }
@@ -110,17 +127,37 @@ namespace Softlynx.ActiveSQL
         }
 
         /// <summary>
+        /// Помечает свойство как не имеющее модификаций
+        /// </summary>
+        /// <param name="property">Идентификатор свойства</param>
+        public void ClearChanges(PropType property)
+        {
+            changes.Remove(property.ID);
+        }
+
+        /// <summary>
+        /// Помечает весь объект, как не имеющий модификаций
+        /// </summary>
+        public void ClearChanges()
+        {
+            changes.Clear();
+        }
+
+
+        /*
+        /// <summary>
         /// Фиксирует текущие значения свойств для отслеживания изменений
         /// </summary>
         public void Snapshot()
         {
-            snapshot.Clear();
+            //snapshot.Clear();
             changes.Clear();
             foreach (DictionaryEntry de in values)
             {
                 snapshot[de.Key] = (de.Value is ICloneable) ? (de.Value as ICloneable).Clone() : de.Value;
             }
         }
+        */
 
         /// <summary>
         /// Возвращает признак изменения свойств относительного сделаного ранее 
@@ -152,7 +189,7 @@ namespace Softlynx.ActiveSQL
         public void CopyTo(PropertySet target)
         {
             target.values=(Hashtable)values.Clone();
-            target.snapshot = (Hashtable)snapshot.Clone();
+            //target.snapshot = (Hashtable)snapshot.Clone();
             target.changes = (Hashtable)changes.Clone();
         }
 
@@ -345,14 +382,13 @@ namespace Softlynx.ActiveSQL
 
 
     }
-    abstract public class DynamicObject : IIDObject, IComparable, IDynamicObject
+    abstract public class DynamicObject : IDObject, IComparable, IDynamicObject
     {
         protected RecordManager _manager;
-        protected Guid _id = Guid.Empty;
         protected bool _isnewobject = true;
 
-        protected Dictionary<PropType, ObjectProp> changed_values = new Dictionary<PropType, ObjectProp>();
-        protected Dictionary<PropType, ObjectProp> props_latest_value = new Dictionary<PropType, ObjectProp>();
+//        protected Dictionary<PropType, ObjectProp> changed_values = new Dictionary<PropType, ObjectProp>();
+//        protected Dictionary<PropType, ObjectProp> props_latest_value = new Dictionary<PropType, ObjectProp>();
 
         int IComparable.CompareTo(object other)
         {
@@ -372,38 +408,6 @@ namespace Softlynx.ActiveSQL
         {
             get { return _manager; }
             set { _manager = value; }
-        }
-
-        [PrimaryKey]
-        public Guid ID
-        {
-            get { return _id; }
-            set
-            {
-                if (_id != value)
-                {
-                    _id = value;
-                    Dictionary<PropType, ObjectProp> platest = changed_values;// props_latest_value;
-                    changed_values = new Dictionary<PropType, ObjectProp>();
-                    props_latest_value = new Dictionary<PropType, ObjectProp>();
-                    foreach (KeyValuePair<PropType, ObjectProp> kv in platest)
-                    {
-                        SetPropertyLastValue(
-                            kv.Key,
-                            kv.Value.Value
-                            );
-                    }
-                    platest.Clear();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Возвращает признак ниличия изменеий в свойствах объекта
-        /// </summary>
-        public bool HasChanges
-        {
-            get { return changed_values.Values.Count > 0; }
         }
 
         [AfterRecordManagerRead]
@@ -471,11 +475,13 @@ namespace Softlynx.ActiveSQL
         {
             if (!handled)
             {
-                foreach (ObjectProp op in changed_values.Values)
+                foreach (PropType pt in  ChangedProperties)
                 {
-                    manager.Write(op);
+                    Object o = null;
+                    if (ValueExists<T>(pt,out o))
+                        manager.Write(o);
                 }
-                changed_values.Clear();
+                ClearChanges();
                 handled=!IsNewObject;
             }
         }
@@ -489,35 +495,39 @@ namespace Softlynx.ActiveSQL
         /// <returns>Модель T из базы либо вновь созданная модель</returns>
         public override ObjectProp GetPropertyWithLastValue(PropType PropertyID)
         {
-            ObjectProp r = null;
+            bool dbrequest = false;
             try
             {
-                r = props_latest_value[PropertyID];
-            }
-            catch (KeyNotFoundException)
-            {
-                if (ID != Guid.Empty)
+                return GetValue<ObjectProp>(PropertyID, new DefaultValueDelegate<ObjectProp>(delegate
                 {
-
-                    foreach (ObjectProp op in RecordIterator.Enum<T>(Manager,
-                            Manager.WhereEqual("ObjectID") +
-                           " and " +
-                            Manager.WhereEqual("PropertyID"),
-                            string.Format("{0} DESC", Manager.AsFieldName("Created")),
-                            "ObjectID", ID,
-                            "PropertyID", PropertyID.ID))
+                    dbrequest = true;
+                    ObjectProp r = null;
+                    if (ID != Guid.Empty)
                     {
-                        r = op;
-                        break;
-                    }
-                }
 
-                if (r == null) r = PropInstance(ID, PropertyID, null);
+                        foreach (ObjectProp op in RecordIterator.Enum<T>(Manager,
+                                Manager.WhereEqual("ObjectID") +
+                               " and " +
+                                Manager.WhereEqual("PropertyID"),
+                                string.Format("{0} DESC", Manager.AsFieldName("Created")),
+                                "ObjectID", ID,
+                                "PropertyID", PropertyID.ID))
+                        {
+                            r = op;
+                            break;
+                        }
+                    }
+
+                    if (r == null) r = PropInstance(ID, PropertyID, null);
                     else
-                    IsNewObject = false;
-                props_latest_value[PropertyID] = r;
+                        IsNewObject = false;
+                    return r;
+                }));
             }
-            return r;
+            finally
+            {
+                if (dbrequest) ClearChanges(PropertyID);
+            }
         }
 
         /// <summary>
@@ -528,22 +538,9 @@ namespace Softlynx.ActiveSQL
         /// <returns>Признак того поменялось ли значение свойства объекта</returns>
         public override bool SetPropertyLastValue(PropType PropertyID, object value)
         {
-            bool changed = false;
             ObjectProp r = GetPropertyWithLastValue(PropertyID);
-            if (
-                ((r.Value != null) && (value != null) && (!value.Equals(r.Value)))
-                ||
-                ((r.Value == null) && (value != null))
-                ||
-                ((r.Value != null) && (value == null))
-                )
-            {
-                changed_values[PropertyID] = PropInstance(ID, PropertyID, value);
-                changed = true;
-                r.Value = value;
-            }
-
-            return changed;
+            r.Value = value;
+            return SetValue<ObjectProp>(PropertyID, r);
         }
 
        
@@ -563,6 +560,29 @@ namespace Softlynx.ActiveSQL
         {
             return GetPropertyWithLastValue(PropertyID).Value;
         }
+
+        protected override void PropertyChanged(PropType property, object Value)
+        {
+            base.PropertyChanged(property, Value);
+            if (property == IDObject.Property.ID)
+            {
+                ArrayList l = new ArrayList();
+                foreach (PropType pt in ChangedProperties)
+                {
+                    Object o = null;
+                    if (ValueExists<T>(pt, out o))
+                    {
+                        l.Add(o);
+                        DeleteProperty(pt);
+                    }
+                }
+                
+                foreach (ObjectProp op in l)
+                    SetPropertyLastValue(op.Property, op.Value);
+                l.Clear();
+            }
+        }
+
 
         public static PropertyIterator Query(RecordManager Manager, DynamicObject obj)
         {
