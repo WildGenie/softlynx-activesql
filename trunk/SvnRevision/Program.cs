@@ -86,6 +86,7 @@ RegexOptions.Compiled);
                 string NewProdCodeLine = null;
                 int UpgradeProdLineNumber = 0;
                 bool ChangeProdCode = false;
+                modified = false;
                 foreach (string code in lines)
                 {
                     string s=code;
