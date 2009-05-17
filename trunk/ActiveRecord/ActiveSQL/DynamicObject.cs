@@ -34,14 +34,13 @@ namespace Softlynx.ActiveSQL
         /// </summary>
         /// <typeparam name="T">Тип свойства</typeparam>
         /// <param name="property">Идентификатор свойства</param>
-        /// <param name="NewValue">Новое значение</param>
+        /// <param name="NewValue">Новое значение. <param>
         /// <returns>Было ли значение изменено</returns>
         protected bool SetValue<T>(PropType property, T NewValue)
         {
-            if (!NewValue.Equals(values[property.ID]))
+            if (!Nullable.Equals(NewValue,values[property.ID]))
             {
                 values[property.ID] = NewValue;
-                //if (!NewValue.Equals(snapshot[property.ID]))
                 changes[property.ID] = NewValue;
                 PropertyChanged(property,NewValue);
                 return true;
@@ -103,7 +102,7 @@ namespace Softlynx.ActiveSQL
         {
             result= values[property.ID];
             if (typeof(T).IsInstanceOfType(result))
-                result = true;
+                return true;
             result = null;
             return false;
         }
@@ -198,11 +197,11 @@ namespace Softlynx.ActiveSQL
             source.CopyTo(this);
         }
 
-        public object Clone()
+        public virtual object Clone()
         {
-            PropertySet res = Activator.CreateInstance(this.GetType()) as PropertySet;
-            res.CopyFrom(this);
-            return res;
+            PropertySet ps=(PropertySet)this.MemberwiseClone();
+            ps.CopyFrom(this);
+            return ps;
         }
 
         /// <summary>
@@ -394,8 +393,7 @@ namespace Softlynx.ActiveSQL
         {
             return ToString().CompareTo(other.ToString());
         }
-
-
+        
         [ExcludeFromTable]
         public bool IsNewObject
         {
@@ -460,7 +458,7 @@ namespace Softlynx.ActiveSQL
         private ObjectProp PropInstance(Guid ObjectID, PropType PropertyID, object value)
         {
             if (PropertyID.Anonymous)
-                throw new ApplicationException("Can't use Anumymous property " + PropertyID.ToString() + " with DynamicObjects.");
+                throw new ApplicationException("Can't use Anonymous property " + PropertyID.ToString() + " with DynamicObjects.");
 
             ObjectProp res = ObjPropConstructor.Invoke(null) as ObjectProp;
             res.ObjectID = ID;
@@ -538,9 +536,15 @@ namespace Softlynx.ActiveSQL
         /// <returns>Признак того поменялось ли значение свойства объекта</returns>
         public override bool SetPropertyLastValue(PropType PropertyID, object value)
         {
-            ObjectProp r = GetPropertyWithLastValue(PropertyID);
+            ObjectProp r = (ObjectProp)GetPropertyWithLastValue(PropertyID).Clone();
             r.Value = value;
-            return SetValue<ObjectProp>(PropertyID, r);
+             if (SetValue<ObjectProp>(PropertyID, r)) 
+            {
+                r.ID = Guid.NewGuid();
+                r.Created = DateTime.Now;
+                return true;
+            };
+            return false;
         }
 
        
