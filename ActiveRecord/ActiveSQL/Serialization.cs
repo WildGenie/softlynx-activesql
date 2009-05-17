@@ -196,20 +196,21 @@ namespace Softlynx.ActiveSQL
 
     public abstract class ObjectProp:IDObject
     {
-        Guid _object_id = Guid.Empty;
-        Guid _property_id = Guid.Empty;
-        DateTime _created = DateTime.Now;
-        Object _value = null;
-        string _valuetext = null;
+        new public static class Props
+        {
+            public static PropType ObjectID = new PropType<Guid>("Object ID");
+            public static PropType PropertyID = new PropType<Guid>("Property ID");
+            public static PropType Created = new PropType<DateTime>("Created timestamp");
+            public static PropType Value = new PropType<object>("Value");
+            public static PropType ValueText = new PropType<string>("Serialized Value");
+        }
 
         /// <summary>
         /// 
         /// </summary>
         public ObjectProp()
         {
-            SetValue<Guid>(IDObject.Property.ID, new Guid());
         }
-
 
         /// <summary>
         /// Привязка к изменяемому объекту
@@ -217,8 +218,8 @@ namespace Softlynx.ActiveSQL
         [Indexed]
         public Guid ObjectID
         {
-            get { return _object_id; }
-            set { _object_id = value; }
+            get { return GetValue<Guid>(Props.ObjectID, Guid.Empty); }
+            set { SetValue(Props.ObjectID, value); }
         }
 
         /// <summary>
@@ -227,8 +228,8 @@ namespace Softlynx.ActiveSQL
         [Indexed]
         public Guid PropertyID
         {
-            get { return _property_id; }
-            set { _property_id = value; }
+            get { return GetValue<Guid>(Props.PropertyID, Guid.Empty); }
+            set { SetValue(Props.PropertyID, value); }
         }
 
         public PropType Property
@@ -242,8 +243,8 @@ namespace Softlynx.ActiveSQL
         [Indexed]
         public DateTime Created
         {
-            get { return _created; }
-            set { _created = value; }
+            get { return GetValue<DateTime>(Props.Created, DateTime.Now); }
+            set { SetValue(Props.Created, value); }
         }
 
 
@@ -256,22 +257,37 @@ namespace Softlynx.ActiveSQL
         {
             get
             {
-                if (_value != null) return _value;
-                _value = ValueFormatter.Deserialize(PropType.ByID(PropertyID).Type,_valuetext);
-                return _value;
+                return GetValue<Object>(Props.Value, new DefaultValueDelegate<object>(
+                    delegate
+                    {
+                        return ValueText == null 
+                            ? null 
+                            : ValueFormatter.Deserialize(PropType.ByID(PropertyID).Type, ValueText);
+                    }));
             }
             set
             {
-                _value = value;
-                _valuetext = ValueFormatter.Serialize(_value);
+                if (value==null) {
+                    DeleteProperty(Props.Value);
+                    return;
+                }
+                if (SetValue(Props.Value, value))
+                    SetValue(Props.ValueText,ValueFormatter.Serialize(value));
             }
+        }
+
+        protected override void PropertyChanged(PropType property, object Value)
+        {
+            base.PropertyChanged(property, Value);
+            if (property == Props.ValueText)
+                DeleteProperty(Props.Value);
         }
 
         [Indexed]
         public string ValueText
         {
-            get { return _valuetext; }
-            set { _valuetext = value; }
+            get { return GetValue<string>(Props.ValueText, (string)null); }
+            set { SetValue(Props.ValueText, value); }
         }
 
         [ExcludeFromTable]

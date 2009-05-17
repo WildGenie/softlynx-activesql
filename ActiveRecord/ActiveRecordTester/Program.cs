@@ -32,6 +32,7 @@ namespace ActiveRecordTester
         public class Property
         {
             static public PropType Name = new PropType<string>("Name","{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
+            static public PropType LastName = new PropType<string>("Name", "{A34E00AF-4A88-46e6-8DE6-539A119C3A21}");
         }
 
         [ExcludeFromTable]
@@ -40,9 +41,15 @@ namespace ActiveRecordTester
             get { return (string)GetPropertyLastValue(Property.Name); }
             set { SetPropertyLastValue(Property.Name,value); }
         }
-        
-        int c1=0;
 
+        [ExcludeFromTable]
+        public string LastName
+        {
+            get { return (string)GetPropertyLastValue(Property.LastName); }
+            set { SetPropertyLastValue(Property.LastName, value); }
+        }
+
+        int c1=0;
     }
 
     public class O1 : PropertySet
@@ -181,7 +188,8 @@ namespace ActiveRecordTester
                 //dom.ID = Guid.NewGuid();
                 dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7B}");
                 string n = dom.Name;
-                dom.Name = "name " + dom.ID.ToString();
+                dom.Name = "name " + dom.ID.ToString()+Guid.NewGuid().GetHashCode().ToString();
+                dom.LastName = "Last Name " + dom.ID.ToString() + Guid.NewGuid().GetHashCode().ToString();
                 //string ss2=r1.SerializeObject(dom);
                 //RecordManager.Default.Read(dom);
                 //RecordManager.Default.Write(dom);

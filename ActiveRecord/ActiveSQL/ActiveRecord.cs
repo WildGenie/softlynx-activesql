@@ -769,7 +769,7 @@ namespace Softlynx.ActiveSQL
                 managers.Remove(this);
             }
             cache.Dispose();
-            Connection.Close();
+            //Connection.Close();
             FlushConnectionPool();
         }
 
