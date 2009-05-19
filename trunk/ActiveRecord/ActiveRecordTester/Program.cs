@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Net;
 using System.IO;
 using System.Text;
 using Softlynx.ActiveSQL;
@@ -11,6 +12,7 @@ using Softlynx.ActiveSQL.Replication;
 using Softlynx.RecordSet;
 using Softlynx.RecordCache;
 using Softlynx.SimpleConfig;
+using Softlynx.SimpleRemoting;
 using System.Threading;
 using System.Data.Common;
 
@@ -127,8 +129,10 @@ namespace ActiveRecordTester
 
 
             RecordManager.ProviderDelegate=new RecordManagerProvider(ProvideRecordManager);
-
-            Thread t = new Thread(new ThreadStart(RunTests));
+            Server s = new Server(new IPEndPoint(IPAddress.Any, 9090), new MessageHandler(MyHandler));
+            
+            //Thread t = new Thread(new ThreadStart(RunTests));
+            Thread t = new Thread(new ThreadStart(s.Run));
             t.Name = "Test run";
             t.Start();
             t.Join();
@@ -154,7 +158,9 @@ namespace ActiveRecordTester
              */
             //prov.Connection.Close();
         }
-
+        static public void MyHandler(RemotingParams parameters)
+        {
+        }
         static RecordManager ProvideRecordManager()
         {
             if (RM==null) {
