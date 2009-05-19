@@ -9,6 +9,7 @@ using System.Threading;
 
 namespace Softlynx.SimpleRemoting
 {
+    
     /// <summary>
     /// Holds input parameters and output results passed to MessageHandler delegate
     /// </summary>
@@ -21,20 +22,45 @@ namespace Softlynx.SimpleRemoting
     }
 
 
+    
+    /// <summary>
+    /// Each remote connect produce the handler thread the delegate is called from upon each new query
+    /// </summary>
+    /// <param name="parameters"></param>
     public delegate void MessageHandler(RemotingParams parameters);
 
-    public class Server
+    /// <summary>
+    /// Server side remoting component in form of TCP listner handles client connection and queries.
+    /// Each client connection is running from separate thread.
+    /// </summary>
+    public class Server:IDisposable
     {
+        /// <summary>
+        /// Each key value pair is limited to this max alllowed value length
+        /// </summary>
+        const int MAX_PARAM_LENGTH = 1024 * 1024;
+        
         private bool terminated = false;
         private List<Socket> ActiveClients = new List<Socket>();
         private MessageHandler handler;
         private TcpListener listner = null;
+        private Thread AsyncRun = null;
+        
+        /// <summary>
+        /// Instantiate new server handler binds to specific TCP end point 
+        /// and user supplied MessageHandler delegate
+        /// </summary>
+        /// <param name="binding">TCP IP endpoint (listen address and port)</param>
+        /// <param name="Handler">User supplied callback delegate</param>
         public Server(IPEndPoint binding, MessageHandler Handler)
         {
             handler = Handler;
             listner = new TcpListener(binding);
         }
 
+        /// <summary>
+        /// Starts synchronous client connection handling
+        /// </summary>
         public void Run()
         {
             listner.Start();
@@ -64,12 +90,20 @@ namespace Softlynx.SimpleRemoting
                 lock (ActiveClients)
                      foreach (Socket s in ActiveClients) s.Disconnect(false);
         }
-        public void Terminate()
+
+        private void Terminate()
         {
             terminated = true;
             listner.Stop();
+            if (AsyncRun != null)
+                AsyncRun.Join();
         }
         
+
+        /// <summary>
+        /// Main network dialog for each new connection
+        /// </summary>
+        /// <param name="socket"></param>
         private void HandleClient(object socket)
         {
             try
@@ -84,7 +118,12 @@ namespace Softlynx.SimpleRemoting
                     {
                         string line = rd.ReadLine();
                         int sep=line.LastIndexOf(' ');
-                        if (line == string.Empty) break;
+                        if (line == string.Empty)
+                        {
+                            wr.WriteLine("204 BYE"); wr.Flush();
+                            break;
+                        }
+
                         string field = sep<0?null:line.Substring(0, sep);
                         string value = line.Substring(sep+1);
                         if (field == null) // command passed in value
@@ -125,12 +164,17 @@ namespace Softlynx.SimpleRemoting
                             wr.WriteLine("400 MAILFORMED"); wr.Flush();
                             continue;
                         }
+                        if (blocklen > MAX_PARAM_LENGTH)
+                        {
+                            wr.WriteLine("406 OVERSIZE"); wr.Flush();
+                            break;
+                        }
                         char[] buf=new char[blocklen];
                         rd.ReadBlock(buf, 0, blocklen);
                         rp.Input[field] = new string(buf);
                         wr.WriteLine("202 OK"); wr.Flush();
                     }
-                    wr.WriteLine("204 BYE"); wr.Flush();
+                    
                     strm.Close();
                 }
             }
@@ -142,7 +186,14 @@ namespace Softlynx.SimpleRemoting
 
         public void RunAsync()
         {
-            
+            if (AsyncRun != null) return;
+            AsyncRun = new Thread(new ThreadStart(Run));
+            AsyncRun.Start();
+        }
+        
+        public void Dispose()
+        {
+            Terminate();
         }
     }
 }
