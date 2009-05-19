@@ -79,6 +79,10 @@
       <Project>{D44A2BE2-CDB8-495D-A1EA-4646635A0C2C}</Project>
       <Name>SimpleConfig</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SimpleRemoting\SimpleRemoting.csproj">
+      <Project>{BACE0252-ED07-4EAA-9487-0DC3C77B511D}</Project>
+      <Name>SimpleRemoting</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
