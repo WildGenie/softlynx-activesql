@@ -1251,6 +1251,7 @@ namespace Softlynx.ActiveSQL
                     List<TableVersion> attrs = new List<TableVersion>((IEnumerable<TableVersion>)Attribute.GetCustomAttributes(type, typeof(TableVersion), true));
                     attrs.Insert(0, new TableVersion(0, TableAction.Recreate));
                     attrs.Sort();
+                    bool recreate_happened = false;
                     foreach (TableVersion update in attrs)
                     {
                         if (update.Version > ov.Version)
@@ -1265,8 +1266,9 @@ namespace Softlynx.ActiveSQL
                                     update.SQLCode = table.CreateTableStatement();
                                     RunCommand(update.SQLCode);
                                     update.SQLCode = s;
+                                    recreate_happened = true;
                                 }
-                                if (update.ColumnName != null)
+                                if ((update.ColumnName != null) && (!recreate_happened))
                                 {
                                     InField colf=table.Field(update.ColumnName);
                                     if ((colf==null) && (update.ColumnAction!=ColumnAction.Remove))
