@@ -135,6 +135,25 @@ namespace ActiveRecordTester
             Thread t = new Thread(new ThreadStart(s.Run));
             t.Name = "Test run";
             t.Start();
+            using (Client c = new Client(new IPEndPoint(IPAddress.Parse("target.server.com"), 9090)))
+            {
+                RemotingParams p = new RemotingParams();
+                FillParams(p.Input);
+                c.Query(p);
+                p.Input.Clear();
+                try
+                {
+                    c.Query(p);
+                }
+                catch
+                {
+                }
+                FillParams(p.Input);
+                c.Query(p);
+
+            }
+
+            s.Terminate();
             t.Join();
             t = null;
             GC.WaitForPendingFinalizers();
@@ -158,8 +177,24 @@ namespace ActiveRecordTester
              */
             //prov.Connection.Close();
         }
+        static void FillParams(IDictionary p)
+        {
+            string rnd = "askljhqwpoeruiqwopeqwoiuהזכמיצףךחשרץ2חש3רחשריצגפזûשחךד1834798אכהמפûנגא";
+            Random r=new Random();
+            while (p.Count < 100)
+            {
+                string key= "כמנ השד " + Guid.NewGuid().ToString() + " פûמאנה ישצ3רד";
+                string value=string.Empty;
+                while (value.Length < 1024*16)
+                    value += rnd;
+                p.Add(key, value);
+            }
+        }
         static public void MyHandler(RemotingParams parameters)
         {
+            if (parameters.Input.Count == 0) 
+                throw new ApplicationException("wwqwer");
+            FillParams(parameters.Output);
         }
         static RecordManager ProvideRecordManager()
         {

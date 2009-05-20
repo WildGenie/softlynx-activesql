@@ -67,6 +67,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleRemoting", "SimpleRem
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleRemotingCE", "SimpleRemotingCE\SimpleRemotingCE.csproj", "{EAAE38D0-D98D-4DBF-8469-10842C09F837}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -120,6 +126,12 @@ Global
 		{BACE0252-ED07-4EAA-9487-0DC3C77B511D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BACE0252-ED07-4EAA-9487-0DC3C77B511D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BACE0252-ED07-4EAA-9487-0DC3C77B511D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAAE38D0-D98D-4DBF-8469-10842C09F837}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAAE38D0-D98D-4DBF-8469-10842C09F837}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAAE38D0-D98D-4DBF-8469-10842C09F837}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{EAAE38D0-D98D-4DBF-8469-10842C09F837}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAAE38D0-D98D-4DBF-8469-10842C09F837}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAAE38D0-D98D-4DBF-8469-10842C09F837}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

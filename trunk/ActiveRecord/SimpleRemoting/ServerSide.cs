@@ -17,28 +17,54 @@ namespace Softlynx.SimpleRemoting
     { 
         Dictionary<string,string> input=new Dictionary<string,string>();
         Dictionary<string,string> output=new Dictionary<string,string>();
+        /// <summary>
+        /// Holds key value pairs passed from remote side. Not the subject to be midified.
+        /// </summary>
         public Dictionary<string,string> Input  {get { return input;}}
+        /// <summary>
+        /// Holds key value pairs will be passed back to remote side as a part of single query.
+        /// </summary>
 	    public Dictionary<string,string> Output {get { return output;}}
     }
 
 
     
     /// <summary>
-    /// Each remote connect produce the handler thread the delegate is called from upon each new query
+    /// Each remote connect produce the handler thread the delegate is called from upon each new query.
+    /// Any excaption will be interceped on lower level and reported to remote side.
     /// </summary>
-    /// <param name="parameters"></param>
+    /// <param name="parameters">Read from Input property and modify the Output</param>
     public delegate void MessageHandler(RemotingParams parameters);
 
     /// <summary>
     /// Server side remoting component in form of TCP listner handles client connection and queries.
     /// Each client connection is running from separate thread.
+    /// <example>
+    /// <code>
+    /// using Softlynx.SimpleRemoting;
+    /// ....
+    /// Server srv = new Server(new IPEndPoint(IPAddress.Any, 9090), new MessageHandler(MyHandler));
+    /// srv.RunAsync(); // either srv.Run();
+    /// ....
+    /// protected void MyHandler(RemotingParams parameters)
+    /// {
+    /// if (parameters.Input["KEY"]=="VALUE")
+    /// {...}
+    /// parameters.Add("Response1","ResponseValue1");
+    /// }
+    /// </code>
+    /// </example>
     /// </summary>
     public class Server:IDisposable
     {
         /// <summary>
         /// Each key value pair is limited to this max alllowed value length
         /// </summary>
-        const int MAX_PARAM_LENGTH = 1024 * 1024;
+        public const int MAX_PARAM_LENGTH = 1024 * 1024;
+        /// <summary>
+        /// Protocol version identifier
+        /// </summary>
+        public const string VERSION = "1.0";
         
         private bool terminated = false;
         private List<Socket> ActiveClients = new List<Socket>();
@@ -86,17 +112,24 @@ namespace Softlynx.SimpleRemoting
                 listner.Stop();
             }
             catch (InvalidOperationException) { }
+            catch (SocketException) { }
             while (ActiveClients.Count>0)
                 lock (ActiveClients)
-                     foreach (Socket s in ActiveClients) s.Disconnect(false);
+                     foreach (Socket s in ActiveClients) s.Close();
         }
 
-        private void Terminate()
+        /// <summary>
+        /// Stops client handlin either sync or async.
+        /// </summary>
+        public void Terminate()
         {
             terminated = true;
             listner.Stop();
             if (AsyncRun != null)
+            {
                 AsyncRun.Join();
+                AsyncRun = null;
+            }
         }
         
 
@@ -112,20 +145,20 @@ namespace Softlynx.SimpleRemoting
                 {
                     StreamReader rd = new StreamReader(strm);
                     StreamWriter wr = new StreamWriter(strm);
-                    wr.WriteLine("200 READY");wr.Flush();
+                    wr.WriteLine("200 READY {0}",VERSION); wr.Flush();
                     RemotingParams rp = new RemotingParams();
                     while (!rd.EndOfStream)
                     {
                         string line = rd.ReadLine();
-                        int sep=line.LastIndexOf(' ');
+                        int sep = line.LastIndexOf(' ');
                         if (line == string.Empty)
                         {
                             wr.WriteLine("204 BYE"); wr.Flush();
                             break;
                         }
 
-                        string field = sep<0?null:line.Substring(0, sep);
-                        string value = line.Substring(sep+1);
+                        string field = sep < 0 ? null : line.Substring(0, sep);
+                        string value = line.Substring(sep + 1);
                         if (field == null) // command passed in value
                         {
                             if (value == "EXEC")
@@ -136,18 +169,18 @@ namespace Softlynx.SimpleRemoting
                                 }
                                 catch (Exception ex)
                                 {
-                                    string msg = ex.Message;
-                                    wr.WriteLine("500 EXCEPTION {0}",msg.Length);
+                                    string msg = ex.ToString();
+                                    wr.WriteLine("500 EXCEPTION {0}", msg.Length);
                                     wr.Write(msg);
                                     wr.Flush();
                                     continue;
                                 }
-                                wr.WriteLine("200 OK {0}",rp.Output.Count);
+                                wr.WriteLine("200 OK {0}", rp.Output.Count);
                                 foreach (KeyValuePair<string, string> kvp in rp.Output)
                                 {
                                     wr.WriteLine("{0} {1}",
                                     kvp.Key.Replace('\r', ' ').Replace('\n', ' '),
-                                    kvp.Key.Length);
+                                    kvp.Value.Length);
                                     wr.Write(kvp.Value);
                                 }
                                 wr.Flush();
@@ -159,7 +192,11 @@ namespace Softlynx.SimpleRemoting
                             continue;
                         }
                         int blocklen = 0;
-                        if (!int.TryParse(value, out blocklen))
+                        try
+                        {
+                            blocklen = int.Parse(value);
+                        }
+                        catch 
                         {
                             wr.WriteLine("400 MAILFORMED"); wr.Flush();
                             continue;
@@ -169,21 +206,25 @@ namespace Softlynx.SimpleRemoting
                             wr.WriteLine("406 OVERSIZE"); wr.Flush();
                             break;
                         }
-                        char[] buf=new char[blocklen];
+                        char[] buf = new char[blocklen];
                         rd.ReadBlock(buf, 0, blocklen);
                         rp.Input[field] = new string(buf);
                         wr.WriteLine("202 OK"); wr.Flush();
                     }
-                    
+
                     strm.Close();
                 }
             }
+            catch { }
             finally
             {
-                ((Socket)socket).Disconnect(false);
+                ((Socket)socket).Close();
             }
         }
 
+        /// <summary>
+        /// Starts asynchronous client connection handling and may be interrupted later with Terminate()
+        /// </summary>
         public void RunAsync()
         {
             if (AsyncRun != null) return;
@@ -191,6 +232,9 @@ namespace Softlynx.SimpleRemoting
             AsyncRun.Start();
         }
         
+        /// <summary>
+        /// Dispose the server resources and terminates all active client connections.
+        /// </summary>
         public void Dispose()
         {
             Terminate();
