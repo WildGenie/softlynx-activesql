@@ -240,6 +240,19 @@ namespace Softlynx.ActiveSQL
     public class InTable : NamedAttribute,ICloneable
 
     {
+        private bool _PersistentSchema=false;
+
+        /// <summary>
+        /// Determines the database schema persistance.
+        /// In case of true the framework will not attempt to create reflected table schema 
+        /// and raise an exception in case of TableVersion TableAction.Recreate or any ColumnAction
+        /// </summary>
+        public bool PersistentSchema
+        {
+            get { return _PersistentSchema; }
+            set { _PersistentSchema = value; }
+        }
+
         internal RecordManager manager = null;
 
         private DbCommand InsertCmd = null;
