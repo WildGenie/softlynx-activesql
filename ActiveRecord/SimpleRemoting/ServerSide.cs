@@ -9,12 +9,32 @@ using System.Threading;
 
 namespace Softlynx.SimpleRemoting
 {
+    /// <summary>
+    /// Specifies the remoting phase for the handler delegate processed
+    /// </summary>
+    public enum RemotingPhase { 
+        /// <summary>
+        /// Client has just been connected.
+        /// </summary>
+        Established, 
+        /// <summary>
+        /// New client query
+        /// </summary>
+        Query, 
+        /// <summary>
+        /// Client disconnected for any reason
+        /// </summary>
+        Disposing };
     
     /// <summary>
     /// Holds input parameters and output results passed to MessageHandler delegate
     /// </summary>
     public class RemotingParams  
-    { 
+    {
+        /// <summary>
+        /// Remoting phase for the handler delegate processed
+        /// </summary>
+        public RemotingPhase Phase = RemotingPhase.Established;
         Dictionary<string,string> input=new Dictionary<string,string>();
         Dictionary<string,string> output=new Dictionary<string,string>();
         /// <summary>
@@ -58,11 +78,13 @@ namespace Softlynx.SimpleRemoting
     public class Server:IDisposable
     {
         /// <summary>
-        /// Each key value pair is limited to this max alllowed value length
+        /// Each key value pair is limited to this max alllowed value length.
+        /// Default value is 1Mb.
         /// </summary>
-        public const int MAX_PARAM_LENGTH = 1024 * 1024;
+        public static int MAX_PARAM_LENGTH = 1024 * 1024;
         /// <summary>
-        /// Protocol version identifier
+        /// Protocol version identifier.
+        /// Currently "1.0".
         /// </summary>
         public const string VERSION = "1.0";
         
@@ -145,8 +167,12 @@ namespace Softlynx.SimpleRemoting
                 {
                     StreamReader rd = new StreamReader(strm);
                     StreamWriter wr = new StreamWriter(strm);
-                    wr.WriteLine("200 READY {0}",VERSION); wr.Flush();
+
                     RemotingParams rp = new RemotingParams();
+                    rp.Phase = RemotingPhase.Established;
+                    handler(rp);
+                    wr.WriteLine("200 READY {0}",VERSION); wr.Flush();
+                    rp.Phase = RemotingPhase.Query;
                     while (!rd.EndOfStream)
                     {
                         string line = rd.ReadLine();
@@ -219,6 +245,9 @@ namespace Softlynx.SimpleRemoting
             finally
             {
                 ((Socket)socket).Close();
+                RemotingParams rp = new RemotingParams();
+                rp.Phase = RemotingPhase.Disposing;
+                handler(rp);
             }
         }
 
