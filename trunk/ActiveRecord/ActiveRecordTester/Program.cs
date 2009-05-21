@@ -8,6 +8,7 @@ using System.Text;
 using Softlynx.ActiveSQL;
 using Softlynx.ActiveSQL.Postgres;
 using Softlynx.ActiveSQL.SQLite;
+using Softlynx.ActiveSQL.OleDB;
 using Softlynx.ActiveSQL.Replication;
 using Softlynx.RecordSet;
 using Softlynx.RecordCache;
@@ -19,13 +20,13 @@ using System.Data.Common;
 namespace ActiveRecordTester
 {
  
-    [InTable]
-    [WithReplica]
+    //[InTable]
+    //[WithReplica]
     public class DemoProperty : ObjectProp { }
 
 
-    [InTable]
-    [WithReplica]
+    //[InTable]
+    //[WithReplica]
     //[TableVersion(4,ColumnAction.Remove,"C1")]
     class DemoObject:DynamicObject<DemoProperty>
     {
@@ -86,7 +87,36 @@ namespace ActiveRecordTester
     {
     
     }
+    
+    [InTable]
+    [PredefinedSchema]
+    public class Inventory : IDObject
+    {
+        public class Property
+        {
+            static public PropType IntID = new PropType<long>("long ID Object identifier");
+            static public PropType SKUDesc = new PropType<string>("SKU Description");
+        }
 
+        
+        new private Guid ID{get {return Guid.Empty;} }
+        
+        [PrimaryKey]
+        public long idInv
+        {
+            get { return GetValue<long>(Property.IntID, 0); }
+            set { SetValue<long>(Property.IntID, value); }
+        }
+
+        public string SKUDesc
+        {
+            get { return GetValue<string>(Property.SKUDesc, string.Empty); }
+            set { SetValue<string>(Property.SKUDesc, value); }
+        }
+
+        
+
+    }
     
     static class Program
     {
@@ -135,7 +165,7 @@ namespace ActiveRecordTester
             Thread t = new Thread(new ThreadStart(s.Run));
             t.Name = "Test run";
             t.Start();
-            using (Client c = new Client(new IPEndPoint(IPAddress.Parse("target.server.com"), 9090)))
+            using (Client c = new Client(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9090)))
             {
                 RemotingParams p = new RemotingParams();
                 FillParams(p.Input);
@@ -158,7 +188,8 @@ namespace ActiveRecordTester
             t = null;
             GC.WaitForPendingFinalizers();
             RM = null;
-            
+
+            RunTests();
             /*
             Session.AttachDatabase(@"c:\temp\ar.db3");
 
@@ -193,17 +224,22 @@ namespace ActiveRecordTester
         static public void MyHandler(RemotingParams parameters)
         {
             if (parameters.Input.Count == 0) 
-                throw new ApplicationException("wwqwer");
+                //throw new ApplicationException("wwqwer");
             FillParams(parameters.Output);
         }
         static RecordManager ProvideRecordManager()
         {
             if (RM==null) {
-                IProviderSpecifics prov = new PgSqlSpecifics();
-                prov.ExtendConnectionString("Database", "test");
-                prov.ExtendConnectionString("Host", "localhost");
-                prov.ExtendConnectionString("User Id", "test");
-                prov.ExtendConnectionString("Password", "test");
+                //IProviderSpecifics prov = new PgSqlSpecifics();
+                //prov.ExtendConnectionString("Database", "test");
+                //prov.ExtendConnectionString("Host", "localhost");
+                //prov.ExtendConnectionString("User Id", "test");
+                //prov.ExtendConnectionString("Password", "test");
+
+                IProviderSpecifics prov = new OleDBSpecifics();
+                prov.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
+                prov.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\sbdb.mdb");
+                prov.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
 
                 //prov = new SQLiteSpecifics();
                 //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
@@ -222,6 +258,11 @@ namespace ActiveRecordTester
     static void RunTests()
     {
 
+        foreach (Inventory inv in RecordIterator.Enum<Inventory>())
+        {
+            string xml = ReplicaManager.SerializeObject(inv);
+        }
+        return;
                 //RecordManager rm = RecordManager.Default;
                 //RecordManager.Default = null;
                 //RecordManager.Default = rm;
@@ -237,12 +278,16 @@ namespace ActiveRecordTester
                 //RecordManager.Default.Write(dom);
                 RecordManager.Default.Write(dom);
 
+                //string xml = ReplicaManager.SerializeObject(dom);
+
                 dom = new DemoObject(RecordManager.Default);
                 //dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7A}");
                 dom.ID = Guid.NewGuid();
                 RecordManager.Default.Write(dom);
                 RecordManager.Default.Delete(dom);
 
+        
+        
                 RecordSet<DemoObject> drs = new RecordSet<DemoObject>();
                 ArrayList l = new ArrayList();
                 foreach (DemoObject dobj in RecordIterator.Enum<DemoObject>())
