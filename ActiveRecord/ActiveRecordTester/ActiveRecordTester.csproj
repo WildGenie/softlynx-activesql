@@ -63,6 +63,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ActiveSQL.OleDB\ActiveSQL.OleDB.csproj">
+      <Project>{E538BD0A-DE27-406A-93BE-41386011A000}</Project>
+      <Name>ActiveSQL.OleDB</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ActiveSQL.Postgres\ActiveSQL.Postgres.csproj">
       <Project>{E4987ABC-7D45-447A-A161-D3EBFF1B9043}</Project>
       <Name>ActiveSQL.Postgres</Name>

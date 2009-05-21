@@ -49,6 +49,15 @@ namespace Softlynx.ActiveSQL
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class WithReplica : Attribute { }
 
+
+    /// <summary>
+    /// Instructs the record manager about database schema is not under framework control.
+    /// In other case framework will not attempt to create reflected table schema 
+    /// and raise an exception in case of TableVersion TableAction.Recreate or any ColumnAction
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    public class PredefinedSchema : Attribute { }
+
     public class NamedAttribute : Attribute
     {
         private string _name = string.Empty;
@@ -82,6 +91,14 @@ namespace Softlynx.ActiveSQL
         internal bool _GenerateSQL_PK = true;
         public PrimaryKey() { }
         public PrimaryKey(bool GenerateSQL_PK) { _GenerateSQL_PK = GenerateSQL_PK; }
+        private bool _HideInherited=false;
+
+        public bool HideInheritedPK
+        {   
+            get { return _HideInherited; }
+            set { _HideInherited=value; }
+        }
+	
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
@@ -235,22 +252,23 @@ namespace Softlynx.ActiveSQL
     public delegate void RecordManagerWriteEvent(object o, ref bool Handled);
     public delegate void RecordSetEvent(object o, object recordset);
 
+
   
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public class InTable : NamedAttribute,ICloneable
 
     {
-        private bool _PersistentSchema=false;
+        internal bool _PredefinedSchema= false;
 
         /// <summary>
-        /// Determines the database schema persistance.
+        /// Determines the database schema is not under the framework control and
+        /// were defined outside the application.
         /// In case of true the framework will not attempt to create reflected table schema 
         /// and raise an exception in case of TableVersion TableAction.Recreate or any ColumnAction
         /// </summary>
-        public bool PersistentSchema
+        public bool PredefinedSchema
         {
-            get { return _PersistentSchema; }
-            set { _PersistentSchema = value; }
+            get { return _PredefinedSchema; }
         }
 
         internal RecordManager manager = null;
@@ -468,18 +486,15 @@ namespace Softlynx.ActiveSQL
            
             foreach (InField field in fields)
             {
-
-                DbParameter prm = manager.CreateParameter(field);
                 if (!field.IsAutoincrement)
-                    InsertCmd.Parameters.Add(prm);
-                UpdateCmd.Parameters.Add(prm);
+                    InsertCmd.Parameters.Add(manager.CreateParameter(field));
+                UpdateCmd.Parameters.Add(manager.CreateParameter(field));
             }
 
             foreach (InField field in primary_fields)
             {
-                DbParameter prm = manager.CreateParameter(field);
-                DeleteCmd.Parameters.Add(prm);
-                FillCmd.Parameters.Add(prm);
+                DeleteCmd.Parameters.Add(manager.CreateParameter(field));
+                FillCmd.Parameters.Add(manager.CreateParameter(field));
             }
             
 
@@ -1199,7 +1214,8 @@ namespace Softlynx.ActiveSQL
 
                     }
                 }
-
+                Type base_only = null;
+                Hashtable DefinedFields = new Hashtable();
                 foreach (PropertyInfo prop in type.GetProperties())
                 {
                     if (prop.IsDefined(typeof(ExcludeFromTable), true)) continue;
@@ -1210,23 +1226,38 @@ namespace Softlynx.ActiveSQL
                     foreach (PrimaryKey pk in prop.GetCustomAttributes(typeof(PrimaryKey), true))
                     {
                         if (pk._GenerateSQL_PK == false) field.GenerateSQL_PK = false;
+                        if ((pk.HideInheritedPK) && (base_only == null))
+                            base_only = prop.DeclaringType;
                     }
                     field.IsAutoincrement = prop.IsDefined(typeof(Autoincrement), true);
                     field.field_type = prop.PropertyType;
                     field.prop = prop;
+                    
+                    if (field.IsPrimary && (base_only!=null) && (!prop.DeclaringType.Equals(base_only)))
+                        continue;
 
                     field.IsIndexed = prop.IsDefined(typeof(Indexed), true);
+                    
+                    if (DefinedFields.ContainsKey(field.Name))
+                        continue;
+                    
+                    if (prop.CanWrite)
+                    {
+                        fields.Add(field);
+                        DefinedFields[field.Name] = true;
+                    }
 
-                    if (prop.CanWrite) fields.Add(field);
                     if (field.IsPrimary)
                     {
                         if (primary_fields.Count > 0)
                             throw new Exception(string.Format("Can't define more than one field for primary index on object {0} ", type.ToString()));
                         primary_fields.Add(field);
+                        DefinedFields[field.Name] = true;
                     }
 
                 }
                 table.with_replica = type.IsDefined(typeof(WithReplica), true);
+                table._PredefinedSchema = type.IsDefined(typeof(PredefinedSchema), true);
                 if ((table.with_replica) && (table.IsVirtual))
                 {
                     throw new Exception(string.Format("Replica is not supported on virtual table {0}", table.Name));
@@ -1262,89 +1293,98 @@ namespace Softlynx.ActiveSQL
                     }
 
                     List<TableVersion> attrs = new List<TableVersion>((IEnumerable<TableVersion>)Attribute.GetCustomAttributes(type, typeof(TableVersion), true));
-                    attrs.Insert(0, new TableVersion(0, TableAction.Recreate));
-                    attrs.Sort();
-                    bool recreate_happened = false;
-                    foreach (TableVersion update in attrs)
-                    {
-                        if (update.Version > ov.Version)
+                    if (!table.PredefinedSchema)
+                        using (ManagerTransaction transaction = BeginTransaction())
                         {
-                            try
+                        attrs.Insert(0, new TableVersion(0, TableAction.Recreate));
+                        attrs.Sort();
+                        bool recreate_happened = false;
+                        foreach (TableVersion update in attrs)
+                        {
+                            if (update.Version > ov.Version)
                             {
-                                if (update.Action == TableAction.Recreate)
+                                try
                                 {
-                                    string s = update.SQLCode;
-                                    update.SQLCode = table.DropTableStatement();
-                                    RunCommand(update.SQLCode);
-                                    update.SQLCode = table.CreateTableStatement();
-                                    RunCommand(update.SQLCode);
-                                    update.SQLCode = s;
-                                    recreate_happened = true;
-                                }
-                                if ((update.ColumnName != null) && (!recreate_happened))
-                                {
-                                    InField colf=table.Field(update.ColumnName);
-                                    if ((colf==null) && (update.ColumnAction!=ColumnAction.Remove))
-                                        throw new ApplicationException("Update reference not existing column " + update.ColumnName);
-                                    string code = "ALTER TABLE " + AsFieldName(table.Name);
-                                    switch (update.ColumnAction)
+                                    if (update.Action == TableAction.Recreate)
                                     {
-                                        case ColumnAction.Remove:
-                                            code += " DROP COLUMN " + AsFieldName(update.ColumnName);
-                                            break;
-                                        
-                                        case ColumnAction.Recreate:
-                                            code += " DROP COLUMN " + AsFieldName(colf.Name);
-                                            code += ", ";
-                                            code += " ADD COLUMN " + AsFieldName(colf.Name) +  SqlType(colf);
-                                            break;
-
-                                        case ColumnAction.Insert:
-                                            code+=" ADD COLUMN "+AsFieldName(colf.Name)+SqlType(colf);
-                                            break;
-
-                                        case ColumnAction.ChangeType:
-                                            code += " ALTER COLUMN " + AsFieldName(colf.Name) + " TYPE " + SqlType(colf);
-                                            break;
-
-                                        default: code = null;
-                                            break;
-                                    }
-                                    if (code != null)
-                                    {
+                                        if (table.PredefinedSchema)
+                                            throw new ApplicationException("Cant't recreate table " + table.Name + " with PersistentSchema attribute active");
                                         string s = update.SQLCode;
-                                        update.SQLCode = code;
-                                        RunCommand(code);
+                                        update.SQLCode = table.DropTableStatement();
+                                        RunCommand(update.SQLCode);
+                                        update.SQLCode = table.CreateTableStatement();
+                                        RunCommand(update.SQLCode);
                                         update.SQLCode = s;
+                                        recreate_happened = true;
                                     }
+                                    if ((update.ColumnName != null) && (!recreate_happened))
+                                    {
+                                        if (table.PredefinedSchema)
+                                            throw new ApplicationException("Cant't alter columns on table " + table.Name + " with PersistentSchema attribute active");
+                                        InField colf = table.Field(update.ColumnName);
+                                        if ((colf == null) && (update.ColumnAction != ColumnAction.Remove))
+                                            throw new ApplicationException("Update reference not existing column " + update.ColumnName);
+                                        string code = "ALTER TABLE " + AsFieldName(table.Name);
+                                        switch (update.ColumnAction)
+                                        {
+                                            case ColumnAction.Remove:
+                                                code += " DROP COLUMN " + AsFieldName(update.ColumnName);
+                                                break;
+
+                                            case ColumnAction.Recreate:
+                                                code += " DROP COLUMN " + AsFieldName(colf.Name);
+                                                code += ", ";
+                                                code += " ADD COLUMN " + AsFieldName(colf.Name) + SqlType(colf);
+                                                break;
+
+                                            case ColumnAction.Insert:
+                                                code += " ADD COLUMN " + AsFieldName(colf.Name) + SqlType(colf);
+                                                break;
+
+                                            case ColumnAction.ChangeType:
+                                                code += " ALTER COLUMN " + AsFieldName(colf.Name) + " TYPE " + SqlType(colf);
+                                                break;
+
+                                            default: code = null;
+                                                break;
+                                        }
+                                        if (code != null)
+                                        {
+                                            string s = update.SQLCode;
+                                            update.SQLCode = code;
+                                            RunCommand(code);
+                                            update.SQLCode = s;
+                                        }
+                                    }
+
+                                    if (
+                                        (update.Action == TableAction.RunSQL)
+                                        ||
+                                        (update.Action == TableAction.Recreate)
+                                        &&
+                                        (update.SQLCode != string.Empty)
+                                        )
+
+                                        RunCommand(update.SQLCode);
+
+                                    table.DoTableVersionChanged(update.Version);
                                 }
-
-                                if (
-                                    (update.Action == TableAction.RunSQL)
-                                    ||
-                                    (update.Action == TableAction.Recreate)
-                                    &&
-                                    (update.SQLCode != string.Empty)
-                                    )
-                                    
-                                RunCommand(update.SQLCode);
-
-                            table.DoTableVersionChanged(update.Version);
+                                catch (Exception E)
+                                {
+                                    throw new Exception(
+                                        string.Format("{0} when upgrading table {1} to version {2} with {3} action and command:\n{4}",
+                                        E.Message,
+                                        table.Name,
+                                        update.Version,
+                                        update.Action.ToString(),
+                                        update.SQLCode), E);
+                                }
+                                ov.Version = update.Version;
+                                Write(ov);
                             }
-                            catch (Exception E)
-                            {
-                                throw new Exception(
-                                    string.Format("{0} when upgrading table {1} to version {2} with {3} action and command:\n{4}",
-                                    E.Message,
-                                    table.Name,
-                                    update.Version,
-                                    update.Action.ToString(),
-                                    update.SQLCode), E);
-                            }
-                            ov.Version = update.Version;
-                            Write(ov);
-                        } 
-                    }
+                        }
+                            transaction.Commit();
+                        }
                     table.InitSqlMethods();
                 }
             }
@@ -1389,17 +1429,19 @@ namespace Softlynx.ActiveSQL
 
         internal void InitStructure(params Type[] types)
         {
-
-            TryToRegisterAsActiveRecord(typeof(ObjectVersions));
-
-            using (ManagerTransaction transaction = BeginTransaction())
+            foreach (Type t in types)
             {
+                if (!t.IsDefined(typeof(PredefinedSchema), true) && t.IsDefined(typeof(InTable), true))
+                {
+                    TryToRegisterAsActiveRecord(typeof(ObjectVersions));
+                    break;
+                }
+            }
+
                 foreach (Type t in types)
                 {
                     TryToRegisterAsActiveRecord(t);
                 }
-                transaction.Commit();
-            }
 
             using (ManagerTransaction transaction = BeginTransaction())
             {
