@@ -67,7 +67,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleRemoting", "SimpleRem
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleRemotingCE", "SimpleRemotingCE\SimpleRemotingCE.csproj", "{EAAE38D0-D98D-4DBF-8469-10842C09F837}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleRemoting CF", "SimpleRemoting CF\SimpleRemoting CF.csproj", "{EAAE38D0-D98D-4DBF-8469-10842C09F837}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"

@@ -51,6 +51,16 @@ namespace Softlynx.ActiveSQL.SQLite
             return p;
         }
 
+        public DbParameter CreateParameter(InField f)
+        {
+            return SetupParameter(CreateParameter(f.Name, f.FieldType), f);
+        }
+
+        public DbParameter SetupParameter(DbParameter param, InField f)
+        {
+            return param;
+        }
+
 
         public string GetSqlType(Type t)
         {

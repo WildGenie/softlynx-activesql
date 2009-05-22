@@ -20,6 +20,7 @@ namespace Softlynx.ActiveSQL
     {
         DbParameter CreateParameter(string name, object value);
         DbParameter CreateParameter(string name, Type t);
+        DbParameter SetupParameter(DbParameter param, InField f);
         string GetSqlType(Type t);
         DbType GetDbType(Type t);
         string AsFieldName(string s);
@@ -215,6 +216,28 @@ namespace Softlynx.ActiveSQL
              
                 _prop=value;
             }
+        }
+
+        private byte _precision = 0;
+
+        public byte Precision
+        {
+            get { return _precision; }
+            set { _precision = value; }
+        }
+
+        private byte _scale = 0;
+        public byte Scale
+        {
+            get { return _scale; }
+            set { _scale = value; }
+        }
+
+        private int _size = 0;
+        public int Size
+        {
+            get { return _size; }
+            set { _size = value; }
         }
 
         internal string GetValue(object obj)
@@ -487,7 +510,7 @@ namespace Softlynx.ActiveSQL
             foreach (InField field in fields)
             {
                 if (!field.IsAutoincrement)
-                    InsertCmd.Parameters.Add(manager.CreateParameter(field));
+                   InsertCmd.Parameters.Add(manager.CreateParameter(field));
                 UpdateCmd.Parameters.Add(manager.CreateParameter(field));
             }
 
@@ -543,6 +566,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Update(object Record)
         {
+            UpdateCmd.Transaction = this.manager.transaction;
             RecordManager.ReopenConnection(UpdateCmd);
             foreach (InField field in fields)
             {
@@ -553,6 +577,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Insert(object Record)
         {
+            InsertCmd.Transaction = this.manager.transaction;
             RecordManager.ReopenConnection(InsertCmd);
             foreach (InField field in fields)
             {
@@ -816,8 +841,13 @@ namespace Softlynx.ActiveSQL
         {
             foreach (DbConnection c in ConnectionPool.Values)
             {
-                c.Close();
-                c.Dispose();
+                try
+                {
+                    c.Close();
+                    c.Dispose();
+                }
+                catch
+                { };
             }
             ConnectionPool.Clear();
         }
@@ -1219,7 +1249,7 @@ namespace Softlynx.ActiveSQL
                 foreach (PropertyInfo prop in type.GetProperties())
                 {
                     if (prop.IsDefined(typeof(ExcludeFromTable), true)) continue;
-                    InField field = (InField)Attribute.GetCustomAttribute(type, typeof(InField));
+                    InField field = (InField)Attribute.GetCustomAttribute(prop, typeof(InField));
                     if (field == null) field = new InField();
                     if (field.Name == string.Empty) field.Name = prop.Name;
                     field.IsPrimary = prop.IsDefined(typeof(PrimaryKey), true);
@@ -1547,10 +1577,10 @@ namespace Softlynx.ActiveSQL
             }
             return exist;
         }
-        
-        internal DbParameter CreateParameter(InField f)
+
+        public DbParameter CreateParameter(InField f)
         {
-            return specifics.CreateParameter(f.Name, f.FieldType);
+            return specifics.SetupParameter(specifics.CreateParameter(f.Name, f.FieldType),f);
         }
 
         public DbParameter CreateParameter(string name, Type type)

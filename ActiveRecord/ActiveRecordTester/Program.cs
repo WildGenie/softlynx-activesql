@@ -16,6 +16,7 @@ using Softlynx.SimpleConfig;
 using Softlynx.SimpleRemoting;
 using System.Threading;
 using System.Data.Common;
+using System.Data.OleDb;
 
 namespace ActiveRecordTester
 {
@@ -90,31 +91,50 @@ namespace ActiveRecordTester
     
     [InTable]
     [PredefinedSchema]
-    public class Inventory : IDObject
+    public class ItemsDescr : IDObject
     {
         public class Property
         {
             static public PropType IntID = new PropType<long>("long ID Object identifier");
             static public PropType SKUDesc = new PropType<string>("SKU Description");
+            static public PropType SKUCode = new PropType<long>("SKU Code");
+            static public PropType Barcode = new PropType<double>("Barcode");
+            static public PropType Department = new PropType<string>("Department");
+            static public PropType RetailPrice = new PropType<Money>("Retail Price");
         }
 
-        
-        new private Guid ID{get {return Guid.Empty;} }
-        
+        new public Guid ID { get { return base.ID; } }
+
         [PrimaryKey]
-        public long idInv
+        public long SKUCode
         {
-            get { return GetValue<long>(Property.IntID, 0); }
-            set { SetValue<long>(Property.IntID, value); }
+            get { return GetValue<long>(Property.SKUCode, 0); }
+            set { SetValue<long>(Property.SKUCode, value); }
         }
-
+        
         public string SKUDesc
         {
             get { return GetValue<string>(Property.SKUDesc, string.Empty); }
             set { SetValue<string>(Property.SKUDesc, value); }
         }
 
-        
+        public double Barcode
+        {
+            get { return GetValue<double>(Property.Barcode, 0.0); }
+            set { SetValue<double>(Property.Barcode, value); }
+        }
+
+        public int Department
+        {
+            get { return GetValue<int>(Property.Department, 0); }
+            set { SetValue<int>(Property.Department, value); }
+        }
+
+        public Money RetailPrice
+        {
+            get { return GetValue<Money>(Property.RetailPrice, new Money()); }
+            set { SetValue<Money>(Property.RetailPrice, value); }
+        }
 
     }
     
@@ -255,7 +275,7 @@ namespace ActiveRecordTester
 
                 IProviderSpecifics prov = new OleDBSpecifics();
                 prov.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
-                prov.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\sbdb.mdb");
+                prov.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\SBDB.mdb");
                 prov.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
 
                 //prov = new SQLiteSpecifics();
@@ -265,6 +285,12 @@ namespace ActiveRecordTester
                 //prov.Connection.Ev
                 //prov.Connection.ConnectionString
                 prov.Connection.Open();
+                //DbCommand dbcm = prov.Connection.CreateCommand();
+                //dbcm.CommandText = "INSERT INTO ItemsDescr(SCUDesc,RetailPrice) values(@V1,@v2)";
+                //OleDbParameter db1=new OleDbParameter("V1",OleDbType.
+                //dbcm.Parameters.Add(prov.C
+                //dbcm.Prepare();
+                
                 RM = new RecordManager(prov, typeof(Program).Assembly.GetTypes());
                 ReplicaManager r1 = new ReplicaManager();
                 r1.RegisterWithRecordManager(RM);
@@ -274,10 +300,17 @@ namespace ActiveRecordTester
 
     static void RunTests()
     {
-
-        foreach (Inventory inv in RecordIterator.Enum<Inventory>())
+        Type t1 = typeof(string);
+        Type t2 = typeof(Money);
+   
+        RecordManager RM=RecordManager.Default;
+        foreach (ItemsDescr inv in RecordIterator.Enum<ItemsDescr>(RM))
         {
             string xml = ReplicaManager.SerializeObject(inv);
+            object o = ReplicaManager.DeserializeObject(xml);
+            inv.SKUDesc += "+";
+            inv.RetailPrice -= 1.0;
+            RM.Write(inv);
         }
         return;
                 //RecordManager rm = RecordManager.Default;

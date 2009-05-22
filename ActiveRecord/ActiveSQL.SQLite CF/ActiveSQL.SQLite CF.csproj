@@ -63,6 +63,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\..\..\Program Files\SQLite.NET\bin\CompactFramework\SQLite.Interop.060.lib">
+      <Link>SQLite.Interop.060.lib</Link>
+    </Content>
     <None Include="..\AlexeiVolkov.snk">
       <Link>AlexeiVolkov.snk</Link>
     </None>
@@ -75,6 +78,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\..\..\Program Files\SQLite.NET\bin\CompactFramework\SQLite.Interop.060.DLL">
+      <Link>SQLite.Interop.060.DLL</Link>
+    </Content>
     <Content Include="logo.ico" />
   </ItemGroup>
   <Import Condition="'$(TargetFrameworkVersion)' == 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.v1.targets" />
