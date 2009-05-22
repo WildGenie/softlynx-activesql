@@ -53,12 +53,12 @@ namespace Softlynx.SimpleRemoting
     /// using (Client cli = new Client(new IPEndPoint(IPAddress.Parse("target.server.net"), 9090)))
     /// {
     /// RemotingParams p = new RemotingParams();
-    /// p.Add("ParamKey1","ParamValue1");
+    /// p.Input.Add("ParamKey1","ParamValue1");
     /// try {
     /// cli.Query(p);
     /// } catch {...}
     /// //examine p.Output
-    /// if (p.Outputt["ReplyKey1"]=="ReplyValue") 
+    /// if (p.Output["ReplyKey1"]=="ReplyValue") 
     /// {...}
     /// }
     /// </code>

@@ -27,13 +27,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_2CE023CD01144D31B6593542212AB391"
+        "MsmKey" = "8:_26E69ED197F94C2DBB10D7E56540A08C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_3184CD43384A4D5E80500CE3911866D8"
+        "MsmKey" = "8:_2B1502EEB6A4427B97EF86F775A4D0DA"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2CE023CD01144D31B6593542212AB391"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -41,6 +47,30 @@
         {
         "MsmKey" = "8:_32973457CC584F24A3BBA1996855DE69"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+        "OwnerKey" = "8:_26E69ED197F94C2DBB10D7E56540A08C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+        "OwnerKey" = "8:_F61498A9C62349C6885FEF6E35743E12"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+        "OwnerKey" = "8:_94F4B4DBAB384035AEFAB56321856855"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+        "OwnerKey" = "8:_5A94498A5D39472788F69087C318854A"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -64,19 +94,7 @@
         "Entry"
         {
         "MsmKey" = "8:_5355C62796263477AEA238C00E2FA3DB"
-        "OwnerKey" = "8:_ACF8056F769556178AD8A4ADB35853A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5355C62796263477AEA238C00E2FA3DB"
         "OwnerKey" = "8:_5A94498A5D39472788F69087C318854A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5355C62796263477AEA238C00E2FA3DB"
-        "OwnerKey" = "8:_3184CD43384A4D5E80500CE3911866D8"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -124,12 +142,6 @@
         "Entry"
         {
         "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
-        "OwnerKey" = "8:_3184CD43384A4D5E80500CE3911866D8"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
         "OwnerKey" = "8:_F2489980C033415E8B10328CD37D057D"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -142,12 +154,6 @@
         "Entry"
         {
         "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
-        "OwnerKey" = "8:_ACF8056F769556178AD8A4ADB35853A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
         "OwnerKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -155,24 +161,6 @@
         {
         "MsmKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
         "OwnerKey" = "8:_5A94498A5D39472788F69087C318854A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ACF8056F769556178AD8A4ADB35853A7"
-        "OwnerKey" = "8:_5A94498A5D39472788F69087C318854A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ACF8056F769556178AD8A4ADB35853A7"
-        "OwnerKey" = "8:_94F4B4DBAB384035AEFAB56321856855"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ACF8056F769556178AD8A4ADB35853A7"
-        "OwnerKey" = "8:_F61498A9C62349C6885FEF6E35743E12"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -196,7 +184,7 @@
         "Entry"
         {
         "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
-        "OwnerKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
+        "OwnerKey" = "8:_2B1502EEB6A4427B97EF86F775A4D0DA"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -214,12 +202,6 @@
         "Entry"
         {
         "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
-        "OwnerKey" = "8:_ACF8056F769556178AD8A4ADB35853A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
         "OwnerKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -232,13 +214,13 @@
         "Entry"
         {
         "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
-        "OwnerKey" = "8:_3184CD43384A4D5E80500CE3911866D8"
+        "OwnerKey" = "8:_5355C62796263477AEA238C00E2FA3DB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_E91B39332C2D7967A8CE083382C77953"
-        "OwnerKey" = "8:_5355C62796263477AEA238C00E2FA3DB"
+        "OwnerKey" = "8:_AAE42224B8FB87D84FA3EA2E018C736C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -328,12 +310,6 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_ACF8056F769556178AD8A4ADB35853A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_0738CAABA1CD9D24D0639A75E3E94FAC"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -341,12 +317,6 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_32973457CC584F24A3BBA1996855DE69"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_3184CD43384A4D5E80500CE3911866D8"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -364,7 +334,25 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_2B1502EEB6A4427B97EF86F775A4D0DA"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_E91B39332C2D7967A8CE083382C77953"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_26E69ED197F94C2DBB10D7E56540A08C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -549,6 +537,37 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.107.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+                    {
+                    "Name" = "8:Softlynx.ActiveSQL.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:Softlynx.ActiveSQL.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_5355C62796263477AEA238C00E2FA3DB"
             {
             "AssemblyRegister" = "3:1"
@@ -659,37 +678,6 @@
             "PackageAs" = "3:1"
             "Register" = "3:1"
             "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_ACF8056F769556178AD8A4ADB35853A7"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.107.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_ACF8056F769556178AD8A4ADB35853A7"
-                    {
-                    "Name" = "8:Softlynx.ActiveSQL.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:Softlynx.ActiveSQL.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
@@ -914,14 +902,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Softlynx.ActiveSQL"
-        "ProductCode" = "8:{7DF6ED88-8819-470D-9889-004F63A99D26}"
-        "PackageCode" = "8:{71924C77-66C9-4F5A-AD1F-5530594EE1BD}"
+        "ProductCode" = "8:{3962E53C-879C-4BD0-BEF6-AC33A6DC9DBF}"
+        "PackageCode" = "8:{8541B6F2-6BB4-4933-A5DC-030673485002}"
         "UpgradeCode" = "8:{3E756E92-D2D8-49F5-977E-74F2FFED98FF}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.2.109"
+        "ProductVersion" = "8:1.2.110"
         "Manufacturer" = "8:SoftLynx"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://code.google.com/p/softlynx-activesql/"
@@ -1657,12 +1645,12 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_0D2623CA811449ACB90745982626BBF9"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_26E69ED197F94C2DBB10D7E56540A08C"
             {
-            "SourcePath" = "8:"
+            "SourcePath" = "8:..\\ActiveSQL.OleDB\\obj\\Debug\\Softlynx.ActiveSQL.OleDB.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
-            "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
+            "Folder" = "8:_D6A834ECFDE74C0C83F03E3BD9CDC48E"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1678,16 +1666,16 @@
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Symbols"
-            "OutputProjectGuid" = "8:{665E2243-330F-495D-AFE0-4344CB5FE516}"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{E538BD0A-DE27-406A-93BE-41386011A000}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_3184CD43384A4D5E80500CE3911866D8"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_2B1502EEB6A4427B97EF86F775A4D0DA"
             {
-            "SourcePath" = "8:..\\SimpleConfig CF\\obj\\Debug\\Softlynx.SimpleConfig.dll"
+            "SourcePath" = "8:..\\SimpleRemotingCE\\obj\\Debug\\Softlynx.SimpleRemoting.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
@@ -1707,7 +1695,7 @@
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{665E2243-330F-495D-AFE0-4344CB5FE516}"
+            "OutputProjectGuid" = "8:{EAAE38D0-D98D-4DBF-8469-10842C09F837}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
@@ -1769,34 +1757,6 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_3933B7E5FE19493491433ABD9A0A4A97"
-            {
-            "SourcePath" = "8:"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Symbols"
-            "OutputProjectGuid" = "8:{665E2243-330F-495D-AFE0-4344CB5FE516}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5A94498A5D39472788F69087C318854A"
             {
             "SourcePath" = "8:..\\ActiveSQL.SQLite CF\\obj\\Debug\\Softlynx.ActiveSQL.SQLite.dll"
@@ -1820,6 +1780,34 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{1274B129-346A-43BC-93C3-AD8D2652A11F}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_7BF31D9733214B4A8535C67546F867EF"
+            {
+            "SourcePath" = "8:"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_EFBA2FF858D940AE97B12F3974FC9F4D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Symbols"
+            "OutputProjectGuid" = "8:{EAAE38D0-D98D-4DBF-8469-10842C09F837}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
@@ -2044,6 +2032,34 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Symbols"
             "OutputProjectGuid" = "8:{E4987ABC-7D45-447A-A161-D3EBFF1B9043}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E870C0699D1E4F5DB8C8552CE68F0AD4"
+            {
+            "SourcePath" = "8:"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_D6A834ECFDE74C0C83F03E3BD9CDC48E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Symbols"
+            "OutputProjectGuid" = "8:{E538BD0A-DE27-406A-93BE-41386011A000}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {

@@ -223,6 +223,23 @@ namespace ActiveRecordTester
         }
         static public void MyHandler(RemotingParams parameters)
         {
+            if (parameters.Phase == RemotingPhase.Established)
+            {
+                // initialize the session
+                return;
+            }
+            if (parameters.Phase == RemotingPhase.Disposing)
+            {
+                // dispose the session
+                return;
+            }
+            if (parameters.Phase != RemotingPhase.Query)
+            {
+                // should never happened
+                throw new ApplicationException("Unknown remoting phase");
+            }
+
+
             if (parameters.Input.Count == 0) 
                 //throw new ApplicationException("wwqwer");
             FillParams(parameters.Output);
