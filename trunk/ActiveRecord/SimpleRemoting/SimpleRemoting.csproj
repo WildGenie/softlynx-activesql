@@ -50,7 +50,7 @@
   -->
   <PropertyGroup>
     <PreBuildEvent>svnrevision $(ProjectDir)
-rem svnrevision $(ProjectDir) "../$(ProjectName) CF/Properties/AssemblyInfo.cs"
+svnrevision $(ProjectDir) "../$(ProjectName) CF/Properties/AssemblyInfo.cs"
 </PreBuildEvent>
   </PropertyGroup>
 </Project>

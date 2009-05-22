@@ -80,7 +80,13 @@ namespace Softlynx.RecordSet
                     Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
                     i++;
                     Type pt = field.prop.PropertyType;
-                    field.prop.SetValue(instance, v, null);
+                    object nv = v;
+                    if ((!pt.IsPrimitive) && (pt.Namespace!="System")) {
+                        ConstructorInfo nvci=pt.GetConstructor(new Type[] { v.GetType() });
+                        if (nvci != null)
+                            nv = nvci.Invoke(new object[] { v });
+                    }
+                    field.prop.SetValue(instance, nv, null);
                 }
 
                 table.FireAfterReadEvent(instance);

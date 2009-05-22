@@ -41,6 +41,6 @@
     <CollectionTocStyle>Hierarchical</CollectionTocStyle>
     <IncludeStopWordList>True</IncludeStopWordList>
     <PlugInNamespaces>ms.vsipcc+, ms.vsexpresscc+</PlugInNamespaces>
-    <HelpFileVersion>1.0.104.0</HelpFileVersion>
+    <HelpFileVersion>1.0.110.0</HelpFileVersion>
     <ContentPlacement>AboveNamespaces</ContentPlacement>
 </project>

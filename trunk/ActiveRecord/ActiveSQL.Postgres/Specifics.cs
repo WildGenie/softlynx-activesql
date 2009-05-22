@@ -50,6 +50,10 @@ namespace Softlynx.ActiveSQL.Postgres
             return p;
         }
 
+        public DbParameter SetupParameter(DbParameter param, InField f)
+        {
+            return param;
+        }
 
         public string GetSqlType(Type t)
         {

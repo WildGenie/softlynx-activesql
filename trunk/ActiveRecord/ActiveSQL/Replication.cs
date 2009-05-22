@@ -346,22 +346,30 @@ namespace Softlynx.ActiveSQL.Replication
 
 
         XmlSerializer logserializer = new XmlSerializer(typeof(ReplicaLog));
-        static XmlWriterSettings serializer_settings = null;
+        static XmlWriterSettings _serializer_settings = null;
         XmlSerializerNamespaces serializer_ns = new XmlSerializerNamespaces();
+
+        private static XmlWriterSettings SerializerSettings
+        {
+            get
+            {
+                if (_serializer_settings == null)
+                {
+                    _serializer_settings = new XmlWriterSettings();
+                    _serializer_settings.CloseOutput = false;
+                    _serializer_settings.NewLineChars = "";
+                    _serializer_settings.NewLineHandling = NewLineHandling.None;
+                    _serializer_settings.NewLineOnAttributes = false;
+                    _serializer_settings.OmitXmlDeclaration = true;
+                    _serializer_settings.Indent = false;
+                }
+                return _serializer_settings;
+            }
+        }
 
         public ReplicaManager()
         {
-            if (serializer_settings == null)
-            {
-                serializer_settings=new XmlWriterSettings();
-                serializer_settings.CloseOutput = false;
-                serializer_settings.NewLineChars = "";
-                serializer_settings.NewLineHandling = NewLineHandling.None;
-                serializer_settings.NewLineOnAttributes = false;
-                serializer_settings.OmitXmlDeclaration = true;
-                serializer_settings.Indent = false;
-                serializer_ns.Add("", "");
-            }
+            serializer_ns.Add("", "");
         }
 
 
@@ -370,7 +378,7 @@ namespace Softlynx.ActiveSQL.Replication
         {
             long logcnt = 0;
             MemoryStream ms = new MemoryStream();
-            XmlWriter xw = XmlWriter.Create(ms, serializer_settings);
+            XmlWriter xw = XmlWriter.Create(ms, SerializerSettings);
             xw.WriteStartElement("ReplicaBuffer");
             foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager, Manager.WhereExpression("SeqNO", ">") + " and " + Manager.WhereEqual("Actual"), Manager.AsFieldName("SeqNO"), "SeqNO", lastknownid,"Actual",true))
             {
@@ -459,7 +467,7 @@ namespace Softlynx.ActiveSQL.Replication
         private static string SerializeObject(InTable ActiveRecordInfo, object obj, ReplicaLog.Operation operation)
         {
             MemoryStream ms = new MemoryStream();
-            XmlWriter xw = XmlWriter.Create(ms,serializer_settings);
+            XmlWriter xw = XmlWriter.Create(ms,SerializerSettings);
             InField[] fld = (operation == ReplicaLog.Operation.Write) ? ActiveRecordInfo.fields : ActiveRecordInfo.primary_fields;
             xw.WriteStartDocument();
             xw.WriteStartElement(ActiveRecordInfo.Name);
@@ -476,23 +484,61 @@ namespace Softlynx.ActiveSQL.Replication
             return data;
         }
 
-        public static object DeserializeObject(InTable ActiveRecordInfo, string data)
+        public static object DeserializeObject(string data)
         {
-            return DeserializeObject(ActiveRecordInfo, data, RecordManager.Default);
+            return DeserializeObject(RecordManager.Default, data);
         }
 
-        public static object DeserializeObject(InTable ActiveRecordInfo, string data,RecordManager Manager)
+        public static object DeserializeObject(RecordManager Manager,string data)
+        {
+            return DeserializeObject(Manager,null, data);
+        }
+
+        public static T DeserializeObjectAs<T>(string data)
+        {
+            return DeserializeObjectAs<T>(RecordManager.Default,data);
+        }
+
+        public static object DeserializeObjectAs(Type t, string data)
+        {
+            return DeserializeObjectAs(t, data);
+        }
+
+        public static T DeserializeObjectAs<T>(RecordManager Manager, string data)
+        {
+            return (T)DeserializeObjectAs(Manager,typeof(T), data);
+        }
+
+        public static object DeserializeObjectAs(RecordManager Manager, Type t, string data)
+        {
+            InTable it = Manager.ActiveRecordInfo(t, false);
+            return DeserializeObject(Manager, it, data);
+        }
+
+        private static object DeserializeObject(RecordManager Manager,InTable ActiveRecordInfo, string data)
         {
             MemoryStream ms = new MemoryStream();
             TextWriter tw = new StreamWriter(ms);
             tw.Write(data);
             tw.Flush();
             ms.Seek(0, SeekOrigin.Begin);
+            XmlReader xr = XmlReader.Create(ms);
+            xr.Read();
+            if (ActiveRecordInfo == null)
+            {
+                Type rt = Manager.GetTypeFromTableName(xr.Name);
+                if (rt!=null)
+                    ActiveRecordInfo=Manager.ActiveRecordInfo(rt, false);
+                if (ActiveRecordInfo == null)
+                    throw new ApplicationException("Can't find any ActiveRecord class named " + xr.Name);
+            }
+
             Object instance = Activator.CreateInstance(ActiveRecordInfo.basetype);
             if (instance is IRecordManagerDriven)
                 (instance as IRecordManagerDriven).Manager = Manager;
-            XmlReader xr = XmlReader.Create(ms);
+
             xr.ReadStartElement();
+
             while (!xr.EOF)
             {
                 if (xr.IsStartElement())
@@ -533,7 +579,7 @@ namespace Softlynx.ActiveSQL.Replication
             InTable it = rt==null?null:Manager.ActiveRecordInfo(rt,false);
             if (it!=null)
             {
-                 Object instance =  DeserializeObject(it, log.ObjectValue,Manager);
+                 Object instance =  DeserializeObject(Manager,it, log.ObjectValue);
                     using (DisableLogger)
                     {
                         DbCommand TestConflict = Commands(Manager).ConflictReplicaCmd;

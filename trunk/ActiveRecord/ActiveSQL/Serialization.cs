@@ -196,7 +196,7 @@ namespace Softlynx.ActiveSQL
 
     public abstract class ObjectProp:IDObject
     {
-        new public static class Props
+        public static class Props
         {
             public static PropType ObjectID = new PropType<Guid>("Object ID");
             public static PropType PropertyID = new PropType<Guid>("Property ID");
