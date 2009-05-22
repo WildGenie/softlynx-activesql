@@ -68,9 +68,24 @@ namespace Softlynx.SimpleRemoting
     /// ....
     /// protected void MyHandler(RemotingParams parameters)
     /// {
+    ///             if (parameters.Phase == RemotingPhase.Established)
+    ///        {
+    ///            // initialize the session
+    ///            return;
+    ///        }
+    ///        if (parameters.Phase == RemotingPhase.Disposing)
+    ///        {
+    ///            // dispose the session
+    ///            return;
+    ///        }
+    ///        if (parameters.Phase != RemotingPhase.Query)
+    ///        {
+    ///            // should never happened
+    ///            throw new ApplicationException("Unknown remoting phase");
+    ///        }
     /// if (parameters.Input["KEY"]=="VALUE")
     /// {...}
-    /// parameters.Add("Response1","ResponseValue1");
+    /// parameters.Output.Add("Response1","ResponseValue1");
     /// }
     /// </code>
     /// </example>

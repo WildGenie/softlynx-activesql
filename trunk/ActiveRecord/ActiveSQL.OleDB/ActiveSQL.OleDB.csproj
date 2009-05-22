@@ -7,8 +7,8 @@
     <ProjectGuid>{E538BD0A-DE27-406A-93BE-41386011A000}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ActiveSQL.OleDB</RootNamespace>
-    <AssemblyName>ActiveSQL.OleDB</AssemblyName>
+    <RootNamespace>Softlynx.ActiveSQL.OleDB</RootNamespace>
+    <AssemblyName>Softlynx.ActiveSQL.OleDB</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
