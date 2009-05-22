@@ -209,6 +209,23 @@ namespace Softlynx.ActiveSQL
         internal Type field_type = typeof(object);
         internal PropertyInfo _prop = null;
 
+        private DbType? _DBType=null;
+
+        public DbType? DBType
+        {
+            get { return _DBType; }
+            set { _DBType = value; }
+
+        }
+        public InField()
+            : base()
+        {
+        }
+
+        public InField(DbType dbt):base()
+        {
+            DBType = dbt;
+        }
         internal PropertyInfo prop
         {
             get { return _prop; }
@@ -1580,7 +1597,10 @@ namespace Softlynx.ActiveSQL
 
         public DbParameter CreateParameter(InField f)
         {
-            return specifics.SetupParameter(specifics.CreateParameter(f.Name, f.FieldType),f);
+            DbParameter res=specifics.CreateParameter(f.Name, f.FieldType);
+            if (f.DBType!=null)
+                res.DbType = (DbType)f.DBType;
+            return specifics.SetupParameter(res,f);
         }
 
         public DbParameter CreateParameter(string name, Type type)
