@@ -51,26 +51,26 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+        "MsmKey" = "8:_502455C79AD6910B52C846BC51EEC7D4"
         "OwnerKey" = "8:_26E69ED197F94C2DBB10D7E56540A08C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
-        "OwnerKey" = "8:_5A94498A5D39472788F69087C318854A"
+        "MsmKey" = "8:_502455C79AD6910B52C846BC51EEC7D4"
+        "OwnerKey" = "8:_F61498A9C62349C6885FEF6E35743E12"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+        "MsmKey" = "8:_502455C79AD6910B52C846BC51EEC7D4"
         "OwnerKey" = "8:_94F4B4DBAB384035AEFAB56321856855"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
-        "OwnerKey" = "8:_F61498A9C62349C6885FEF6E35743E12"
+        "MsmKey" = "8:_502455C79AD6910B52C846BC51EEC7D4"
+        "OwnerKey" = "8:_5A94498A5D39472788F69087C318854A"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -340,7 +340,7 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+        "OwnerKey" = "8:_502455C79AD6910B52C846BC51EEC7D4"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -525,14 +525,14 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_502455C79AD6910B52C846BC51EEC7D4"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.111.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Softlynx.ActiveSQL, Version=1.2.112.0, Culture=neutral, PublicKeyToken=6b47c24f377fda99, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_3AD3714C19B5B7FDD469DFD57F9DCAFB"
+                    "_502455C79AD6910B52C846BC51EEC7D4"
                     {
                     "Name" = "8:Softlynx.ActiveSQL.dll"
                     "Attributes" = "3:512"
@@ -850,14 +850,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Softlynx.ActiveSQL"
-        "ProductCode" = "8:{3C2883CD-00C1-4DAB-B439-77DE2D687453}"
-        "PackageCode" = "8:{FC31C7B2-9DB1-4A59-8003-158C09084212}"
+        "ProductCode" = "8:{6FF3CC6E-AEAE-437E-9D34-9CBA2DDD8DB9}"
+        "PackageCode" = "8:{64C96C4B-995D-4A9D-B9D4-0CE40A24DD8D}"
         "UpgradeCode" = "8:{3E756E92-D2D8-49F5-977E-74F2FFED98FF}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.2.111"
+        "ProductVersion" = "8:1.2.112"
         "Manufacturer" = "8:SoftLynx"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://code.google.com/p/softlynx-activesql/"

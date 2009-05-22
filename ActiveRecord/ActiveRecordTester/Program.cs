@@ -15,6 +15,7 @@ using Softlynx.RecordCache;
 using Softlynx.SimpleConfig;
 using Softlynx.SimpleRemoting;
 using System.Threading;
+using System.Data;
 using System.Data.Common;
 using System.Data.OleDb;
 
@@ -130,10 +131,11 @@ namespace ActiveRecordTester
             set { SetValue<int>(Property.Department, value); }
         }
 
-        public Money RetailPrice
+        [InField(DbType.Currency)]
+        public decimal RetailPrice
         {
-            get { return GetValue<Money>(Property.RetailPrice, new Money()); }
-            set { SetValue<Money>(Property.RetailPrice, value); }
+            get { return GetValue<decimal>(Property.RetailPrice, 0); }
+            set { SetValue<decimal>(Property.RetailPrice, value); }
         }
 
     }
@@ -309,7 +311,7 @@ namespace ActiveRecordTester
             string xml = ReplicaManager.SerializeObject(inv);
             object o = ReplicaManager.DeserializeObject(xml);
             inv.SKUDesc += "+";
-            inv.RetailPrice -= 1.0;
+            inv.RetailPrice -= 1;
             RM.Write(inv);
         }
         return;
