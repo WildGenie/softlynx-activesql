@@ -9,12 +9,16 @@ using Npgsql;
 
 namespace Softlynx.ActiveSQL.Postgres
 {
-    public class PgSqlSpecifics : IProviderSpecifics
+    public class PgSqlSpecifics : ProviderSpecifics
     {
         NpgsqlConnectionStringBuilder sb = new NpgsqlConnectionStringBuilder();
-        DbConnection db = new NpgsqlConnection();
 
-        private static Hashtable CreateTypeMapping()
+        public override DbConnection CreateDbConnection()
+        {
+            return new NpgsqlConnection();
+        }
+
+        protected override Hashtable CreateTypeMapping()
         {
             Hashtable res = new Hashtable();
             res[typeof(string)] = new object[] { "Text", DbType.String };
@@ -31,18 +35,7 @@ namespace Softlynx.ActiveSQL.Postgres
             return res;
         }
 
-        Hashtable type_mapping = CreateTypeMapping();
-
-        public DbParameter CreateParameter(string name, object value)
-        {
-            DbParameter p = new NpgsqlParameter();
-            p.DbType = GetDbType(value.GetType());
-            p.ParameterName = name;
-            p.Value = value;
-            return p;
-        }
-
-        public DbParameter CreateParameter(string name, Type type)
+        public override DbParameter CreateParameter(string name, Type type)
         {
             DbParameter p = new NpgsqlParameter();
             p.DbType = GetDbType(type);
@@ -50,63 +43,28 @@ namespace Softlynx.ActiveSQL.Postgres
             return p;
         }
 
-        public DbParameter SetupParameter(DbParameter param, InField f)
-        {
-            return param;
-        }
+        
 
-        public string GetSqlType(Type t)
-        {
-            object[] o = (object[])type_mapping[t];
-            if (t.IsEnum) 
-                o = (object[])type_mapping[typeof(int)];
-            if (o == null) return "bytea";
-            return (string)o[0];
-        }
-      
-
-        public DbType GetDbType(Type  t)
-        {
-            object[] o = (object[])type_mapping[t];
-            if (t.IsEnum)
-                o = (object[])type_mapping[typeof(int)];
-            if (o == null) return DbType.Object;
-            return (DbType)o[1];
-        }
-
-
-        public string AsFieldName(string s)
+        public override string AsFieldName(string s)
         {
             return string.Format("\"{0}\"", s);
         }
 
-        public string AsFieldParam(string s)
+        public override string AsFieldParam(string s)
         {
             return string.Format(":{0}", s);
         }
         
-        public string AutoincrementStatement(string ColumnName)
+        public override string AutoincrementStatement(string ColumnName)
         {
             return string.Format("{0} BIGSERIAL", AsFieldName(ColumnName));
         }
 
-        public DbConnection Connection
-        {
-            get {
-                return db;
-            }
-        }
-
-        public void ExtendConnectionString(string key, string value)
+        public override void ExtendConnectionString(string key, string value)
         {
             sb.Add(key, value);
-            db.ConnectionString = sb.ConnectionString;
-
+            Connection.ConnectionString = sb.ConnectionString;
         }
 
-        public string AdoptSelectCommand(string select, InField[] fields)
-        {
-            return select;
-        }
     }
 }

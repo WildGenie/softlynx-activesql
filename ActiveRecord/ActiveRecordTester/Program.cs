@@ -91,7 +91,6 @@ namespace ActiveRecordTester
     }
     
     [InTable]
-    [PredefinedSchema]
     public class ItemsDescr : IDObject
     {
         public class Property
@@ -104,9 +103,6 @@ namespace ActiveRecordTester
             static public PropType RetailPrice = new PropType<Money>("Retail Price");
         }
 
-        new public Guid ID { get { return base.ID; } }
-
-        [PrimaryKey]
         public long SKUCode
         {
             get { return GetValue<long>(Property.SKUCode, 0); }
@@ -138,6 +134,19 @@ namespace ActiveRecordTester
             set { SetValue<decimal>(Property.RetailPrice, value); }
         }
 
+    }
+
+    [InTable(Name="ItemsDescr")]
+    public class MDB_ItemsDescr : ItemsDescr
+    {
+        new protected Guid ID { get { return Guid.Empty; } }
+
+        [PrimaryKey]
+        new public long SKUCode
+        {
+            get { return base.SKUCode; }
+            set { base.SKUCode=value; }
+        }
     }
     
     static class Program
@@ -275,7 +284,7 @@ namespace ActiveRecordTester
                 //prov.ExtendConnectionString("User Id", "test");
                 //prov.ExtendConnectionString("Password", "test");
 
-                IProviderSpecifics prov = new OleDBSpecifics();
+                ProviderSpecifics prov = new OleDBSpecifics();
                 prov.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
                 prov.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\SBDB.mdb");
                 prov.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
@@ -302,18 +311,33 @@ namespace ActiveRecordTester
 
     static void RunTests()
     {
-        Type t1 = typeof(string);
-        Type t2 = typeof(Money);
-   
-        RecordManager RM=RecordManager.Default;
-        foreach (ItemsDescr inv in RecordIterator.Enum<ItemsDescr>(RM))
+        ProviderSpecifics prov1 = new OleDBSpecifics();
+        prov1.AutoSchema = false;
+        prov1.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
+        prov1.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\SBDB.mdb");
+        prov1.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
+
+        ProviderSpecifics prov2 = new SQLiteSpecifics();
+        prov2.ExtendConnectionString("Data Source", @"c:\tests.db3");
+        prov2.ExtendConnectionString("BinaryGUID","FALSE");
+
+        RecordManager RM1 = new RecordManager(prov1, typeof(MS_ItemsDescr));
+        RecordManager RM2 = new RecordManager(prov2, typeof(ItemsDescr));
+        int cnt = 0;
+        DateTime dts = DateTime.Now;
+        using (ManagerTransaction trans = RM2.BeginTransaction())
         {
-            string xml = ReplicaManager.SerializeObject(inv);
-            object o = ReplicaManager.DeserializeObject(xml);
-            inv.SKUDesc += "+";
-            inv.RetailPrice -= 1;
-            RM.Write(inv);
+            foreach (MS_ItemsDescr inv in RecordIterator.Enum<MS_ItemsDescr>(RM1))
+            {
+                ItemsDescr id = new ItemsDescr();
+                id.CopyFrom(inv);
+                id.ID = Guid.NewGuid();
+                RM2.Write(id);
+                cnt++;
+            }
+            trans.Commit();
         }
+        TimeSpan timer = DateTime.Now - dts;
         return;
                 //RecordManager rm = RecordManager.Default;
                 //RecordManager.Default = null;
