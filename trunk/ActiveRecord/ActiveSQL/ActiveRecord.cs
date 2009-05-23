@@ -16,23 +16,90 @@ namespace Softlynx.ActiveSQL
         public NotActiveRecordException(string msg):base(msg){}
     };
 
-    public interface IProviderSpecifics
+    public abstract class ProviderSpecifics
     {
-        DbParameter CreateParameter(string name, object value);
-        DbParameter CreateParameter(string name, Type t);
-        DbParameter SetupParameter(DbParameter param, InField f);
-        string GetSqlType(Type t);
-        DbType GetDbType(Type t);
-        string AsFieldName(string s);
-        string AsFieldParam(string s);
-        string AutoincrementStatement(string ColumnName);
-        DbConnection Connection
+        private Hashtable type_mappings = null;
+        private DbConnection db_connection = null;
+        
+        private bool _AutoSchema=true;
+
+        /// <summary>
+        /// Determine will the record manager handle schema creation and versioning for that \
+        /// specific connection 
+        /// </summary>
+        public bool AutoSchema
         {
-            get;
+            get { return _AutoSchema; }
+            set { _AutoSchema = value; }
         }
-        void ExtendConnectionString(string key, string value);
-        string AdoptSelectCommand(string select, InField[] fields);
+
+
+        protected abstract Hashtable CreateTypeMapping();
+        public abstract DbConnection CreateDbConnection();
+
+
+        protected Hashtable TypeMappings
+        {
+            get
+            {
+                if (type_mappings==null)
+                    type_mappings=CreateTypeMapping();
+                return type_mappings;
+            }
+        }
+
+        public abstract DbParameter CreateParameter(string name, Type t);
+        public virtual DbParameter CreateParameter(string name, object value)
+        {
+            DbParameter res=CreateParameter(name, value.GetType());
+            res.Value = value;
+            return res;
+        }
+        public virtual DbParameter SetupParameter(DbParameter param, InField f)
+        {
+            return param;
+        }
+
+        public virtual string GetSqlType(Type t)
+        {
+            object[] o = (object[])TypeMappings[t];
+            if (t.IsEnum)
+                o = (object[])TypeMappings[typeof(int)];
+            if (o == null) o=(object[])TypeMappings[typeof(object)];
+            return (string)o[0];
+        }
+
+
+        public virtual DbType GetDbType(Type t)
+        {
+            object[] o = (object[])TypeMappings[t];
+            if (t.IsEnum)
+                o = (object[])TypeMappings[typeof(int)];
+            if (o == null) return DbType.Object;
+            return (DbType)o[1];
+        }
+
+        public abstract string AsFieldName(string s);
+        public abstract string AsFieldParam(string s);
+        public abstract string AutoincrementStatement(string ColumnName);
+        
+        public virtual DbConnection Connection
+        {
+            get
+            {
+                if (db_connection == null)
+                    db_connection = CreateDbConnection();
+                return db_connection;
+            }
+        }
+        public abstract void ExtendConnectionString(string key, string value);
+        
+        public virtual string AdoptSelectCommand(string select, InField[] fields)
+        {
+            return select;
+        }
     }
+
 
     #region Common attributes
     public enum TableAction { None, RunSQL, Recreate };
@@ -804,7 +871,7 @@ namespace Softlynx.ActiveSQL
         private CacheCollector cache = new CacheCollector();
 
         static Hashtable managers = new Hashtable();
-        
+        private bool _GlobalSchemaPersistance = false;
         /// <summary>
         /// Return the collection of system wide RecordManagers
         /// defined for running threads.
@@ -961,7 +1028,7 @@ namespace Softlynx.ActiveSQL
         }
 
 
-        IProviderSpecifics specifics;
+        ProviderSpecifics specifics;
         internal DbTransaction transaction = null;
         internal int TransactionLevel=0;
 
@@ -1017,7 +1084,7 @@ namespace Softlynx.ActiveSQL
             table_names.Clear();
         }
 
-        public RecordManager(IProviderSpecifics ProviderSpecifics, params Type[] RegisterTypes)
+        public RecordManager(ProviderSpecifics ProviderSpecifics, params Type[] RegisterTypes)
         {
             specifics = ProviderSpecifics;
             InitStructure(RegisterTypes);
@@ -1340,7 +1407,7 @@ namespace Softlynx.ActiveSQL
                     }
 
                     List<TableVersion> attrs = new List<TableVersion>((IEnumerable<TableVersion>)Attribute.GetCustomAttributes(type, typeof(TableVersion), true));
-                    if (!table.PredefinedSchema)
+                    if (!table.PredefinedSchema && specifics.AutoSchema)
                         using (ManagerTransaction transaction = BeginTransaction())
                         {
                         attrs.Insert(0, new TableVersion(0, TableAction.Recreate));
@@ -1476,12 +1543,15 @@ namespace Softlynx.ActiveSQL
 
         internal void InitStructure(params Type[] types)
         {
-            foreach (Type t in types)
+            if (specifics.AutoSchema)
             {
-                if (!t.IsDefined(typeof(PredefinedSchema), true) && t.IsDefined(typeof(InTable), true))
+                foreach (Type t in types)
                 {
-                    TryToRegisterAsActiveRecord(typeof(ObjectVersions));
-                    break;
+                    if (!t.IsDefined(typeof(PredefinedSchema), true) && t.IsDefined(typeof(InTable), true))
+                    {
+                        TryToRegisterAsActiveRecord(typeof(ObjectVersions));
+                        break;
+                    }
                 }
             }
 

@@ -44,7 +44,7 @@ namespace ActiveRecordTesterCE
             SimpleConfig.Save();
             SimpleConfig.Load();
 
-            IProviderSpecifics prov =  new SQLiteSpecifics();
+            ProviderSpecifics prov =  new SQLiteSpecifics();
             prov.ExtendConnectionString("Data Source", @"\tests.db3");
             prov.ExtendConnectionString("BinaryGUID", "FALSE");
             prov.Connection.Open();
