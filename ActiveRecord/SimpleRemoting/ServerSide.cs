@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
@@ -37,6 +38,8 @@ namespace Softlynx.SimpleRemoting
         public RemotingPhase Phase = RemotingPhase.Established;
         Dictionary<string,string> input=new Dictionary<string,string>();
         Dictionary<string,string> output=new Dictionary<string,string>();
+        Hashtable session = new Hashtable();
+
         /// <summary>
         /// Holds key value pairs passed from remote side. Not the subject to be midified.
         /// </summary>
@@ -45,6 +48,12 @@ namespace Softlynx.SimpleRemoting
         /// Holds key value pairs will be passed back to remote side as a part of single query.
         /// </summary>
 	    public Dictionary<string,string> Output {get { return output;}}
+
+        /// <summary>
+        /// Client session state object.
+        /// It is safe place to keep client connection related data.
+        /// </summary>
+        public Hashtable Session { get { return session; } }
     }
 
 
