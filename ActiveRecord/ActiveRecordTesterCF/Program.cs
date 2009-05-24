@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Net;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Softlynx.ActiveSQL;
 using Softlynx.ActiveSQL.SQLite;
-
 using Softlynx.RecordSet;
 using Softlynx.SimpleConfig;
+using Softlynx.SimpleRemoting;
 
 
 namespace ActiveRecordTesterCE
@@ -38,6 +39,24 @@ namespace ActiveRecordTesterCE
         [MTAThread]
         static void Main()
         {
+            using (Client c = new Client(new IPEndPoint(IPAddress.Parse("192.168.1.10"), 9090)))
+            {
+                RemotingParams p = new RemotingParams();
+                //FillParams(p.Input);
+                c.Query(p);
+                p.Input.Clear();
+                try
+                {
+                    c.Query(p);
+                }
+                catch
+                {
+                }
+                //FillParams(p.Input);
+                c.Query(p);
+
+            }
+
             SimpleConfig.FileName = @"\mycfg.xml";
             SimpleConfig.Pairs["drink"] = "1";
             SimpleConfig.Pairs["vehicle"] = "bike";

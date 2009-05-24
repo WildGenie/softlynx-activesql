@@ -147,6 +147,7 @@ namespace Softlynx.SimpleRemoting
                                 try
                                 {
                                     HandleClient(o);
+                                    ((Socket)o).Close();
                                 }
                                 finally
                                 {
@@ -185,14 +186,13 @@ namespace Softlynx.SimpleRemoting
         /// <param name="socket"></param>
         private void HandleClient(object socket)
         {
+            RemotingParams rp = new RemotingParams();
             try
             {
                 using (Stream strm = new NetworkStream((Socket)socket, false))
                 {
                     StreamReader rd = new StreamReader(strm);
                     StreamWriter wr = new StreamWriter(strm);
-
-                    RemotingParams rp = new RemotingParams();
                     rp.Phase = RemotingPhase.Established;
                     handler(rp);
                     wr.WriteLine("200 READY {0}",VERSION); wr.Flush();
@@ -268,10 +268,11 @@ namespace Softlynx.SimpleRemoting
             catch { }
             finally
             {
-                ((Socket)socket).Close();
-                RemotingParams rp = new RemotingParams();
+                rp.Input.Clear();
+                rp.Output.Clear();
                 rp.Phase = RemotingPhase.Disposing;
                 handler(rp);
+                rp.Session.Clear();
             }
         }
 

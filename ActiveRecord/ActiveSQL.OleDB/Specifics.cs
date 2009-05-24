@@ -217,7 +217,7 @@ namespace Softlynx.ActiveSQL.OleDB
 
         public override string AsFieldName(string s)
         {
-            return string.Format("{0}", s);
+            return string.Format("[{0}]", s);
         }
 
         public override string AsFieldParam(string s)

@@ -79,6 +79,10 @@
       <Project>{665E2243-330F-495D-AFE0-4344CB5FE516}</Project>
       <Name>SimpleConfig CF</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SimpleRemoting CF\SimpleRemoting CF.csproj">
+      <Project>{EAAE38D0-D98D-4DBF-8469-10842C09F837}</Project>
+      <Name>SimpleRemoting CF</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Condition="'$(TargetFrameworkVersion)' == 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.v1.targets" />
   <Import Condition="'$(TargetFrameworkVersion)' == 'v2.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />

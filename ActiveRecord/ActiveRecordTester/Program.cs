@@ -214,7 +214,7 @@ namespace ActiveRecordTester
 
             }
 
-            s.Terminate();
+            //s.Terminate();
             t.Join();
             t = null;
             GC.WaitForPendingFinalizers();
@@ -309,6 +309,67 @@ namespace ActiveRecordTester
         return RM;
         }
 
+        [InTable]
+        public class Employees : IDObject
+        {
+            public class Property
+            {
+                static public PropType Login = new PropType<long>("Login");
+                static public PropType EmployeeName = new PropType<string>("EmployeeName");
+                static public PropType Comments = new PropType<string>("Comments");
+                static public PropType Password = new PropType<string>("Password");
+                static public PropType isActive = new PropType<bool>("isActive");
+                static public PropType IsAdmin = new PropType<bool>("IsAdmin");
+            }
+
+            public long Login
+            {
+                get { return GetValue<long>(Property.Login, 0); }
+                set { SetValue<long>(Property.Login, value); }
+            }
+            public string EmployeeName
+            {
+                get { return GetValue<string>(Property.EmployeeName, string.Empty); }
+                set { SetValue<string>(Property.EmployeeName, value); }
+            }
+
+            public string Comments
+            {
+                get { return GetValue<string>(Property.Comments, string.Empty); }
+                set { SetValue<string>(Property.Comments, value); }
+            }
+
+            public string Password
+            {
+                get { return GetValue<string>(Property.Password, string.Empty); }
+                set { SetValue<string>(Property.Password, value); }
+            }
+
+            public bool isActive
+            {
+                get { return GetValue<bool>(Property.isActive, true); }
+                set { SetValue<bool>(Property.isActive, value); }
+            }
+
+            public bool IsAdmin
+            {
+                get { return GetValue<bool>(Property.IsAdmin, false); }
+                set { SetValue<bool>(Property.IsAdmin, value); }
+            }
+        }
+        [InTable(Name = "Employees")]
+        public class MDB_Employees : Employees
+        {
+            new protected Guid ID { get { return Guid.Empty; } }
+
+            [PrimaryKey]
+            new public long Login
+            {
+                get { return base.Login; }
+                set { base.Login = value; }
+            }
+        }
+
     static void RunTests()
     {
         ProviderSpecifics prov1 = new OleDBSpecifics();
@@ -321,15 +382,15 @@ namespace ActiveRecordTester
         prov2.ExtendConnectionString("Data Source", @"c:\tests.db3");
         prov2.ExtendConnectionString("BinaryGUID","FALSE");
 
-        RecordManager RM1 = new RecordManager(prov1, typeof(MS_ItemsDescr));
-        RecordManager RM2 = new RecordManager(prov2, typeof(ItemsDescr));
+        RecordManager RM1 = new RecordManager(prov1, typeof(MDB_Employees));
+        RecordManager RM2 = new RecordManager(prov2, typeof(Employees));
         int cnt = 0;
         DateTime dts = DateTime.Now;
         using (ManagerTransaction trans = RM2.BeginTransaction())
         {
-            foreach (MS_ItemsDescr inv in RecordIterator.Enum<MS_ItemsDescr>(RM1))
+            foreach (MDB_Employees inv in RecordIterator.Enum<MDB_Employees>(RM1))
             {
-                ItemsDescr id = new ItemsDescr();
+                Employees id = new Employees();
                 id.CopyFrom(inv);
                 id.ID = Guid.NewGuid();
                 RM2.Write(id);
