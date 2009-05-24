@@ -544,13 +544,11 @@ namespace Softlynx.ActiveSQL.Replication
                 if (xr.IsStartElement())
                 {
                     string fname = xr.Name;
+                    xr.MoveToContent();
+                    string fvalue = xr.ReadElementString();
                     InField f = ActiveRecordInfo.Field(fname);
                     if (f != null)
-                    {
-                        xr.MoveToContent();
-                        string fvalue = xr.ReadElementString();
                         f.SetValue(instance, fvalue);
-                    }
                 }
                 else xr.Read();
             }

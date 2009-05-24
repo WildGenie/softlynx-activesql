@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net;
+using System.Data;
+using System.Data.Common;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Softlynx.ActiveSQL;
@@ -30,6 +32,8 @@ namespace ActiveRecordTesterCE
             set { SetPropertyLastValue(Property.Name, value); }
         }
     }
+
+    
 
     static class Program
     {

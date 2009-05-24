@@ -147,6 +147,12 @@ namespace ActiveRecordTester
             get { return base.SKUCode; }
             set { base.SKUCode=value; }
         }
+        public DateTime DTM
+        {
+            get { return DateTime.Now; }
+            set {  }
+        }
+
     }
     
     static class Program
@@ -214,7 +220,7 @@ namespace ActiveRecordTester
 
             }
 
-            //s.Terminate();
+            s.Terminate();
             t.Join();
             t = null;
             GC.WaitForPendingFinalizers();
@@ -368,6 +374,80 @@ namespace ActiveRecordTester
                 get { return base.Login; }
                 set { base.Login = value; }
             }
+
+            [InField(Size=8)]
+            public DateTime DTM
+            {
+                get { return DateTime.Now; }
+                set { }
+            }
+
+        }
+
+        [InTable]
+        public class tmpPPTNewDescrLog : IDObject
+        {
+            public class Property
+            {
+                // idPPTNewDescr ???
+                static public PropType SKUCode = new PropType<long>("SKUCode");
+                static public PropType SyncNo = new PropType<long>("SyncNo");
+                static public PropType Barcode = new PropType<double>("Barcode");
+                static public PropType SKUDesc = new PropType<string>("SKUDesc");
+                static public PropType RetailPrice = new PropType<decimal>("RetailPrice");
+                static public PropType TStamp = new PropType<DateTime>("TStamp");
+                static public PropType flgModify = new PropType<int>("flgModify");
+                static public PropType EmplID = new PropType<long>("EmplID");
+            }
+            public long SKUCode
+            {
+                get { return GetValue<long>(Property.SKUCode, 0); }
+                set { SetValue<long>(Property.SKUCode, value); }
+            }
+
+            public long SyncNo
+            {
+                get { return GetValue<long>(Property.SyncNo, 0); }
+                set { SetValue<long>(Property.SyncNo, value); }
+            }
+
+            public double Barcode
+            {
+                get { return GetValue<double>(Property.Barcode, 0); }
+                set { SetValue<double>(Property.Barcode, value); }
+            }
+
+            public string SKUDesc
+            {
+                get { return GetValue<string>(Property.SKUDesc, string.Empty); }
+                set { SetValue<string>(Property.SKUDesc, value); }
+            }
+
+            [InField(DbType.Currency)]
+            public decimal RetailPrice
+            {
+                get { return GetValue<decimal>(Property.RetailPrice, 0); }
+                set { SetValue<decimal>(Property.RetailPrice, value); }
+            }
+
+            [InField(Size=8)]
+            public DateTime TStamp
+            {
+                get { return GetValue<DateTime>(Property.TStamp, DateTime.MinValue); }
+                set { SetValue<DateTime>(Property.TStamp, value); }
+            }
+
+            public int flgModify
+            {
+                get { return GetValue<int>(Property.flgModify, 0); }
+                set { SetValue<int>(Property.flgModify, value); }
+            }
+
+            public int EmplID
+            {
+                get { return GetValue<int>(Property.EmplID, 0); }
+                set { SetValue<int>(Property.EmplID, value); }
+            }
         }
 
     static void RunTests()
@@ -382,23 +462,11 @@ namespace ActiveRecordTester
         prov2.ExtendConnectionString("Data Source", @"c:\tests.db3");
         prov2.ExtendConnectionString("BinaryGUID","FALSE");
 
-        RecordManager RM1 = new RecordManager(prov1, typeof(MDB_Employees));
-        RecordManager RM2 = new RecordManager(prov2, typeof(Employees));
-        int cnt = 0;
-        DateTime dts = DateTime.Now;
-        using (ManagerTransaction trans = RM2.BeginTransaction())
-        {
-            foreach (MDB_Employees inv in RecordIterator.Enum<MDB_Employees>(RM1))
+        RecordManager RM1 = new RecordManager(prov1, typeof(tmpPPTNewDescrLog));
+            foreach (tmpPPTNewDescrLog inv in RecordIterator.Enum<tmpPPTNewDescrLog>(RM1))
             {
-                Employees id = new Employees();
-                id.CopyFrom(inv);
-                id.ID = Guid.NewGuid();
-                RM2.Write(id);
-                cnt++;
+                RM1.Write(inv);
             }
-            trans.Commit();
-        }
-        TimeSpan timer = DateTime.Now - dts;
         return;
                 //RecordManager rm = RecordManager.Default;
                 //RecordManager.Default = null;
