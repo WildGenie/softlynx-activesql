@@ -167,6 +167,7 @@ namespace Softlynx.SimpleRemoting
         /// </summary>
         public void Dispose()
         {
+            connection.Client.Close();
             connection.Close();
         }
     }
