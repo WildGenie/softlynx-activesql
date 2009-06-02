@@ -19,6 +19,7 @@ using System.Data;
 using System.Data.Common;
 using System.Data.OleDb;
 
+
 namespace ActiveRecordTester
 {
  
@@ -390,6 +391,7 @@ namespace ActiveRecordTester
             public class Property
             {
                 // idPPTNewDescr ???
+                static public PropType idPPTNewDescr = new PropType<long>("idPPTNewDescr");
                 static public PropType SKUCode = new PropType<long>("SKUCode");
                 static public PropType SyncNo = new PropType<long>("SyncNo");
                 static public PropType Barcode = new PropType<double>("Barcode");
@@ -398,7 +400,20 @@ namespace ActiveRecordTester
                 static public PropType TStamp = new PropType<DateTime>("TStamp");
                 static public PropType flgModify = new PropType<int>("flgModify");
                 static public PropType EmplID = new PropType<long>("EmplID");
+                static public PropType flgUploaded = new PropType<long>("flgUploaded");
             }
+
+        new protected Guid ID { get { return Guid.Empty; } }
+        
+        [PrimaryKey]
+        [Autoincrement]
+        public long idPPTNewDescr
+        {
+            get { return GetValue<long>(Property.idPPTNewDescr, 0); }
+            set { SetValue<long>(Property.idPPTNewDescr, value); }
+        }
+
+
             public long SKUCode
             {
                 get { return GetValue<long>(Property.SKUCode, 0); }
@@ -430,7 +445,8 @@ namespace ActiveRecordTester
                 set { SetValue<decimal>(Property.RetailPrice, value); }
             }
 
-            [InField(Size=8)]
+            [InField(Size = 8)]
+            //[ExcludeFromTable]
             public DateTime TStamp
             {
                 get { return GetValue<DateTime>(Property.TStamp, DateTime.MinValue); }
@@ -443,30 +459,87 @@ namespace ActiveRecordTester
                 set { SetValue<int>(Property.flgModify, value); }
             }
 
-            public int EmplID
+            public long EmplID
             {
-                get { return GetValue<int>(Property.EmplID, 0); }
-                set { SetValue<int>(Property.EmplID, value); }
+                get { return GetValue<long>(Property.EmplID, 0); }
+                set { SetValue<long>(Property.EmplID, value); }
             }
         }
 
     static void RunTests()
     {
-        ProviderSpecifics prov1 = new OleDBSpecifics();
-        prov1.AutoSchema = false;
-        prov1.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
-        prov1.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\SBDB.mdb");
-        prov1.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
+        /*
+                ProviderSpecifics MDB_prov = new OleDBSpecifics();
+                MDB_prov.AutoSchema = false;
+                MDB_prov.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
+                MDB_prov.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\sbdb.mdb");
+                MDB_prov.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
 
-        ProviderSpecifics prov2 = new SQLiteSpecifics();
-        prov2.ExtendConnectionString("Data Source", @"c:\tests.db3");
-        prov2.ExtendConnectionString("BinaryGUID","FALSE");
+                ProviderSpecifics SNAP_prov = new SQLiteSpecifics();
+                string tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".db3");
+               
+                SNAP_prov.ExtendConnectionString("Data Source", tmp);
+                SNAP_prov.ExtendConnectionString("BinaryGUID","FALSE");
 
-        RecordManager RM1 = new RecordManager(prov1, typeof(tmpPPTNewDescrLog));
-            foreach (tmpPPTNewDescrLog inv in RecordIterator.Enum<tmpPPTNewDescrLog>(RM1))
-            {
-                RM1.Write(inv);
-            }
+            
+                    RecordManager MDB = new RecordManager(MDB_prov,
+                        typeof(MDB_pptItemsDescr),
+                        typeof(MDB_ClosedAreas),
+                        typeof(MDB_tblSBParams),
+                        typeof(MDB_Employees)
+                        );
+                    RecordManager SNAP = new RecordManager(SNAP_prov,
+                        typeof(ItemsDescr),
+                        typeof(ClosedAreas),
+                        typeof(Employees),
+                        typeof(tblSBParams)
+                        );
+                using (ManagerTransaction trans = SNAP.BeginTransaction())
+                {
+                    foreach (MDB_pptItemsDescr inv in RecordIterator.Enum<MDB_pptItemsDescr>(MDB))
+                    {
+                        ItemsDescr id = new ItemsDescr();
+                        id.CopyFrom(inv);
+                        id.ID = Guid.NewGuid();
+                        SNAP.Write(id);
+                    }
+
+                    foreach (MDB_ClosedAreas inv in RecordIterator.Enum<MDB_ClosedAreas>(MDB))
+                    {
+                        ClosedAreas l_area = new ClosedAreas();
+                        l_area.CopyFrom(inv);
+                        l_area.ID = Guid.NewGuid();
+                        SNAP.Write(l_area);
+                    }
+
+                    foreach (MDB_Employees inv in RecordIterator.Enum<MDB_Employees>(MDB))
+                    {
+                        Employees l_emp = new Employees();
+                        l_emp.CopyFrom(inv);
+                        l_emp.ID = Guid.NewGuid();
+                        SNAP.Write(l_emp);
+                    }
+
+                    foreach (MDB_tblSBParams inv in RecordIterator.Enum<MDB_tblSBParams>(MDB))
+                    {
+                        tblSBParams l_par = new tblSBParams();
+                        l_par.CopyFrom(inv);
+                        l_par.ID = Guid.NewGuid();
+                        SNAP.Write(l_par);
+                    }
+
+                    trans.Commit();
+                }
+
+
+                MDB.FlushConnectionPool();
+                MDB.Connection.Close();
+                MDB.Dispose();
+
+                SNAP.FlushConnectionPool();
+                SNAP.Connection.Close();
+                SNAP.Dispose();
+         */
         return;
                 //RecordManager rm = RecordManager.Default;
                 //RecordManager.Default = null;
