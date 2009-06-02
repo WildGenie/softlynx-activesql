@@ -516,8 +516,10 @@ namespace Softlynx.ActiveSQL
             List<InField> insertfields = new List<InField>();
             foreach (InField f in fields)
             {
-                if (!f.IsAutoincrement)
-                    insertfields.Add(f);
+                if (f.IsAutoincrement) 
+                    continue;
+                
+                insertfields.Add(f);
             }
 
             return String.Format("INSERT INTO {0}({1}) values ({2})",
@@ -533,6 +535,9 @@ namespace Softlynx.ActiveSQL
             string keyvalpairs = string.Empty;
             foreach (InField dc in fields)
             {
+                if (dc.IsAutoincrement)
+                    continue;
+
                 if (keyvalpairs != String.Empty) keyvalpairs += ",";
                 keyvalpairs += String.Format("{0}={1}", manager.AsFieldName(dc.Name), manager.AsFieldParam(dc.Name));
             };
@@ -593,9 +598,10 @@ namespace Softlynx.ActiveSQL
            
             foreach (InField field in fields)
             {
-                if (!field.IsAutoincrement)
-                   InsertCmd.Parameters.Add(manager.CreateParameter(field));
-                UpdateCmd.Parameters.Add(manager.CreateParameter(field));
+                if (!field.IsAutoincrement) 
+                    InsertCmd.Parameters.Add(manager.CreateParameter(field));
+                if ((!field.IsAutoincrement) || (field.IsPrimary))
+                    UpdateCmd.Parameters.Add(manager.CreateParameter(field));
             }
 
             foreach (InField field in primary_fields)
@@ -654,6 +660,7 @@ namespace Softlynx.ActiveSQL
             RecordManager.ReopenConnection(UpdateCmd);
             foreach (InField field in fields)
             {
+                object o = field.prop.GetValue(Record, null); 
                 UpdateCmd.Parameters[field.Name].Value = field.prop.GetValue(Record, null);
             }
             return UpdateCmd.ExecuteNonQuery();
