@@ -23,13 +23,13 @@ using System.Data.OleDb;
 namespace ActiveRecordTester
 {
  
-    //[InTable]
-    //[WithReplica]
+    [InTable]
+    [WithReplica]
     public class DemoProperty : ObjectProp { }
 
 
-    //[InTable]
-    //[WithReplica]
+    [InTable]
+    [WithReplica]
     //[TableVersion(4,ColumnAction.Remove,"C1")]
     class DemoObject:DynamicObject<DemoProperty>
     {
@@ -137,7 +137,7 @@ namespace ActiveRecordTester
 
     }
 
-    [InTable(Name="ItemsDescr")]
+    [InTable(Name="ItemsDescr1")]
     public class MDB_ItemsDescr : ItemsDescr
     {
         new protected Guid ID { get { return Guid.Empty; } }
@@ -199,11 +199,12 @@ namespace ActiveRecordTester
             RecordManager.ProviderDelegate=new RecordManagerProvider(ProvideRecordManager);
             Server s = new Server(new IPEndPoint(IPAddress.Any, 9090), new MessageHandler(MyHandler));
             
-            //Thread t = new Thread(new ThreadStart(RunTests));
-            Thread t = new Thread(new ThreadStart(s.Run));
+            Thread t = new Thread(new ThreadStart(RunTests));
+            //Thread t = new Thread(new ThreadStart(s.Run));
             t.Name = "Test run";
             t.Start();
-            using (Client c = new Client(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9090)))
+            /*
+             using (Client c = new Client(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9090)))
             {
                 RemotingParams p = new RemotingParams();
                 FillParams(p.Input);
@@ -222,6 +223,7 @@ namespace ActiveRecordTester
             }
 
             s.Terminate();
+             */
             t.Join();
             t = null;
             GC.WaitForPendingFinalizers();
@@ -291,14 +293,14 @@ namespace ActiveRecordTester
                 //prov.ExtendConnectionString("User Id", "test");
                 //prov.ExtendConnectionString("Password", "test");
 
-                ProviderSpecifics prov = new OleDBSpecifics();
-                prov.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
-                prov.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\SBDB.mdb");
-                prov.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
+                //ProviderSpecifics prov = new OleDBSpecifics();
+                //prov.ExtendConnectionString("provider", "Microsoft.Jet.OLEDB.4.0");
+                //prov.ExtendConnectionString("data source", @"C:\Program Files\Starboard Inventory\SBDB.mdb");
+                //prov.ExtendConnectionString("Jet OLEDB:Database Password", "sa23dk89");
 
-                //prov = new SQLiteSpecifics();
-                //prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
-                //prov.ExtendConnectionString("BinaryGUID","FALSE");
+                ProviderSpecifics prov = new SQLiteSpecifics();
+                prov.ExtendConnectionString("Data Source", @"c:\tests.db3");
+                prov.ExtendConnectionString("BinaryGUID","FALSE");
 
                 //prov.Connection.Ev
                 //prov.Connection.ConnectionString
@@ -364,7 +366,7 @@ namespace ActiveRecordTester
                 set { SetValue<bool>(Property.IsAdmin, value); }
             }
         }
-        [InTable(Name = "Employees")]
+        [InTable(Name = "Employees1")]
         public class MDB_Employees : Employees
         {
             new protected Guid ID { get { return Guid.Empty; } }
@@ -385,7 +387,7 @@ namespace ActiveRecordTester
 
         }
 
-        [InTable]
+        //[InTable]
         public class tmpPPTNewDescrLog : IDObject
         {
             public class Property
@@ -403,9 +405,10 @@ namespace ActiveRecordTester
                 static public PropType flgUploaded = new PropType<long>("flgUploaded");
             }
 
+        //[PrimaryKey(false)]
         new protected Guid ID { get { return Guid.Empty; } }
         
-        [PrimaryKey]
+//        [PrimaryKey]
         [Autoincrement]
         public long idPPTNewDescr
         {
@@ -540,7 +543,7 @@ namespace ActiveRecordTester
                 SNAP.Connection.Close();
                 SNAP.Dispose();
          */
-        return;
+        
                 //RecordManager rm = RecordManager.Default;
                 //RecordManager.Default = null;
                 //RecordManager.Default = rm;

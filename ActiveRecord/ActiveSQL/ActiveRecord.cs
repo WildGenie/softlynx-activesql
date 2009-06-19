@@ -12,6 +12,190 @@ using Softlynx.RecordCache;
 
 namespace Softlynx.ActiveSQL
 {
+    internal class Limit : Condition
+    {
+        internal int _RecordCount = -1;
+        internal Limit(int RecordCount)
+        {
+            _RecordCount = RecordCount;
+        }
+    }
+
+    internal class OrderBy : Condition
+    {
+        internal string column = null;
+        internal bool isAscendant = true;
+
+        internal OrderBy(string Column)
+        {
+            column = Column;
+        }
+
+        internal OrderBy(string Column, bool IsAscendant)
+        {
+            column = Column;
+            isAscendant = IsAscendant;
+        }
+    }
+
+    public class ConditionDefs
+    {
+        internal Condition[] conditions = null;
+        internal RecordManager rm = null;
+
+        internal int RecordLimit = -1;
+        internal string WhereClause = null;
+        internal string OrderClause = null;
+        internal Hashtable ParameterValues = new Hashtable();
+
+        private ConditionDefs(RecordManager _rm, Condition[] _conditions)
+        {
+            conditions = _conditions;
+            rm = _rm;
+            List<string> OrderColumns = new List<string>();
+            List<string> WhereConds = new List<string>();
+            if (conditions!=null)
+                foreach (Condition cond in conditions)
+                {
+                    if (cond is Limit)
+                        RecordLimit = (cond as Limit)._RecordCount;
+
+                    if (cond is OrderBy)
+                        OrderColumns.Add(
+                            rm.AsFieldName((cond as OrderBy).column) + " " +
+                            (((cond as OrderBy).isAscendant) ? "ASC" : "DESC"));
+
+                    if (cond is WhereCondition)
+                        WhereConds.Add(BuildWhereCondExpr(cond as WhereCondition));
+                }
+            WhereClause = string.Join(" AND ", WhereConds.ToArray());
+            OrderClause = string.Join(",", OrderColumns.ToArray());
+        }
+
+        private string BuildWhereCondExpr(WhereCondition whereCondition)
+        {
+
+            if (whereCondition is Where) 
+            {
+                Where w=whereCondition as Where;
+                string pname = string.Format("PRM{0}", ParameterValues.Count);
+                ParameterValues.Add(pname,w.value);
+                return
+                    "("+rm.AsFieldName(w.field) + w.op + rm.AsFieldParam(pname)+")";
+            }
+
+            WhereGroup g = whereCondition as WhereGroup;
+            List<string> WhereConds = new List<string>();
+            foreach (WhereCondition c in g.conditions)
+                WhereConds.Add(BuildWhereCondExpr(c));
+            return "(" + string.Join(" " + g.JoinOperator + " ", WhereConds.ToArray()) + ")";
+        }
+
+
+        public static ConditionDefs Parse(RecordManager rm, params Condition[] conditions)
+        {
+            return new ConditionDefs(rm, conditions);
+        }
+
+    }
+
+    public abstract class Condition
+    {
+
+        public static Condition Limit(int RecordCount)
+        {
+            return new Limit(RecordCount);
+        }
+
+        public static Condition OrderBy(string Column)
+        {
+            return new OrderBy(Column);
+        }
+
+        public static Condition OrderBy(string Column, bool IsAscendant)
+        {
+            return new OrderBy(Column, IsAscendant);
+        }
+
+    }
+
+    abstract public class WhereCondition : Condition {
+    }
+
+    internal class WhereGroup : WhereCondition
+    {
+        internal string JoinOperator = null;
+        internal WhereCondition[] conditions = null;
+        internal WhereGroup(string Operator, params WhereCondition[] Conditions)
+        {
+            JoinOperator = Operator;
+            conditions = Conditions;
+        }
+    
+
+    }
+
+    public class Where : WhereCondition
+    {
+        internal string field = string.Empty;
+        internal object value = null;
+        internal string op = null;
+
+        private Where() { }
+
+        private Where(string FieldName, string Operator, object Value)
+        {
+            field = FieldName;
+            value = Value;
+            op = Operator;
+        }
+
+        public static WhereCondition AND(params WhereCondition[] Conditions)
+        {
+            return new WhereGroup("AND", Conditions);
+        }
+
+        public static WhereCondition OR(params WhereCondition[] Conditions)
+        {
+            return new WhereGroup("OR", Conditions);
+        }
+
+        public static WhereCondition OP(string FiledName, string Operator, object Value)
+        {
+            return new Where(FiledName, Operator, Value);
+        }
+
+        public static WhereCondition EQ(string FiledName, object Value)
+        {
+            return OP(FiledName, "=", Value);
+        }
+
+        public static WhereCondition NE(string FiledName, object Value)
+        {
+            return OP(FiledName, "!=", Value);
+        }
+
+        public static WhereCondition GE(string FiledName, object Value)
+        {
+            return OP(FiledName, ">=", Value);
+        }
+
+        public static WhereCondition GT(string FiledName, object Value)
+        {
+            return OP(FiledName, ">", Value);
+        }
+
+        public static WhereCondition LE(string FiledName, object Value)
+        {
+            return OP(FiledName, "<=", Value);
+        }
+
+        public static WhereCondition LT(string FiledName, object Value)
+        {
+            return OP(FiledName, "<", Value);
+        }
+    }
+
     public class NotActiveRecordException : ApplicationException { 
         public NotActiveRecordException(string msg):base(msg){}
     };
@@ -658,10 +842,11 @@ namespace Softlynx.ActiveSQL
         {
             UpdateCmd.Transaction = this.manager.transaction;
             RecordManager.ReopenConnection(UpdateCmd);
-            foreach (InField field in fields)
+            foreach (DbParameter prm in UpdateCmd.Parameters)
             {
-                object o = field.prop.GetValue(Record, null); 
-                UpdateCmd.Parameters[field.Name].Value = field.prop.GetValue(Record, null);
+                InField field = Field(prm.ParameterName);
+                if (field != null)
+                   prm.Value = field.prop.GetValue(Record, null);
             }
             return UpdateCmd.ExecuteNonQuery();
         }
@@ -670,11 +855,14 @@ namespace Softlynx.ActiveSQL
         {
             InsertCmd.Transaction = this.manager.transaction;
             RecordManager.ReopenConnection(InsertCmd);
-            foreach (InField field in fields)
+
+            foreach (DbParameter prm in InsertCmd.Parameters)
             {
-                if (!field.IsAutoincrement)
-                    InsertCmd.Parameters[field.Name].Value = field.prop.GetValue(Record, null);
+                InField field = Field(prm.ParameterName);
+                if (field != null)
+                    prm.Value = field.prop.GetValue(Record, null);
             }
+
             return InsertCmd.ExecuteNonQuery();
         }
 

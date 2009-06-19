@@ -132,7 +132,6 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
         [InTable]
-        [TableVersion(1, TableAction.Recreate)]
         public class ReplicaLog : IIDObject
     {
         public enum Operation {Write,Delete};
@@ -147,7 +146,6 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
         private Int64 _SeqNO = 0;
-
         [Autoincrement]
         public Int64 SeqNO
         {
