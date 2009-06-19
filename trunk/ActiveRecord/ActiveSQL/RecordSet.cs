@@ -9,7 +9,9 @@ using Softlynx.ActiveSQL;
 
 namespace Softlynx.RecordSet
 {
-   
+
+
+
     public class RecordIterator : IEnumerable, IEnumerator, IDisposable
     {
        // private ManagerTransaction transaction = null;
@@ -19,8 +21,50 @@ namespace Softlynx.RecordSet
         private DbDataReader reader = null;
         private object[] cparams = null;
         private ConstructorInfo ci = null;
-        
+        private ConditionDefs defs = null;
 
+        internal RecordIterator(InTable _table, params Condition[] conditions)
+        {
+            table = _table;
+            if (table.IsVirtual)
+                throw new Exception("Can't fill virual tables from database");
+
+            defs = ConditionDefs.Parse(table.manager,conditions);
+
+            cmd += String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.manager.AsFieldName(table.Name));
+
+            if (defs.WhereClause != string.Empty)
+                cmd += String.Format(" WHERE ({0})", defs.WhereClause);
+
+            if (defs.OrderClause != string.Empty)
+                cmd += String.Format(" ORDER BY {0}", defs.OrderClause);
+
+            if (defs.RecordLimit>0)
+                cmd += String.Format(" LIMIT {0}", defs.RecordLimit);
+
+            filter_params = new object[defs.ParameterValues.Count * 2];
+            int c = 0;
+            foreach (DictionaryEntry de in defs.ParameterValues)
+            {
+                filter_params[c++] = de.Key;
+                filter_params[c++] = de.Value;
+            }
+
+            cparams = new object[] { table.manager };
+
+            ci = table.basetype.GetConstructor(new Type[] { typeof(RecordManager) });
+            if (ci == null)
+            {
+                cparams = null;
+                ci = table.basetype.GetConstructor(new Type[] { });
+            };
+
+            if (ci == null)
+                throw new Exception(string.Format("Can't create instance of {0} without known constructor", table.basetype.Name));
+
+        }
+
+        [Obsolete("Switch to RecordIterator(InTable _table, params Condition[] conditions) notation")] 
         internal RecordIterator(InTable _table, Type[] ptypes, string filter, string orderby, int limit, params object[] _filter_params)
         {
             table = _table;
@@ -126,111 +170,147 @@ namespace Softlynx.RecordSet
             return count;
         }
 
+        static public RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions)
+        {
+            InTable t = manager.ActiveRecordInfo(T);
+            return new RecordIterator(t, conditions);
+        }
+
+        static public RecordIterator Enum<T>(RecordManager manager, params Condition[] conditions)
+        {
+            return Enum(typeof(T), manager, conditions);
+        }
+
+
+        static public RecordIterator Enum(Type T,  params Condition[] conditions)
+        {
+            return Enum(T, RecordManager.Default, conditions);
+        }
+
+        static public RecordIterator Enum<T>(params Condition[] conditions)
+        {
+            return Enum(typeof(T), RecordManager.Default, conditions);
+        }
+
+        static public RecordIterator Enum<T>(RecordManager manager)
+        {
+            return Enum<T>(manager, (Condition[])null);
+        }
+
+        static public RecordIterator Enum(Type T, RecordManager manager)
+        {
+            return Enum(T, manager, (Condition[])null);
+        }
+
+        static public RecordIterator Enum(Type T)
+        {
+            return Enum(T, RecordManager.Default);
+        }
+
+        static public RecordIterator Enum<T>()
+        {
+            
+            return Enum<T>(RecordManager.Default);
+        }
+
+
+
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum(Type T,RecordManager manager, Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
         {
             InTable t = manager.ActiveRecordInfo(T);
             return new RecordIterator(t, ptypes, filter, orderby, limit, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(RecordManager manager, Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
         {
             return Enum(typeof(T), manager, ptypes, filter, orderby, limit, filter_params);
         }
 
-
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
         {
             return Enum<T>(RecordManager.Default, ptypes, filter, orderby, limit, filter_params);
 
         }
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum(Type T,Type[] ptypes, string filter, string orderby, int limit, params object[] filter_params)
         {
             return Enum(T,RecordManager.Default, ptypes, filter, orderby, limit, filter_params);
         }
 
-
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(RecordManager manager, string filter, string orderby, int limit, params object[] filter_params)
         {
             return Enum<T>(manager, (Type[])null, filter, orderby, limit, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum(Type T,RecordManager manager, string filter, string orderby, int limit, params object[] filter_params)
         {
             return Enum(T, manager, (Type[])null, filter, orderby, limit, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(string filter, string orderby, int limit, params object[] filter_params)
         {
             return Enum<T>(RecordManager.Default, (Type[])null, filter, orderby, limit, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum(Type T,string filter, string orderby, int limit, params object[] filter_params)
         {
             return Enum(T, RecordManager.Default, (Type[])null, filter, orderby, limit, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(RecordManager manager, string filter, string orderby, params object[] filter_params)
         {
             return Enum<T>(manager, filter, orderby, 0, filter_params);
         }
-
+        
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum(Type T,RecordManager manager, string filter, string orderby, params object[] filter_params)
         {
             return Enum(T,manager, filter, orderby, 0, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(string filter, string orderby, params object[] filter_params)
         {
             return Enum<T>(RecordManager.Default, filter, orderby, 0, filter_params);
         }
 
-        static public RecordIterator Enum(Type T,string filter, string orderby, params object[] filter_params)
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
+        static public RecordIterator Enum(Type T, string filter, string orderby, params object[] filter_params)
         {
             return Enum(T,RecordManager.Default, filter, orderby, 0, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(RecordManager manager, string filter, params object[] filter_params)
         {
             return Enum<T>(manager, filter, string.Empty, filter_params);
         }
 
-        static public RecordIterator Enum(Type T,RecordManager manager, string filter, params object[] filter_params)
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
+        static public RecordIterator Enum(Type T, RecordManager manager, string filter, params object[] filter_params)
         {
             return Enum(T,manager, filter, string.Empty, filter_params);
         }
 
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
         static public RecordIterator Enum<T>(string filter, params object[] filter_params)
         {
             return Enum<T>(RecordManager.Default, filter, string.Empty, filter_params);
         }
 
-        static public RecordIterator Enum(Type T,string filter, params object[] filter_params)
+        [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
+        static public RecordIterator Enum(Type T, string filter, params object[] filter_params)
         {
             return Enum(T,RecordManager.Default, filter, string.Empty, filter_params);
         }
-
-        static public RecordIterator Enum<T>(RecordManager manager)
-        {
-            return Enum<T>(manager, string.Empty, string.Empty);
-        }
-
-        static public RecordIterator Enum(Type T,RecordManager manager)
-        {
-            return Enum(T,manager, string.Empty, string.Empty);
-        }
-
-        static public RecordIterator Enum(Type T)
-        {
-            return Enum(T,RecordManager.Default);
-        }
-
-        static public RecordIterator Enum<T>()
-        {
-            return Enum<T>(RecordManager.Default);
-        }
-
-
-
     }
 
    public class RecordSet<T>:IEnumerable,ICollection,IList,IDisposable
