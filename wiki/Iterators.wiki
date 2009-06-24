@@ -1,0 +1,24 @@
+#summary How to iterate over the class instances
+
+In the common case you iterate over the class instances with help of RecordIterator.
+
+The following code will iterate all over the SimpleObject instances reflected to database
+{{{
+   foreach (SimpleObject obj in RecordIterator.Enum<SimpleObject>())
+    {
+     ....
+    }
+}}}
+
+
+The following code will iterate all over the SimpleObject instances reflected to database with specified restrictions
+{{{
+
+   foreach (SimpleObject obj in RecordIterator.Enum<SimpleObject>(
+                      Where.OrderBy("Name"),
+                      Where.EQ("Name","Value1")
+           ))
+    {
+     ....
+    }
+}}}
