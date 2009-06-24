@@ -91,3 +91,33 @@ using Softlynx.ActiveSQL;
         }
     }
 }}}
+
+To control the reflection of the instance itself use the RecordManager methods like
+ * Read
+ * Write 
+ * Delete
+
+For example reflect an instance to database:
+{{{
+                SimpleObject o = new SimpleObject();
+                o.ID = Guid.NewGuid();
+                o.Name = "Person One";
+
+                RecordManager.Default.Write(o);
+}}}
+
+Get the instance values back from database:
+{{{
+                SimpleObject o = new SimpleObject();
+                o.ID = new Guid("{A191C04B-C975-4cac-BDDE-CB0D0CA47E4E}");
+                
+                RecordManager.Default.Read(o);
+}}}
+
+Delete the specified instance permanently
+{{{
+                SimpleObject o = new SimpleObject();
+                o.ID = new Guid("{A191C04B-C975-4cac-BDDE-CB0D0CA47E4E}");
+                
+                RecordManager.Default.Delete(o);
+}}}
