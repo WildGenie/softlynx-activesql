@@ -1,0 +1,3 @@
+#summary Class level attribute instructs the RecordManager to map the class reflection.
+
+Class level attribute instructs the RecordManager to map the class reflection.
