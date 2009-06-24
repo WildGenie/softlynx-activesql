@@ -1,0 +1,1 @@
+#summary Static class instance user to access the reflected objects in iterated way.
