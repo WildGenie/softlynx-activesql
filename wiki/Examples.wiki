@@ -1,5 +1,5 @@
 #summary Typical code templates.
-#labels Phase-Implementation
+#labels Phase-Implementation,Featured
 
 = Code samples =
 
