@@ -1,0 +1,1 @@
+#summary Property level attribute instructs RecordManager about object's primary key
