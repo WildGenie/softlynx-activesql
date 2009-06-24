@@ -1,0 +1,93 @@
+#summary Reflecting an object to database
+#labels Reflection
+
+Each object with *InTable* attribute is subject to be reflected with RecordManager.
+Any public RW property is reflected to corresponding data table column.
+
+Each object *MUST* have a primary key defined, it can't by complex one, i.e. only one property should be marked with *PrimaryKey* attribute.
+
+{{{
+using Softlynx.ActiveSQL;
+
+....
+
+    [InTable]
+    public class SimpleObject
+    {
+        Guid _ID = Guid.Empty;
+        
+        [PrimaryKey]
+        public Guid ID
+        {
+            get { return _ID; }
+            set { _ID = value; }
+        }
+
+        string _Name = string.Empty;
+
+        public string Name
+        {
+            get { return _Name; }
+            set { _Name = value; }
+        }
+
+        string _Address = string.Empty;
+
+        //Will not be reflected due to it's protection level
+        protected string Address
+        {
+            get { return _Address; }
+            set { _Address = value; }
+        }
+
+        string _Status = string.Empty;
+
+        //Will not be reflected due to direct attribute specified
+        [ExcludeFromTable]
+        public string Status
+        {
+            get { return _Status; }
+            set { _Status = value; }
+        }
+    }
+}}}
+
+It is recommended to define a Guid typed column as a primary key for an object. Following that suggestion there is predefined class ID object that contains ID column defined as well as some other benefits. Almost the same reflection could be achieved on top of IDObject with following recommended code 
+
+{{{
+using Softlynx.ActiveSQL;
+
+....
+
+    [InTable]
+    public class SimpleObject2:IDObject
+    {
+        public class Property
+        {
+            static public PropType Name = new PropType<string>("Person Name");
+            static public PropType Address = new PropType<string>("Person Address");
+            static public PropType Status = new PropType<string>("Person Status");
+        }
+    
+        public string Name
+        {
+            get { return GetValue<string>(Property.Name, string.Empty); }
+            set { SetValue<string>(Property.Name, value); }
+        }
+
+        //Will not be reflected due to it's protection level
+        protected string Address
+        {
+            get { return GetValue<string>(Property.Address, string.Empty); }
+            set { SetValue<string>(Property.Address, value); }
+        }
+
+        //Will not be reflected due to direct attribute specified
+        [ExcludeFromTable]
+        public string Status
+        {
+            get { return GetValue<string>(Property.Status, string.Empty); }
+            set { SetValue<string>(Property.Status, value); }
+        }
+    }
+}}}
