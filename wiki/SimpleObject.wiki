@@ -1,1 +1,1 @@
-#summary Simple object defened in Reflection section
+#summary Simple object defened in [Reflection] section
