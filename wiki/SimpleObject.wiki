@@ -1,1 +1,3 @@
-#summary Simple object defened in [Reflection] section
+#summary Simple object
+
+See the definition in [Reflection] section
