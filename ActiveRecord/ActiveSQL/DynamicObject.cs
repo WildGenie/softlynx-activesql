@@ -137,6 +137,8 @@ namespace Softlynx.ActiveSQL
         /// <summary>
         /// Помечает весь объект, как не имеющий модификаций
         /// </summary>
+        [AfterRecordManagerRead]
+        [AfterRecordManagerWrite]
         public void ClearChanges()
         {
             changes.Clear();
@@ -259,6 +261,18 @@ namespace Softlynx.ActiveSQL
         {
             get { return GetValue<Guid>(Property.ID,Guid.Empty); }
             set { SetValue<Guid>(Property.ID,value); }
+        }
+        /// <summary>
+        /// Determines was the object reflected 
+        /// back (ever readed before) from database or constructed from scratch.
+        /// Actualy it is true in case of Property.ID has been changed or does not even defined.
+        /// </summary>
+        [ExcludeFromTable]
+        public bool IsNewObject
+        {
+            get { 
+                object tmp=null;
+                return IsChanged(Property.ID) || (!ValueExists<Guid>(Property.ID,out tmp)); }
         }
     }
 
@@ -384,7 +398,7 @@ namespace Softlynx.ActiveSQL
     abstract public class DynamicObject : IDObject, IComparable, IDynamicObject
     {
         protected RecordManager _manager;
-        protected bool _isnewobject = true;
+//        protected bool _isnewobject = true;
 
 //        protected Dictionary<PropType, ObjectProp> changed_values = new Dictionary<PropType, ObjectProp>();
 //        protected Dictionary<PropType, ObjectProp> props_latest_value = new Dictionary<PropType, ObjectProp>();
@@ -394,12 +408,6 @@ namespace Softlynx.ActiveSQL
             return ToString().CompareTo(other.ToString());
         }
         
-        [ExcludeFromTable]
-        public bool IsNewObject
-        {
-            get { return _isnewobject; }
-            set { _isnewobject = value; }
-        }
 
         [ExcludeFromTable]
         public RecordManager Manager
@@ -408,11 +416,6 @@ namespace Softlynx.ActiveSQL
             set { _manager = value; }
         }
 
-        [AfterRecordManagerRead]
-        protected void WhenRead()
-        {
-            IsNewObject = false;
-        }
 
         public abstract ObjectProp GetPropertyWithLastValue(PropType PropertyID);
         public abstract bool SetPropertyLastValue(PropType PropertyID, object value);
@@ -476,11 +479,13 @@ namespace Softlynx.ActiveSQL
                 foreach (PropType pt in  ChangedProperties)
                 {
                     Object o = null;
-                    if (ValueExists<T>(pt,out o))
+                    if (ValueExists<T>(pt, out o))
+                    {
                         manager.Write(o);
+                        ClearChanges(pt);
+                    }
                 }
-                ClearChanges();
-                handled=!IsNewObject;
+                handled=!HasChanges;
             }
         }
 
@@ -517,8 +522,7 @@ namespace Softlynx.ActiveSQL
                     }
 
                     if (r == null) r = PropInstance(ID, PropertyID, null);
-                    else
-                        IsNewObject = false;
+                    //else IsNewObject = false;
                     return r;
                 }));
             }
