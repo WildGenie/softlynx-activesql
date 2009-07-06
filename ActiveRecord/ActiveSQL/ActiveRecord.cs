@@ -48,6 +48,31 @@ namespace Softlynx.ActiveSQL
         internal string OrderClause = null;
         internal Hashtable ParameterValues = new Hashtable();
 
+
+        /// <summary>
+        /// Returns ready WHERE statement
+        /// </summary>
+        public string Where
+        {
+            get { return WhereClause; }
+        }
+
+        /// <summary>
+        /// Returns ready ORDER BY statement
+        /// </summary>
+        public string OrderBy
+        {
+            get { return OrderClause; }
+        }
+
+        /// <summary>
+        /// Returns key=value pairs for parsed conditional defines
+        /// </summary>
+        public Hashtable Parameters
+        {
+            get { return ParameterValues; }
+        }
+
         private ConditionDefs(RecordManager _rm, Condition[] _conditions)
         {
             conditions = _conditions;
