@@ -25,11 +25,20 @@ namespace Softlynx.RecordSet
 
         internal RecordIterator(InTable _table, params Condition[] conditions)
         {
+            ConditionDefs defs=ConditionDefs.Parse(_table.manager, conditions);
+            PrepareIterator(_table, defs);
+        }
+
+        internal RecordIterator(InTable _table, ConditionDefs defs)
+        {
+            PrepareIterator(_table, defs);
+        }
+
+        private void PrepareIterator(InTable _table, ConditionDefs defs)
+        {
             table = _table;
             if (table.IsVirtual)
                 throw new Exception("Can't fill virual tables from database");
-
-            defs = ConditionDefs.Parse(table.manager,conditions);
 
             cmd += String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.manager.AsFieldName(table.Name));
 
@@ -39,7 +48,7 @@ namespace Softlynx.RecordSet
             if (defs.OrderClause != string.Empty)
                 cmd += String.Format(" ORDER BY {0}", defs.OrderClause);
 
-            if (defs.RecordLimit>0)
+            if (defs.RecordLimit > 0)
                 cmd += String.Format(" LIMIT {0}", defs.RecordLimit);
 
             filter_params = new object[defs.ParameterValues.Count * 2];
@@ -63,6 +72,8 @@ namespace Softlynx.RecordSet
                 throw new Exception(string.Format("Can't create instance of {0} without known constructor", table.basetype.Name));
 
         }
+    
+    
 
         [Obsolete("Switch to RecordIterator(InTable _table, params Condition[] conditions) notation")] 
         internal RecordIterator(InTable _table, Type[] ptypes, string filter, string orderby, int limit, params object[] _filter_params)
@@ -170,6 +181,28 @@ namespace Softlynx.RecordSet
             return count;
         }
 
+        static public RecordIterator Enum(Type T, RecordManager manager, ConditionDefs defs)
+        {
+            InTable t = manager.ActiveRecordInfo(T);
+            return new RecordIterator(t, defs);
+        }
+
+        static public RecordIterator Enum<T>(RecordManager manager, ConditionDefs defs)
+        {
+            return Enum(typeof(T), manager, defs);
+        }
+
+        static public RecordIterator Enum(Type T, ConditionDefs defs)
+        {
+            InTable t = RecordManager.Default.ActiveRecordInfo(T);
+            return new RecordIterator(t, defs);
+        }
+
+        static public RecordIterator Enum<T>(ConditionDefs defs)
+        {
+            return Enum(typeof(T), RecordManager.Default, defs);
+        }
+
         static public RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions)
         {
             InTable t = manager.ActiveRecordInfo(T);
@@ -212,7 +245,6 @@ namespace Softlynx.RecordSet
             
             return Enum<T>(RecordManager.Default);
         }
-
 
 
         [Obsolete("Switch to RecordIterator Enum(Type T, RecordManager manager,  params Condition[] conditions) notation")]
