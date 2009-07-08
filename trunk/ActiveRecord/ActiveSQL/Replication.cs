@@ -533,7 +533,7 @@ namespace Softlynx.ActiveSQL.Replication
 
             Object instance = Activator.CreateInstance(ActiveRecordInfo.basetype);
             if (instance is IRecordManagerDriven)
-                (instance as IRecordManagerDriven).Manager = Manager;
+                (instance as IRecordManagerDriven).RecordManager = Manager;
 
             xr.ReadStartElement();
 

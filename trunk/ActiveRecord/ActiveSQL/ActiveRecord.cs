@@ -384,8 +384,28 @@ namespace Softlynx.ActiveSQL
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class RecordSetRemove : NamedAttribute { }
 
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class OnTableVersionChange : Attribute { }
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
+    public class OnTableVersionChange : Attribute {
+        
+        private bool _PostRegistration=false;
+        private int? _version = null;
+
+        /// <summary>
+        /// True if handler will run asyncronously after all registration sequences
+        /// </summary>
+        public bool PostRegistration
+        {
+            get { return _PostRegistration; }
+            set { _PostRegistration = value; }
+        }
+
+        public int? Version
+        {
+            get { return _version; }
+            set { _version = value; }
+        }
+
+    }
 
 
     
@@ -625,6 +645,7 @@ namespace Softlynx.ActiveSQL
         public event RecordManagerEvent AfterRecordManagerRead = null;
         public event RecordManagerEvent RecordManagerPostRegistration = null;
         public event RecordManagerEvent TableVersionChanged = null;
+        public event RecordManagerEvent TableVersionAsyncChanged = null;
         public event RecordSetEvent RecordSetInsert = null;
         public event RecordSetEvent RecordSetRemove = null;
 
@@ -856,7 +877,7 @@ namespace Softlynx.ActiveSQL
                 reader.Close();
             }
             if (Record is IRecordManagerDriven)
-                (Record as IRecordManagerDriven).Manager = manager;
+                (Record as IRecordManagerDriven).RecordManager = manager;
             if (res) FireAfterReadEvent(Record);
 
             return res;
@@ -896,7 +917,7 @@ namespace Softlynx.ActiveSQL
             using (ManagerTransaction t=manager.BeginTransaction())
             {
                 if (Record is IRecordManagerDriven)
-                    (Record as IRecordManagerDriven).Manager = manager;
+                    (Record as IRecordManagerDriven).RecordManager = manager;
 
                 bool write_handled = false;
                 int r = 0;
@@ -931,7 +952,7 @@ namespace Softlynx.ActiveSQL
             using (ManagerTransaction transaction = manager.BeginTransaction())
             {
                 if (Record is IRecordManagerDriven)
-                    (Record as IRecordManagerDriven).Manager = manager;
+                    (Record as IRecordManagerDriven).RecordManager = manager;
 
                 if (BeforeRecordManagerDelete != null) BeforeRecordManagerDelete(Record);
                 int i = 0;
@@ -956,6 +977,11 @@ namespace Softlynx.ActiveSQL
         {
             if (TableVersionChanged != null)
                 TableVersionChanged(version);
+            if (TableVersionAsyncChanged != null)
+                manager.VersionChangePostHandlers.Enqueue(new RecordManagerEvent(delegate
+                {
+                    TableVersionAsyncChanged(version);
+                }));
         }
     }
 
@@ -1090,8 +1116,10 @@ namespace Softlynx.ActiveSQL
         
         private CacheCollector cache = new CacheCollector();
 
+        internal Queue<RecordManagerEvent> VersionChangePostHandlers = new Queue<RecordManagerEvent>();
+
         static Hashtable managers = new Hashtable();
-        private bool _GlobalSchemaPersistance = false;
+
         /// <summary>
         /// Return the collection of system wide RecordManagers
         /// defined for running threads.
@@ -1478,7 +1506,7 @@ namespace Softlynx.ActiveSQL
 
                 if (table.Name == string.Empty) table.Name = type.Name;
                 if (table_names.ContainsKey(table.Name))
-                    throw new Exception(string.Format("Table name {0} already used bu ActiveRecord object {1}", table.Name, type.ToString()));
+                    throw new Exception(string.Format("Table name {0} already used by ActiveRecord object {1}", table.Name, type.ToString()));
 
                 List<InField> fields = new List<InField>();
                 List<InField> primary_fields = new List<InField>();
@@ -1543,7 +1571,11 @@ namespace Softlynx.ActiveSQL
                         if ((mattr.GetType() == typeof(OnTableVersionChange)) && (method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.TableVersionChanged += new RecordManagerEvent(delegate(object o) { CallMethod(m, null,o); });
+                            OnTableVersionChange otc=mattr as OnTableVersionChange;
+                            if (otc.PostRegistration)
+                                table.TableVersionAsyncChanged += new RecordManagerEvent(delegate(object o) { CallMethod(m, null, o); });
+                            else
+                                table.TableVersionChanged += new RecordManagerEvent(delegate(object o) { CallMethod(m, null, o); });
                         }
 
                     }
@@ -1599,8 +1631,6 @@ namespace Softlynx.ActiveSQL
 
                 table.fields = fields.ToArray();
                 table.primary_fields = primary_fields.ToArray();
-                tables[type] = table;
-                table_names[table.Name] = type;
                 table.basetype = type;
                 if (!table.IsVirtual)
                 {
@@ -1616,6 +1646,8 @@ namespace Softlynx.ActiveSQL
                         {
                         }
                         table.InitSqlMethods();
+                        tables[type] = table;
+                        table_names[table.Name] = type;
                     }
                     ov.Name = table.Name;
                     try
@@ -1700,8 +1732,8 @@ namespace Softlynx.ActiveSQL
                                         )
 
                                         RunCommand(update.SQLCode);
+                                        table.DoTableVersionChanged(update.Version);
 
-                                    table.DoTableVersionChanged(update.Version);
                                 }
                                 catch (Exception E)
                                 {
@@ -1720,6 +1752,9 @@ namespace Softlynx.ActiveSQL
                             transaction.Commit();
                         }
                     table.InitSqlMethods();
+                    tables[type] = table;
+                    table_names[table.Name] = type;
+
                 }
             }
         }
@@ -1784,6 +1819,10 @@ namespace Softlynx.ActiveSQL
             {
                 foreach (InTable t in tables.Values)
                     t.PostRegistrationEvent();
+                
+                while (VersionChangePostHandlers.Count>0) {
+                    VersionChangePostHandlers.Dequeue()(null);
+                };
                 transaction.Commit();
             }
 
