@@ -127,7 +127,7 @@ namespace Softlynx.RecordSet
                 object instance = ci.Invoke(cparams);
                 if ((cparams == null) && (instance is IRecordManagerDriven))
                 {
-                    (instance as IRecordManagerDriven).Manager = table.manager;
+                    (instance as IRecordManagerDriven).RecordManager = table.manager;
                 }
                 int i = 0;
                 foreach (InField field in table.fields)

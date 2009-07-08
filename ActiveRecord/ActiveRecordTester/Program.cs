@@ -30,7 +30,7 @@ namespace ActiveRecordTester
 
     [InTable]
     [WithReplica]
-    //[TableVersion(4,ColumnAction.Remove,"C1")]
+    [TableVersion(6,TableAction.None)]
     class DemoObject:DynamicObject<DemoProperty>
     {
         public DemoObject() : base() { }
@@ -64,6 +64,11 @@ namespace ActiveRecordTester
 
 
         int c1=0;
+        [OnTableVersionChange(PostRegistration=true)]
+        static public void newVersion(int version)
+        {
+            version = 0;
+        }
     }
 
     public class O1 : PropertySet

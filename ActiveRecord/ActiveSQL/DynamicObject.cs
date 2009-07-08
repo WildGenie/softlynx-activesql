@@ -248,7 +248,7 @@ namespace Softlynx.ActiveSQL
         }
     }
 
-    public class IDObject:PropertySet,IIDObject
+    public class IDObject:PropertySet,IIDObject,IRecordManagerDriven
     {
 
         public class Property
@@ -274,11 +274,36 @@ namespace Softlynx.ActiveSQL
                 object tmp=null;
                 return IsChanged(Property.ID) || (!ValueExists<Guid>(Property.ID,out tmp)); }
         }
+
+        private RecordManager _RM = null;
+        /// <summary>
+        /// Associated record manager or null if not defined
+        /// </summary>
+        [ExcludeFromTable]
+        public RecordManager RecordManager
+        {
+            get { return _RM; }
+            set { _RM=value; }
+        }
+
+        /// <summary>
+        /// Returns either associated record manager or RecordManager.Default.
+        /// </summary>
+        public RecordManager RM
+        {
+            get
+            {
+                if (_RM == null) _RM = RecordManager.Default;
+                return _RM;
+            }
+        }
+
+
     }
 
     public interface IRecordManagerDriven
     {
-        RecordManager Manager
+        RecordManager RecordManager
         {
             get;
             set; 
@@ -321,7 +346,7 @@ namespace Softlynx.ActiveSQL
             records = Records;
             if (records is IRecordManagerDriven)
             {
-                manager = (records as IRecordManagerDriven).Manager;
+                manager = (records as IRecordManagerDriven).RecordManager;
             }
             else
                 manager = RecordManager.Default;
@@ -364,7 +389,7 @@ namespace Softlynx.ActiveSQL
                     {
                         IDynamicObject o = Activator.CreateInstance(returnobjtype) as IDynamicObject;
                         if (o is IRecordManagerDriven)
-                            (o as IRecordManagerDriven).Manager = manager;
+                            (o as IRecordManagerDriven).RecordManager = manager;
                         if (o is IIDObject)
                             (o as IIDObject).ID = op.ObjectID;
 
