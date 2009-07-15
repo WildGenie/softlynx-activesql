@@ -107,6 +107,7 @@ namespace Softlynx.ActiveSQL
         /// работы с PropertySet.
         /// Недопускается использование анонимных свойств для работы с БД через 
         /// DynamicObject.
+        /// </summary>
         public PropType() : base(typeof(T), null, null) { }
 
         /// <summary>
@@ -114,6 +115,7 @@ namespace Softlynx.ActiveSQL
         /// работы с PropertySet.
         /// Недопускается использование анонимных свойств для работы с БД через 
         /// DynamicObject
+        /// </summary>
         public PropType(string Name) : base(typeof(T), Name, null) { }
     }
 
@@ -232,7 +234,7 @@ namespace Softlynx.ActiveSQL
             set { SetValue(Props.PropertyID, value); }
         }
 
-        public PropType Property
+        public new PropType Property
         {
             get { return (PropType)PropType.propreg[PropertyID]; }
         }

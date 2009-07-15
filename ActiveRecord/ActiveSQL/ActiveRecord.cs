@@ -24,17 +24,17 @@ namespace Softlynx.ActiveSQL
     internal class OrderBy : Condition
     {
         internal string column = null;
-        internal bool isAscendant = true;
+        internal Where.SortBy _order = Where.SortBy.Descendant;
 
         internal OrderBy(string Column)
         {
             column = Column;
         }
 
-        internal OrderBy(string Column, bool IsAscendant)
+        internal OrderBy(string Column, Where.SortBy order)
         {
             column = Column;
-            isAscendant = IsAscendant;
+            _order = order;
         }
     }
 
@@ -88,7 +88,7 @@ namespace Softlynx.ActiveSQL
                     if (cond is OrderBy)
                         OrderColumns.Add(
                             rm.AsFieldName((cond as OrderBy).column) + " " +
-                            (((cond as OrderBy).isAscendant) ? "ASC" : "DESC"));
+                            (((cond as OrderBy)._order) == Condition.Ascendant ? "ASC" : "DESC"));
 
                     if (cond is WhereCondition)
                         WhereConds.Add(BuildWhereCondExpr(cond as WhereCondition));
@@ -105,8 +105,11 @@ namespace Softlynx.ActiveSQL
                 Where w=whereCondition as Where;
                 string pname = string.Format("PRM{0}", ParameterValues.Count);
                 ParameterValues.Add(pname,w.value);
-                return
-                    "("+rm.AsFieldName(w.field) + w.op + rm.AsFieldParam(pname)+")";
+                return string.Format("({0} {1} {2})",
+                              rm.AsFieldName(w.field),
+                              w.op,
+                              rm.AsFieldParam(pname)
+                              );
             }
 
             WhereGroup g = whereCondition as WhereGroup;
@@ -123,9 +126,12 @@ namespace Softlynx.ActiveSQL
         }
 
     }
-
+    
+    
     public abstract class Condition
     {
+        public const Where.SortBy Descendant = Where.SortBy.Descendant;
+        public const Where.SortBy Ascendant = Where.SortBy.Ascendant;
 
         public static Condition Limit(int RecordCount)
         {
@@ -137,9 +143,9 @@ namespace Softlynx.ActiveSQL
             return new OrderBy(Column);
         }
 
-        public static Condition OrderBy(string Column, bool IsAscendant)
+        public static Condition OrderBy(string Column, Where.SortBy order)
         {
-            return new OrderBy(Column, IsAscendant);
+            return new OrderBy(Column, order);
         }
 
     }
@@ -162,6 +168,8 @@ namespace Softlynx.ActiveSQL
 
     public class Where : WhereCondition
     {
+        public enum SortBy { Ascendant, Descendant }
+
         internal string field = string.Empty;
         internal object value = null;
         internal string op = null;
@@ -579,6 +587,15 @@ namespace Softlynx.ActiveSQL
         {
             get { return field_type; }
         }
+
+        internal object PrepareValueType(object v)
+        {
+            if (v == null) return v;
+            if (prop.PropertyType.IsInstanceOfType(v)) return v;
+            if (prop.PropertyType.IsEnum) 
+                return Enum.ToObject(prop.PropertyType,v);
+            return Convert.ChangeType(v, prop.PropertyType,null);
+        }
     }
 
 
@@ -869,6 +886,7 @@ namespace Softlynx.ActiveSQL
                     foreach (InField field in fields)
                     {
                         Object v = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        v = field.PrepareValueType(v);
                         field.prop.SetValue(Record, v, null);
                         i++;
                     }

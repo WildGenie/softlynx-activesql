@@ -193,6 +193,7 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
         Operation _Operation = Operation.Write;
+        [Indexed]
         public Operation ObjectOperation
         {
             get { return _Operation; }
@@ -378,7 +379,9 @@ namespace Softlynx.ActiveSQL.Replication
             MemoryStream ms = new MemoryStream();
             XmlWriter xw = XmlWriter.Create(ms, SerializerSettings);
             xw.WriteStartElement("ReplicaBuffer");
-            foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager, Manager.WhereExpression("SeqNO", ">") + " and " + Manager.WhereEqual("Actual"), Manager.AsFieldName("SeqNO"), "SeqNO", lastknownid,"Actual",true))
+            foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager,
+                Where.GT("SeqNO",lastknownid),
+                Where.EQ("Actual",true)))
             {
                 lastknownid = l.SeqNO;
                 if (!ExcludeAuthor.ContainsKey(l.AutorID))
