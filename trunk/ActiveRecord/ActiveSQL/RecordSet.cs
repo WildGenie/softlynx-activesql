@@ -21,7 +21,6 @@ namespace Softlynx.RecordSet
         private DbDataReader reader = null;
         private object[] cparams = null;
         private ConstructorInfo ci = null;
-        private ConditionDefs defs = null;
 
         internal RecordIterator(InTable _table, params Condition[] conditions)
         {
@@ -141,6 +140,7 @@ namespace Softlynx.RecordSet
                         //if (nvci != null)
                             //nv = nvci.Invoke(new object[] { v });
                     //}
+                    v = field.PrepareValueType(v);
                     field.prop.SetValue(instance, v, null);
                 }
 

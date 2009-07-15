@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using Softlynx.ActiveSQL;
 using Softlynx.ActiveSQL.SQLite;
+using Softlynx.ActiveSQL.Replication;
 using Softlynx.RecordSet;
 using Softlynx.SimpleConfig;
 using Softlynx.SimpleRemoting;
@@ -14,14 +15,17 @@ using Softlynx.SimpleRemoting;
 namespace ActiveRecordTesterCE
 {
     [InTable]
+    [WithReplica]
+
     public class DemoProperty : ObjectProp { }
 
     [InTable]
+    [WithReplica]
     public class DemoObject : DynamicObject<DemoProperty>
     {
         public DemoObject() : base() { }
         public DemoObject(RecordManager manager) : base(manager) { }
-        public class Property
+        public new class Property
         {
             static public PropType Name = new PropType<string>("Name","{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
         }
@@ -43,6 +47,7 @@ namespace ActiveRecordTesterCE
         [MTAThread]
         static void Main()
         {
+            /*
             using (Client c = new Client(new IPEndPoint(IPAddress.Parse("192.168.1.10"), 9090)))
             {
                 RemotingParams p = new RemotingParams();
@@ -60,7 +65,7 @@ namespace ActiveRecordTesterCE
                 c.Query(p);
 
             }
-
+            */
             SimpleConfig.FileName = @"\mycfg.xml";
             SimpleConfig.Pairs["drink"] = "1";
             SimpleConfig.Pairs["vehicle"] = "bike";
@@ -72,7 +77,15 @@ namespace ActiveRecordTesterCE
             prov.ExtendConnectionString("BinaryGUID", "FALSE");
             prov.Connection.Open();
             RecordManager.Default = new RecordManager(prov, typeof(Program).Assembly.GetTypes());
+            ReplicaManager rm = new ReplicaManager();
+            rm.RegisterWithRecordManager();
 
+            ReplicaManager.ReplicaLog rl = new ReplicaManager.ReplicaLog();
+            rl.ID = Guid.NewGuid();
+            RecordManager.Default.Write(rl);
+            RecordManager.Default.Read(rl);
+
+            
             DemoObject dom = new DemoObject(RecordManager.Default);
             //dom.ID = Guid.NewGuid();
             dom.ID = new Guid("{97C8BE02-1072-4797-8A37-E5D844272C7B}");

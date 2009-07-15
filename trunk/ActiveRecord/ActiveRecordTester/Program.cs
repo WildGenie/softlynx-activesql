@@ -35,7 +35,7 @@ namespace ActiveRecordTester
     {
         public DemoObject() : base() { }
         public DemoObject(RecordManager manager) : base(manager) { }
-        public class Property
+        public new class Property
         {
             static public PropType Name = new PropType<string>("Name","{A34E00AF-4A88-46e6-8DE6-539A119C3A22}");
             static public PropType LastName = new PropType<string>("Name", "{A34E00AF-4A88-46e6-8DE6-539A119C3A21}");
@@ -107,7 +107,7 @@ namespace ActiveRecordTester
     [InTable]
     public class ItemsDescr : IDObject
     {
-        public class Property
+        public new class Property
         {
             static public PropType IntID = new PropType<long>("long ID Object identifier");
             static public PropType SKUDesc = new PropType<string>("SKU Description");
@@ -334,7 +334,7 @@ namespace ActiveRecordTester
         [InTable]
         public class Employees : IDObject
         {
-            public class Property
+            public new class Property
             {
                 static public PropType Login = new PropType<long>("Login");
                 static public PropType EmployeeName = new PropType<string>("EmployeeName");
@@ -403,7 +403,7 @@ namespace ActiveRecordTester
         //[InTable]
         public class tmpPPTNewDescrLog : IDObject
         {
-            public class Property
+            public new class Property
             {
                 // idPPTNewDescr ???
                 static public PropType idPPTNewDescr = new PropType<long>("idPPTNewDescr");

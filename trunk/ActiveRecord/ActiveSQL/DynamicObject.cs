@@ -34,7 +34,7 @@ namespace Softlynx.ActiveSQL
         /// </summary>
         /// <typeparam name="T">Тип свойства</typeparam>
         /// <param name="property">Идентификатор свойства</param>
-        /// <param name="NewValue">Новое значение. <param>
+        /// <param name="NewValue">Новое значение. </param>
         /// <returns>Было ли значение изменено</returns>
         protected bool SetValue<T>(PropType property, T NewValue)
         {
@@ -79,8 +79,8 @@ namespace Softlynx.ActiveSQL
         /// </summary>
         /// <typeparam name="T">Тип результата</typeparam>
         /// <param name="property">Идентификатор свойства</param>
-        /// <param name="DefaultValueDelegate">Делегат для получения значения по умолчанию</param>
-        /// <returns>Значение запрашиваемого свойства</returns>
+        /// <param name="DefaultValue">елегат для получения значения по умолчанию</param>
+        /// <returns>начение запрашиваемого свойства</returns>
         protected T GetValue<T>(PropType property, DefaultValueDelegate<T> DefaultValue) 
         {
             object obj = values[property.ID];
@@ -97,6 +97,7 @@ namespace Softlynx.ActiveSQL
         /// </summary>
         /// <typeparam name="T">Проверяемый тип</typeparam>
         /// <param name="property">Идентификатор свойства</param>
+        /// <param name="result">Значение свойства если оно существует</param>
         /// <returns>Значение объекта или null если не существует</returns>
         protected bool ValueExists<T>(PropType property,out object result)
         {
@@ -534,12 +535,9 @@ namespace Softlynx.ActiveSQL
                     {
 
                         foreach (ObjectProp op in RecordIterator.Enum<T>(Manager,
-                                Manager.WhereEqual("ObjectID") +
-                               " and " +
-                                Manager.WhereEqual("PropertyID"),
-                                string.Format("{0} DESC", Manager.AsFieldName("Created")),
-                                "ObjectID", ID,
-                                "PropertyID", PropertyID.ID))
+                            Where.EQ("ObjectID",ID),
+                            Where.EQ("PropertyID", PropertyID.ID),
+                            Where.OrderBy("Created",Condition.Descendant)))
                         {
                             r = op;
                             break;
@@ -620,9 +618,9 @@ namespace Softlynx.ActiveSQL
         public static PropertyIterator Query(RecordManager Manager, DynamicObject obj)
         {
             RecordIterator ri = RecordIterator.Enum<T>(Manager,
-            Manager.WhereEqual("ObjectID"),
-            string.Format("{0} DESC", Manager.AsFieldName("Created")),
-            "ObjectID", obj.ID);
+                Where.EQ("ObjectID", obj.ID),
+                Where.OrderBy("Created",Condition.Descendant));
+
             return new PropertyIterator(ri);
         }
 
@@ -649,10 +647,9 @@ namespace Softlynx.ActiveSQL
             */
 
             RecordIterator ri=RecordIterator.Enum<T>(Manager,
-            Manager.WhereEqual("PropertyID")+" and "+Manager.WhereExpression("ValueText",cmpop),
-            string.Format("{0} DESC", Manager.AsFieldName("Created")),
-            "PropertyID", PropertyID.ID,
-            "ValueText", v);
+                Where.EQ("PropertyID",PropertyID.ID),
+                Where.OP("ValueText",cmpop,v),
+                Where.OrderBy("Created",Condition.Descendant));
             return new PropertyIterator(ri);
         }
 
