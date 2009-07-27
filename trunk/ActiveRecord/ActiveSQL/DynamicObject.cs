@@ -298,8 +298,6 @@ namespace Softlynx.ActiveSQL
                 return _RM;
             }
         }
-
-
     }
 
     public interface IRecordManagerDriven
