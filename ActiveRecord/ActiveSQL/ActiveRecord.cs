@@ -24,7 +24,7 @@ namespace Softlynx.ActiveSQL
     internal class OrderBy : Condition
     {
         internal string column = null;
-        internal Where.SortBy _order = Where.SortBy.Descendant;
+        internal Where.SortBy _order = Where.SortBy.Ascendant;
 
         internal OrderBy(string Column)
         {
