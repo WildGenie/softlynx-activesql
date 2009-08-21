@@ -20,10 +20,33 @@ namespace Softlynx.ActiveSQL
         private string _name = string.Empty;
         private Type _type = null;
         private bool anonymous = false;
+        internal static Hashtable _PropsDependencies = new Hashtable();
+        internal static Hashtable _PropsStack = new Hashtable();
         
         public bool Anonymous
         {
             get { return anonymous; }
+        }
+
+        internal static Hashtable ClassDependencyRoot(object o)
+        {
+            Hashtable ht=(Hashtable)_PropsDependencies[o.GetType()];
+            if (ht==null) {
+                ht=new Hashtable();
+                _PropsDependencies[o.GetType()]=ht;
+            }
+            return ht;
+        }
+
+        internal static LinkedList<PropType> ClassStackRoot(object o)
+        {
+            LinkedList<PropType> hs = (LinkedList<PropType>)_PropsStack[o.GetType()];
+            if (hs == null)
+            {
+                hs = new LinkedList<PropType>();
+                _PropsStack[o.GetType()] = hs;
+            }
+            return hs;
         }
 
         internal PropType(Type type, string Name, string id)
