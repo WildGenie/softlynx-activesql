@@ -13,22 +13,39 @@ namespace Softlynx.ActiveSQL
     public interface IIDObject
     {
         Guid ID { get; set;}
+        bool HasID { get; }
     }
 
 
     public delegate T DefaultValueDelegate<T>(PropType property);
-    public delegate void PropertyValueChanged(PropType property, object Value);
+    public delegate void PropertyValueChange(PropType property, object Value);
 
     /// <summary>
     /// Объект управляет динамическим набором свойств.
     /// </summary>
     public abstract class PropertySet:ICloneable
     {
+
+        /// <summary>
+        /// turn on/off property dependancy tracking
+        /// </summary>
+        public static bool PerClassDependencyTracking = false;
+
         //Hashtable snapshot = new Hashtable();
         Hashtable changes = new Hashtable();
         Hashtable values = new Hashtable();
 
-        public event PropertyValueChanged OnPropertyValueChanged = null;
+
+        /// <summary>
+        /// Event fired up on property has been changed
+        /// </summary>
+        public event PropertyValueChange OnPropertyChanged = null;
+
+        /// <summary>
+        /// Event fired prior to property change
+        /// </summary>
+        public event PropertyValueChange OnPropertyChanging = null;
+
         /// <summary>
         /// Задает новое значение свойства
         /// </summary>
@@ -40,6 +57,7 @@ namespace Softlynx.ActiveSQL
         {
             if (!Nullable.Equals(NewValue,values[property.ID]))
             {
+                PropertyChanging(property, NewValue);
                 values[property.ID] = NewValue;
                 changes[property.ID] = NewValue;
                 PropertyChanged(property,NewValue);
@@ -49,14 +67,25 @@ namespace Softlynx.ActiveSQL
         }
 
         /// <summary>
+        /// Виртуальный метод вызывается до изменения значения свойства
+        /// </summary>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <param name="Value">Его новое значение</param>
+        protected virtual void PropertyChanging(PropType property, object Value)
+        {
+            if (OnPropertyChanging != null)
+                OnPropertyChanging(property, Value);
+        }
+
+        /// <summary>
         /// Виртуальный метод вызывается в случае изменения значения свойства
         /// </summary>
         /// <param name="property">Идентификатор свойства</param>
         /// <param name="Value">Его новое значение</param>
         protected virtual void PropertyChanged(PropType property, object Value)
         {
-            if (OnPropertyValueChanged != null)
-                OnPropertyValueChanged(property, Value);
+            if (OnPropertyChanged != null)
+                OnPropertyChanged(property, Value);
         }
 
         /// <summary>
@@ -72,6 +101,43 @@ namespace Softlynx.ActiveSQL
             return GetValue<T>(property, new DefaultValueDelegate<T>(delegate { return DefaultValue; }));
         }
 
+        private LinkedList<PropType> PropStack 
+        {
+            get
+            {
+                return PropType.ClassStackRoot(this);
+            }
+        }
+
+        
+        private Hashtable PropDependency {
+            get
+            {
+                return PropType.ClassDependencyRoot(this);
+            }
+        }
+
+        /// <summary>
+        /// Returns the list of properties dependent on specified in prop param.
+        /// Dependency is evaluated and tracked internaly. For instance if property 
+        /// A in evaluation process requested value of property B then 
+        /// A would be dependent on B and DependsOn(B) will return array with A.
+        /// 
+        /// For proper dependency tracking DO NOT use the prototype 
+        /// GetValue<T>(PropType property, T DefaultValue) in your code, but use 
+        /// the delegate patterns like 
+        /// GetValue<T>(PropType property, DefaultValueDelegate<T> DefaultValue)
+        /// </summary>
+        /// <param name="prop"></param>
+        /// <returns></returns>
+        public PropType[] PropsDependsOn(PropType prop)
+        {
+            Hashtable deps = (Hashtable)(PropDependency[prop] ?? new Hashtable());
+            PropType[] res = new PropType[deps.Count];
+            deps.Keys.CopyTo(res, 0);
+            return res;
+        }
+
         /// <summary>
         /// Запрашивается текущее значение свойства, если оно отсутвует то 
         /// ему присваеевается значение результата работы делегата DefaultValueDelegate
@@ -81,16 +147,36 @@ namespace Softlynx.ActiveSQL
         /// <param name="property">Идентификатор свойства</param>
         /// <param name="DefaultValue">елегат для получения значения по умолчанию</param>
         /// <returns>начение запрашиваемого свойства</returns>
-        protected T GetValue<T>(PropType property, DefaultValueDelegate<T> DefaultValue) 
+        protected T GetValue<T>(PropType property, DefaultValueDelegate<T> DefaultValue)
         {
-            object obj = values[property.ID];
-            if (typeof(T).IsInstanceOfType(obj))
-                return (T)obj;
-            T res = DefaultValue(property);
-            SetValue<T>(property, res);
-            return res;
+            if (PerClassDependencyTracking)
+            {
+                foreach (PropType pts in PropStack)
+                {
+                    if (pts.Equals(property)) continue;
+                    Hashtable deps = (Hashtable)(PropDependency[property] ?? new Hashtable());
+                    deps[pts] = true;
+                    PropDependency[property] = deps;
+                }
+            }
+            LinkedListNode<PropType> node = null;
+            try
+            {
+                object obj = values[property.ID];
+                if (typeof(T).IsInstanceOfType(obj))
+                    return (T)obj;
+                if (PerClassDependencyTracking)  
+                    node=PropStack.AddLast(property);
+                T res = DefaultValue(property);
+                SetValue<T>(property, res);
+                return res;
+            }
+            finally
+            {
+                if (node!=null)
+                    PropStack.Remove(node);
+            }
         }
-
         /// <summary>
         /// Возвращает текущее значение объекта с указанным свойством, если само значение определено и имеет 
         /// указанный тип T
@@ -109,6 +195,18 @@ namespace Softlynx.ActiveSQL
         }
 
         /// <summary>
+        /// Возвращает признак определенности свойства с заданным типом
+        /// </summary>
+        /// <typeparam name="T">Проверяемый тип</typeparam>
+        /// <param name="property">Идентификатор свойства</param>
+        /// <returns>екгу если существует и false в противном случае</returns>
+        protected bool ValueExists<T>(PropType property)
+        {
+            object tmp = null;
+            return ValueExists<T>(property, out tmp);
+        }
+
+        /// <summary>
         /// Удаляет текущее значение свойства и если изменения сделаны,
         /// вызывает цепочку событий связанное с его изменением
         /// </summary>
@@ -124,6 +222,17 @@ namespace Softlynx.ActiveSQL
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Delete all the properties tracked as dependant on one specified as root
+        /// </summary>
+        /// <param name="root">Root property the dependency is tracked for</param>
+        /// <returns></returns>
+        public void DeleteDependantProperties(PropType root)
+        {
+            foreach (PropType pt in PropsDependsOn(root))
+                DeleteProperty(pt);
         }
 
         /// <summary>
@@ -263,6 +372,15 @@ namespace Softlynx.ActiveSQL
             get { return GetValue<Guid>(Property.ID,Guid.Empty); }
             set { SetValue<Guid>(Property.ID,value); }
         }
+
+        /// <summary>
+        /// Determines if an ID property was ever defined
+        /// </summary>
+        public bool HasID
+        {
+            get {return ValueExists<Guid>(Property.ID);}
+        }
+
         /// <summary>
         /// Determines was the object reflected 
         /// back (ever readed before) from database or constructed from scratch.
@@ -271,9 +389,7 @@ namespace Softlynx.ActiveSQL
         [ExcludeFromTable]
         public bool IsNewObject
         {
-            get { 
-                object tmp=null;
-                return IsChanged(Property.ID) || (!ValueExists<Guid>(Property.ID,out tmp)); }
+            get {return IsChanged(Property.ID) || !HasID;  }
         }
 
         private RecordManager _RM = null;

@@ -75,20 +75,20 @@ namespace ActiveRecordTester
     {
         public class Property
         {
-            static public PropType Name1 = new PropType<string>();
-            static public PropType Name2 = new PropType<string>();
-            static public PropType ID = new PropType<Guid>();
+            static public PropType Name1 = new PropType<string>("Name1");
+            static public PropType Name2 = new PropType<string>("Name2");
+            static public PropType ID = new PropType<Guid>("ID");
         }
 
         public string Name1
         {
-            get { return GetValue<string>(Property.Name1,string.Empty); }
+            get { return GetValue<string>(Property.Name1,new DefaultValueDelegate<string>( delegate {return Name2;})); }
             set { SetValue<string>(Property.Name1,value); }
         }
 
         public string Name2
         {
-            get { return GetValue<string>(Property.Name2,string.Empty); }
+            get { return GetValue<string>(Property.Name2, new DefaultValueDelegate<string>(delegate { return ID.ToString(); })); }
             set { SetValue<string>(Property.Name2, value); }
         }
 
@@ -184,8 +184,14 @@ namespace ActiveRecordTester
         static void Main()
         {
             O1 o1 = new O1();
+            
+            string tttt=string.Format("",o1.Name1);
+            PropType[] deps1 = o1.PropsDependsOn(O1.Property.ID);
+
             O2 o2 = new O2();
-            o1.OnPropertyValueChanged += new PropertyValueChanged(o1_OnPropertyValueChanged);
+            tttt = string.Format("", o2.Name2);
+            PropType[] deps2 = o2.PropsDependsOn(O2.Property.ID);
+            o1.OnPropertyChanged += new PropertyValueChange(o1_OnPropertyValueChanged);
             string ss = o1.Name1;
             //o1.Name1 = "123";
             //o1.Name2 = "345";

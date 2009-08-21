@@ -145,6 +145,13 @@ namespace Softlynx.ActiveSQL.Replication
             set { _ID = value; }
         }
 
+            public bool HasID
+            {
+                get { return !Guid.Empty.Equals(ID); }
+            }
+
+
+
         private Int64 _SeqNO = 0;
         [Autoincrement]
         public Int64 SeqNO
