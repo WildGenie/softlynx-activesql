@@ -709,8 +709,8 @@ namespace Softlynx.ActiveSQL.Replication
             foreach (InTable t in RM.RegisteredTypes)
                 if (t.with_replica) dsttypes.Add(t.basetype);
 
-            if (dsttypes.Count == 0) return; 
-            
+            if (dsttypes.Count == 0) return;
+
             using (ManagerTransaction trans = RM.BeginTransaction())
             {
                 DeleteProperty(Property.DatabaseObject);
@@ -720,40 +720,46 @@ namespace Softlynx.ActiveSQL.Replication
 
                 snapshot_record.LastUpdate = DateTime.Now;
                 snapshot_record.ReplicaID = SnapshotID;
-                snapshot_record.SeqNO = 0;
-                long maxfoundseqno=0;
+                long maxfoundseqno = snapshot_record.SeqNO;
                 foreach (ReplicaLog rl in RecordIterator.Enum<ReplicaLog>(
                     RM,
-                    Where.OrderBy("SeqNo",WhereCondition.Descendant),
-                    Where.Limit(1))) 
-                    maxfoundseqno=rl.SeqNO;
-                
+                    Where.GT("SeqNO",maxfoundseqno),
+                    Where.OrderBy("SeqNO", WhereCondition.Descendant),
+                    Where.Limit(1)))
+                    maxfoundseqno = rl.SeqNO;
+
                 snapshot_record.SeqNO = maxfoundseqno;
                 RM.Write(snapshot_record);
 
-                RecordManager snapshot = new RecordManager(rplprov, dsttypes.ToArray());
-                ReplicaManager snapshotreplica = new ReplicaManager();
-                snapshotreplica.RegisterWithRecordManager(snapshot);
-                
-                snapshot_record = (ReplicaPeer)snapshot_record.Clone();
-                snapshot_record.SeqNO = 0;
-                snapshot.Write(snapshot_record);
-
-                ReplicaPeer dstdb = Peer(snapshot, database_record.ReplicaID);
-                dstdb.SeqNO = maxfoundseqno;
-                snapshot.Write(dstdb);
-
-                database_record = (ReplicaPeer)database_record.Clone();
-                database_record.ReplicaID = Guid.Empty;
-                snapshot.Write(database_record);
-
-                using (ReplicaContext context = snapshotreplica.DisableLogger)
+                using (RecordManager snapshot = new RecordManager(rplprov, dsttypes.ToArray()))
                 {
-                    foreach (Type  t in dsttypes)
-                            foreach (Object o in RecordIterator.Enum(t, RM))
-                                snapshot.Write(o);
-                        DeleteLogOperations(RM, maxfoundseqno);
-                    trans.Commit();
+                    using (ManagerTransaction snap_trans = snapshot.BeginTransaction())
+                    {
+                        ReplicaManager snapshotreplica = new ReplicaManager();
+                        snapshotreplica.RegisterWithRecordManager(snapshot);
+
+                        snapshot_record = (ReplicaPeer)snapshot_record.Clone();
+                        snapshot_record.SeqNO = 0;
+                        snapshot.Write(snapshot_record);
+
+                        ReplicaPeer dstdb = Peer(snapshot, database_record.ReplicaID);
+                        dstdb.SeqNO = maxfoundseqno;
+                        snapshot.Write(dstdb);
+
+                        database_record = (ReplicaPeer)database_record.Clone();
+                        database_record.ReplicaID = Guid.Empty;
+                        snapshot.Write(database_record);
+
+                        using (ReplicaContext context = snapshotreplica.DisableLogger)
+                        {
+                            foreach (Type t in dsttypes)
+                                foreach (Object o in RecordIterator.Enum(t, RM))
+                                    snapshot.Write(o);
+                            DeleteLogOperations(RM, maxfoundseqno);
+                            trans.Commit();
+                        }
+                        snap_trans.Commit();
+                    }
                 }
             }
         }

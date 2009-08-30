@@ -318,6 +318,7 @@ namespace ActiveRecordTester
             prov_replica.ExtendConnectionString("BinaryGUID", "FALSE");
             
             Replica_src.BuildSnapshot(RM_src, prov_dst);
+            Replica_src.BuildSnapshot(RM_src, prov_dst);
 
             RecordManager RM_dst = new RecordManager(prov_dst, new Type[] { typeof(SnapTestObject) });
             ReplicaManager Replica_dst = new ReplicaManager();
