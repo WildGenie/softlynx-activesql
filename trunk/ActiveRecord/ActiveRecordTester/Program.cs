@@ -183,6 +183,8 @@ namespace ActiveRecordTester
         [STAThread]
         static void Main()
         {
+            TestSnapshoots();
+            return;
             O1 o1 = new O1();
             
             string tttt=string.Format("",o1.Name1);
@@ -267,6 +269,85 @@ namespace ActiveRecordTester
              */
             //prov.Connection.Close();
         }
+
+        [InTable]
+        [WithReplica]
+        public class SnapTestObject : IDObject
+        {
+            public new class Property
+            {
+                static public PropType Name = new PropType<string>("Name");
+            }
+
+            public string Name
+            {
+                get { return (string)GetValue<string>(Property.Name,string.Empty); }
+                set { SetValue<string>(Property.Name, value); }
+            }
+        }
+    
+        private static void TestSnapshoots()
+        {
+            File.Delete(@"c:\tests-src.db3");
+            File.Delete(@"c:\tests-dst.db3");
+            File.Delete(@"c:\tests-replica.db3");
+            
+            ProviderSpecifics prov_src = new SQLiteSpecifics();
+            prov_src.ExtendConnectionString("Data Source", @"c:\tests-src.db3");
+            prov_src.ExtendConnectionString("BinaryGUID", "FALSE");
+
+
+            RecordManager RM_src = new RecordManager(prov_src, new Type[] { typeof(SnapTestObject) });
+            ReplicaManager Replica_src = new ReplicaManager();
+            Replica_src.RegisterWithRecordManager(RM_src);
+            SnapTestObject snp = new SnapTestObject();
+            foreach (int i in new int[] { 1, 2, 3, 4, 5 })
+            {
+                snp.ID = Guid.NewGuid();
+                snp.Name = "Test Name "+i.ToString();
+                RM_src.Write(snp);
+            }
+
+            ProviderSpecifics prov_dst = new SQLiteSpecifics();
+            prov_dst.ExtendConnectionString("Data Source", @"c:\tests-dst.db3");
+            prov_dst.ExtendConnectionString("BinaryGUID", "FALSE");
+
+
+            ProviderSpecifics prov_replica = new SQLiteSpecifics();
+            prov_replica.ExtendConnectionString("Data Source", @"c:\tests-replica.db3");
+            prov_replica.ExtendConnectionString("BinaryGUID", "FALSE");
+            
+            Replica_src.BuildSnapshot(RM_src, prov_dst);
+
+            RecordManager RM_dst = new RecordManager(prov_dst, new Type[] { typeof(SnapTestObject) });
+            ReplicaManager Replica_dst = new ReplicaManager();
+            Replica_dst.RegisterWithRecordManager(RM_dst);
+
+            foreach (int i in new int[] { 6, 7, 8})
+            {
+                snp.ID = Guid.NewGuid();
+                snp.Name = "Test Name " + i.ToString();
+                RM_src.Write(snp);
+                snp.ID = Guid.NewGuid();
+                RM_dst.Write(snp);
+            }
+
+            long sn = 0;
+            byte[] buf = null;
+            int rn = 0;
+            Guid SRCID=Replica_src.DBSelfGuid(RM_src);
+            Guid DSTID=Replica_dst.DBSelfGuid(RM_dst);
+
+            sn=Replica_src.Peer(RM_src, DSTID).SeqNO;
+            buf = Replica_dst.BuildReplicaBuffer(RM_dst, ref sn);
+            rn = Replica_src.ApplyReplicaBuffer(RM_src, buf);
+
+            sn = Replica_dst.Peer(RM_dst, SRCID).SeqNO;
+            buf = Replica_src.BuildReplicaBuffer(RM_src, ref sn);
+            rn = Replica_dst.ApplyReplicaBuffer(RM_dst, buf);
+
+        }
+
         static void FillParams(IDictionary p)
         {
             string rnd = "askljhqwpoeruiqwopeqwoiuäæëîéöóêçùøõ2çù3øçùøéöâôæûùçêã1834798àëäîôûðâà";

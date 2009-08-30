@@ -15,17 +15,33 @@ using System.Reflection;
 namespace Softlynx.ActiveSQL.Replication
 {
 
-    public class ReplicaManager:IDisposable
+    public class SnapshotRequiredException:Exception 
     {
+        public SnapshotRequiredException(string message):base(message){}
+    }
+
+    public class ReplicaManager:PropertySet,IDisposable
+    {
+        public new class Property
+        {
+            static public PropType DatabaseObject = new PropType<ReplicaPeer>("Database Identifier object");
+            static public PropType SnapshotObject = new PropType<ReplicaPeer>("Snapshot Identifier object");
+        }
+
         private Hashtable CMDS = new Hashtable();
 
         internal class CmdSet:IDisposable
         {
+            internal DbCommand DeleteReplicaCmd = null;
             internal DbCommand CleanReplicaCmd = null;
             internal DbCommand ExistReplicaCmd = null;
             internal DbCommand ConflictReplicaCmd = null;
             internal CmdSet(RecordManager Manager)
             {
+                DeleteReplicaCmd = Manager.CreateCommand(
+                "delete from " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
+                " where " + Manager.WhereExpression("SeqNO", "<="),
+                "SeqNO", 0);
 
                 CleanReplicaCmd = Manager.CreateCommand(
                    "update " + Manager.AsFieldName(typeof(ReplicaLog).Name) +
@@ -53,6 +69,9 @@ namespace Softlynx.ActiveSQL.Replication
             {
                 CleanReplicaCmd.Dispose();
                 ExistReplicaCmd.Dispose();
+                ConflictReplicaCmd.Dispose();
+                DeleteReplicaCmd.Dispose();
+
             }
 
         }
@@ -222,33 +241,11 @@ namespace Softlynx.ActiveSQL.Replication
             get { return _PotentialConflict; }
             set { _PotentialConflict = value; }
         }
-
-
-
     }
 
-        private Hashtable DBIDS = new Hashtable();
-        private Hashtable RPIDS = new Hashtable();
 
         public int ReplicaBufferLimit = 1024 * 64;
 
-        private Guid GetHashID(Hashtable ht, Guid gid, RecordManager Manager, bool generatenew)
-        {
-            ReplicaPeer rp = (ReplicaPeer)ht[Manager];
-            if (rp == null)
-            {
-                rp = new ReplicaPeer();
-                rp.ID = gid;
-                Manager.Read(rp);
-                ht[Manager] = rp;
-            }
-            if ((rp.ReplicaID == Guid.Empty) && generatenew)
-            {
-                rp.ReplicaID = Guid.NewGuid();
-                Manager.Write(rp);
-            }
-            return rp.ReplicaID;
-        }
 
         public ReplicaPeer Peer(RecordManager manager,Guid ID)
         {
@@ -263,20 +260,84 @@ namespace Softlynx.ActiveSQL.Replication
             return Peer(RecordManager.Default, ID);
         }
 
+        /// <summary>
+        /// Returns cached ReplicaPeer record for this dataabase instance
+        /// </summary>
+        /// <param name="Manager">Assiciated record manager</param>
+        /// <returns>ReplicaPeer record either existing or created</returns>
+        public ReplicaPeer DbObject(RecordManager Manager)
+        {
+            return GetValue<ReplicaPeer>(Property.DatabaseObject, new DefaultValueDelegate<ReplicaPeer>(
+             delegate
+             {
+                 ReplicaPeer rp = new ReplicaPeer();
+                 rp.ID = ReplicaPeer.ID_DbInstance;
+                 if (!Manager.Read(rp) || Guid.Empty.Equals(rp.ReplicaID))
+                 {
+                     rp.ReplicaID = Guid.NewGuid();
+                     Manager.Write(rp);
+                 }
+                 return rp;
+             }));
+        }
+
+        /// <summary>
+        /// Returns cached ReplicaPeer record for this snapshot instance
+        /// </summary>
+        /// <param name="Manager">Assiciated record manager</param>
+        /// <returns>ReplicaPeer record either existing</returns>
+        public ReplicaPeer SnapshotObject(RecordManager Manager)
+        {
+            return GetValue<ReplicaPeer>(Property.SnapshotObject, new DefaultValueDelegate<ReplicaPeer>(
+             delegate
+             {
+                 ReplicaPeer rp = new ReplicaPeer();
+                 rp.ID = ReplicaPeer.ID_Snapshot;
+                 Manager.Read(rp);
+                 return rp;
+             }));
+        }
+
+
+        /// <summary>
+        /// Database instance identity
+        /// </summary>
+        /// <param name="Manager">Record amanager for requested database</param>
+        /// <returns>GUID for the database</returns>
         public Guid DBSelfGuid(RecordManager Manager)
         {
-            return GetHashID(DBIDS,ReplicaPeer.ID_DbInstance, Manager,true);
+            return DbObject(Manager).ReplicaID;
         }
-
+        
+        /// <summary>
+        /// Database instalnce identity for RecordManager.Default
+        /// </summary>
+        /// <returns>GUID for the database</returns>
         public Guid DBSelfGuid() { return DBSelfGuid(RecordManager.Default); }
 
-
-        public Guid DBSnapshot(RecordManager Manager)
+        /// <summary>
+        /// Snapshot instance identity
+        /// </summary>
+        /// <param name="Manager">Record amanager for requested database</param>
+        /// <returns>GUID for the database</returns>
+        public Guid DBSnapshotGuid(RecordManager Manager)
         {
-            return GetHashID(RPIDS, ReplicaPeer.ID_Snapshot, Manager, false);
+            return SnapshotObject(Manager).ReplicaID;
         }
 
-        public Guid DBSnapshot() { return DBSnapshot(RecordManager.Default); }
+        /// <summary>
+        /// Returns last SeqNo value that stored in a snapshot 
+        /// and not avalable any more via ReplicaLog
+        /// </summary>
+        /// <param name="Manager">Associated record manager</param>
+        /// <returns>SeqNO value</returns>
+        public long SnapshotSeqNO(RecordManager Manager)
+        {
+            return SnapshotObject(Manager).SeqNO;
+        }
+
+
+        public Guid DBSnapshotGuid() { return DBSnapshotGuid(RecordManager.Default); }
 
         public void RegisterWithRecordManager()
         {
@@ -382,6 +443,8 @@ namespace Softlynx.ActiveSQL.Replication
         public Hashtable ExcludeAuthor = new Hashtable();
         public byte[] BuildReplicaBuffer(RecordManager Manager,ref long lastknownid)
         {
+            if (lastknownid < SnapshotSeqNO(Manager))
+                throw new SnapshotRequiredException("Fresh snapshot required to proceed");
             long logcnt = 0;
             MemoryStream ms = new MemoryStream();
             XmlWriter xw = XmlWriter.Create(ms, SerializerSettings);
@@ -407,6 +470,13 @@ namespace Softlynx.ActiveSQL.Replication
         public byte[] BuildReplicaBuffer(ref long lastknownid)
         {
             return BuildReplicaBuffer(RecordManager.Default, ref lastknownid);
+        }
+
+        private void DeleteLogOperations(RecordManager Manager, long MaxSeqNo)
+        {
+            DbCommand DeleteReplicaCmd = Commands(Manager).DeleteReplicaCmd;
+            DeleteReplicaCmd.Parameters[0].Value = MaxSeqNo;
+            DeleteReplicaCmd.ExecuteNonQuery();
         }
 
         private void LogOperation(RecordManager Manager, object obj, ReplicaLog.Operation operation)
@@ -601,6 +671,91 @@ namespace Softlynx.ActiveSQL.Replication
                     }
             }
             return 0;
+        }
+
+        /// <summary>
+        /// Creates a snapshot for source record managare
+        /// and writes all replicated objects into destination provider.
+        /// New Snapshot GUID is generated internaly.
+        /// If there is no replicated objects then no snapshot will be created.
+        /// </summary>
+        /// <param name="RM">Soirce record manager</param>
+        /// <param name="rplprov">Destination provider</param>
+        public void BuildSnapshot(RecordManager RM, ProviderSpecifics rplprov)
+        {
+            BuildSnapshot(RM, rplprov, Guid.NewGuid());
+        }
+
+        /// <summary>
+        /// Creates a snapshot for source record manager
+        /// and writes all replicated objects into destination provider.
+        /// If there is no replicated objects then no snapshot will be created.
+        /// 
+        /// Source RM starts to hold a snapshot object thet defines the maximum 
+        /// value for SeqNO that is stored within created snapshot and no more avaliable 
+        /// via BuildReplicaBuffer/ApplyReplicaBuffer framework cause they are cleared out.
+        /// 
+        /// Latest SeqNO stored in snapshot avaliable with SnapshotSeqNO(RM).
+        /// 
+        /// Any request to ReplicaManager with value less than 
+        /// SnapshotSeqNO will produce an SnapshotRequiredException.
+        /// </summary>
+        /// <param name="RM">Soirce record manager</param>
+        /// <param name="rplprov">Destination provider</param>
+        /// <param name="SnapshotID">Guid identity for a new created snapshot</param>
+        public void BuildSnapshot(RecordManager RM, ProviderSpecifics rplprov,Guid SnapshotID)
+        {
+            List<Type> dsttypes = new List<Type>();
+            foreach (InTable t in RM.RegisteredTypes)
+                if (t.with_replica) dsttypes.Add(t.basetype);
+
+            if (dsttypes.Count == 0) return; 
+            
+            using (ManagerTransaction trans = RM.BeginTransaction())
+            {
+                DeleteProperty(Property.DatabaseObject);
+                DeleteProperty(Property.SnapshotObject);
+                ReplicaPeer snapshot_record = SnapshotObject(RM);
+                ReplicaPeer database_record = DbObject(RM);
+
+                snapshot_record.LastUpdate = DateTime.Now;
+                snapshot_record.ReplicaID = SnapshotID;
+                snapshot_record.SeqNO = 0;
+                long maxfoundseqno=0;
+                foreach (ReplicaLog rl in RecordIterator.Enum<ReplicaLog>(
+                    RM,
+                    Where.OrderBy("SeqNo",WhereCondition.Descendant),
+                    Where.Limit(1))) 
+                    maxfoundseqno=rl.SeqNO;
+                
+                snapshot_record.SeqNO = maxfoundseqno;
+                RM.Write(snapshot_record);
+
+                RecordManager snapshot = new RecordManager(rplprov, dsttypes.ToArray());
+                ReplicaManager snapshotreplica = new ReplicaManager();
+                snapshotreplica.RegisterWithRecordManager(snapshot);
+                
+                snapshot_record = (ReplicaPeer)snapshot_record.Clone();
+                snapshot_record.SeqNO = 0;
+                snapshot.Write(snapshot_record);
+
+                ReplicaPeer dstdb = Peer(snapshot, database_record.ReplicaID);
+                dstdb.SeqNO = maxfoundseqno;
+                snapshot.Write(dstdb);
+
+                database_record = (ReplicaPeer)database_record.Clone();
+                database_record.ReplicaID = Guid.Empty;
+                snapshot.Write(database_record);
+
+                using (ReplicaContext context = snapshotreplica.DisableLogger)
+                {
+                    foreach (Type  t in dsttypes)
+                            foreach (Object o in RecordIterator.Enum(t, RM))
+                                snapshot.Write(o);
+                        DeleteLogOperations(RM, maxfoundseqno);
+                    trans.Commit();
+                }
+            }
         }
     }
 }

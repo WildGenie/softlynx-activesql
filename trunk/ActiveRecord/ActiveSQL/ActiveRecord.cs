@@ -1375,6 +1375,7 @@ namespace Softlynx.ActiveSQL
         {
             return CreateCommand(false, command, parameters);
         }
+
         public DbCommand CreateCommand(bool pooled,string command, params object[] parameters )
         {
             DbConnection conn = pooled ?  PooledConnection :  Connection;
