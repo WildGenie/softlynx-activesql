@@ -930,7 +930,7 @@ namespace Softlynx.ActiveSQL
             return InsertCmd.ExecuteNonQuery();
         }
 
-        internal virtual int Write(object Record)
+        internal virtual int Write(object Record,bool IgnoreHandledStatus)
         {
             using (ManagerTransaction t=manager.BeginTransaction())
             {
@@ -940,7 +940,7 @@ namespace Softlynx.ActiveSQL
                 bool write_handled = false;
                 int r = 0;
                 if (BeforeRecordManagerWrite != null) BeforeRecordManagerWrite(Record, ref write_handled);
-                if (!write_handled)
+                if (!write_handled || IgnoreHandledStatus)
                 {
                     r = Update(Record);
                     if (r == 0) r = Insert(Record);
@@ -1846,21 +1846,40 @@ namespace Softlynx.ActiveSQL
             }
 
         }
-
+        /// <summary>
+        /// Reads an object from a adatabase
+        /// </summary>
+        /// <param name="Record">ActiveRecord object instance</param>
+        /// <returns>Was it actualy found and readed</returns>
         public bool Read(Object Record)
         {
             InTable table = ActiveRecordInfo(Record.GetType());
             return table.Read(Record);
         }
 
-
+        /// <summary>
+        /// Writes an object to database
+        /// </summary>
+        /// <param name="Record">ActiveRecord object instance</param>
+        /// <returns>Number of write operations. It could be zero in case of object reports it state does not require write operation.</returns>
         public int Write(Object Record)
+        {
+            return Write(Record, false);
+        }
+
+        /// <summary>
+        /// Writes an object to database
+        /// </summary>
+        /// <param name="Record">ActiveRecord object instance</param>
+        /// <param name="IgnoreHandledStatus">Instructs the kernel to ignore the object information about it's write requirement state in force write it any way</param>
+        /// <returns>Number of write operations was made.</returns>
+        public int Write(Object Record, bool IgnoreHandledStatus)
         {
             int res = 0;
             InTable table = ActiveRecordInfo(Record.GetType());
             using (ManagerTransaction t = BeginTransaction())
             {
-                res = table.Write(Record);
+                res = table.Write(Record, IgnoreHandledStatus);
                 if ((OnRecordWritten != null) && (res>0))
                      OnRecordWritten(this, Record);
                 t.Commit();
@@ -1868,6 +1887,11 @@ namespace Softlynx.ActiveSQL
             return res;
         }
 
+        /// <summary>
+        /// Deletes the object form database
+        /// </summary>
+        /// <param name="Record">ActiveRecord object instance</param>
+        /// <returns>Number of deleted records</returns>
         public int Delete(Object Record)
         {
             InTable table = ActiveRecordInfo(Record.GetType());

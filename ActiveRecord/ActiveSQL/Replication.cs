@@ -667,7 +667,7 @@ namespace Softlynx.ActiveSQL.Replication
                         if (log.PotentialConflict) return 0;
                         return (log.ObjectOperation == ReplicaLog.Operation.Delete)
                             ? Manager.Delete(instance)
-                            : Manager.Write(instance);
+                            : Manager.Write(instance,true);
                     }
             }
             return 0;
@@ -754,7 +754,7 @@ namespace Softlynx.ActiveSQL.Replication
                         {
                             foreach (Type t in dsttypes)
                                 foreach (Object o in RecordIterator.Enum(t, RM))
-                                    snapshot.Write(o);
+                                    snapshot.Write(o,true);
                             DeleteLogOperations(RM, maxfoundseqno);
                             trans.Commit();
                         }
