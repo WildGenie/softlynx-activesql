@@ -22,7 +22,7 @@ namespace Softlynx.ActiveSQL.Replication
 
     public class ReplicaManager:PropertySet,IDisposable
     {
-        public new class Property
+        public class Property
         {
             static public PropType DatabaseObject = new PropType<ReplicaPeer>("Database Identifier object");
             static public PropType SnapshotObject = new PropType<ReplicaPeer>("Snapshot Identifier object");
@@ -413,26 +413,8 @@ namespace Softlynx.ActiveSQL.Replication
 
 
         XmlSerializer logserializer = new XmlSerializer(typeof(ReplicaLog));
-        static XmlWriterSettings _serializer_settings = null;
         XmlSerializerNamespaces serializer_ns = new XmlSerializerNamespaces();
 
-        private static XmlWriterSettings SerializerSettings
-        {
-            get
-            {
-                if (_serializer_settings == null)
-                {
-                    _serializer_settings = new XmlWriterSettings();
-                    _serializer_settings.CloseOutput = false;
-                    _serializer_settings.NewLineChars = "";
-                    _serializer_settings.NewLineHandling = NewLineHandling.None;
-                    _serializer_settings.NewLineOnAttributes = false;
-                    _serializer_settings.OmitXmlDeclaration = true;
-                    _serializer_settings.Indent = false;
-                }
-                return _serializer_settings;
-            }
-        }
 
         public ReplicaManager()
         {
@@ -447,7 +429,7 @@ namespace Softlynx.ActiveSQL.Replication
                 throw new SnapshotRequiredException("Fresh snapshot required to proceed");
             long logcnt = 0;
             MemoryStream ms = new MemoryStream();
-            XmlWriter xw = XmlWriter.Create(ms, SerializerSettings);
+            XmlWriter xw = XmlWriter.Create(ms, ValueFormatter.SerializerSettings);
             xw.WriteStartElement("ReplicaBuffer");
             foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager,
                 Where.GT("SeqNO",lastknownid),
@@ -544,22 +526,21 @@ namespace Softlynx.ActiveSQL.Replication
 
         private static string SerializeObject(InTable ActiveRecordInfo, object obj, ReplicaLog.Operation operation)
         {
-            MemoryStream ms = new MemoryStream();
-            XmlWriter xw = XmlWriter.Create(ms,SerializerSettings);
-            InField[] fld = (operation == ReplicaLog.Operation.Write) ? ActiveRecordInfo.fields : ActiveRecordInfo.primary_fields;
-            xw.WriteStartDocument();
-            xw.WriteStartElement(ActiveRecordInfo.Name);
-            foreach (InField f in fld)
-            {
-                xw.WriteStartElement(f.Name);
-                xw.WriteValue(f.GetValue(obj));
+            StringBuilder sb = new StringBuilder();
+            XmlWriter xw = XmlWriter.Create(sb, ValueFormatter.SerializerSettings);
+                InField[] fld = (operation == ReplicaLog.Operation.Write) ? ActiveRecordInfo.fields : ActiveRecordInfo.primary_fields;
+                xw.WriteStartDocument();
+                xw.WriteStartElement(ActiveRecordInfo.Name);
+                foreach (InField f in fld)
+                {
+                    xw.WriteStartElement(f.Name);
+                    xw.WriteValue(f.GetValue(obj));
+                    xw.WriteEndElement();
+                }
                 xw.WriteEndElement();
-            }
-            xw.WriteEndElement();
-            xw.WriteEndDocument();
-            xw.Close();
-            string data = ValueFormatter.XmlStrFromBuffer(ms.ToArray(),3);
-            return data;
+                xw.WriteEndDocument();
+                xw.Close();
+            return sb.ToString();
         }
 
         public static object DeserializeObject(string data)
@@ -595,12 +576,7 @@ namespace Softlynx.ActiveSQL.Replication
 
         private static object DeserializeObject(RecordManager Manager,InTable ActiveRecordInfo, string data)
         {
-            MemoryStream ms = new MemoryStream();
-            TextWriter tw = new StreamWriter(ms);
-            tw.Write(data);
-            tw.Flush();
-            ms.Seek(0, SeekOrigin.Begin);
-            XmlReader xr = XmlReader.Create(ms);
+            XmlReader xr = XmlReader.Create(new StringReader(data));
             xr.Read();
             if (ActiveRecordInfo == null)
             {

@@ -22,7 +22,100 @@ using System.Data.OleDb;
 
 namespace ActiveRecordTester
 {
- 
+
+    [InTable]
+    public class tmpPPTInvLog : IDObject
+    {
+        public class Property
+        {
+
+            static public PropType idPPTInv = new PropType<long>("idPPTInv");
+            static public PropType SKUCode = new PropType<long>("SKUCode");
+            static public PropType AreaNo = new PropType<int>("AreaNo");
+            static public PropType TStamp = new PropType<DateTime>("TStamp");
+            static public PropType SyncNo = new PropType<long>("SyncNo");
+            static public PropType Qty = new PropType<double>("Qty");
+            static public PropType EmplID = new PropType<long>("EmplID");
+            static public PropType flgManual = new PropType<bool>("flgManual");
+            static public PropType flgDeleted = new PropType<bool>("flgDeleted");
+            static public PropType flgUploaded = new PropType<long>("flgUploaded");
+            static public PropType Name = new PropType<string>("name");
+        }
+
+        public long flgUploaded
+        {
+            get { return GetValue<long>(Property.flgUploaded, -1); }
+            set { SetValue<long>(Property.flgUploaded, value); }
+        }
+
+        public long SKUCode
+        {
+            get { return GetValue<long>(Property.SKUCode, 0); }
+            set { SetValue<long>(Property.SKUCode, value); }
+        }
+
+        FileMode _fm = FileMode.Create;
+
+        public FileMode FileModeFlag
+        {
+            get { return _fm; }
+            set { _fm = value; }
+        }
+
+        public int AreaNo
+        {
+            get { return GetValue<int>(Property.AreaNo, 0); }
+            set { SetValue<int>(Property.AreaNo, value); }
+        }
+
+        public string Name
+        {
+            get { return GetValue<string>(Property.Name, string.Empty); }
+            set { SetValue<string>(Property.Name, value); }
+        }
+
+        [InField(Size = 8)]
+        //[ExcludeFromTable]
+        public DateTime TStamp
+        {
+            get { return GetValue<DateTime>(Property.TStamp, DateTime.MinValue); }
+            set { SetValue<DateTime>(Property.TStamp, value); }
+        }
+
+        public long SyncNo
+        {
+            get { return GetValue<long>(Property.SyncNo, 0); }
+            set { SetValue<long>(Property.SyncNo, value); }
+        }
+
+        public double Qty
+        {
+            get { return GetValue<double>(Property.Qty, 0); }
+            set { SetValue<double>(Property.Qty, value); }
+        }
+
+        public long EmplID
+        {
+            get { return GetValue<long>(Property.EmplID, 0); }
+            set { SetValue<long>(Property.EmplID, value); }
+        }
+
+        public bool flgManual
+        {
+            get { return GetValue<bool>(Property.flgManual, false); }
+            set { SetValue<bool>(Property.flgManual, value); }
+        }
+
+        public bool flgDeleted
+        {
+            get { return GetValue<bool>(Property.flgDeleted, false); }
+            set { SetValue<bool>(Property.flgDeleted, value); }
+        }
+    }
+
+
+
+
     [InTable]
     [WithReplica]
     public class DemoProperty : ObjectProp { }
@@ -183,8 +276,9 @@ namespace ActiveRecordTester
         [STAThread]
         static void Main()
         {
-            TestSnapshoots();
+            TestSerialization();
             return;
+            TestSnapshoots();
             O1 o1 = new O1();
             
             string tttt=string.Format("",o1.Name1);
@@ -285,7 +379,31 @@ namespace ActiveRecordTester
                 set { SetValue<string>(Property.Name, value); }
             }
         }
-    
+
+        private static void TestSerialization()
+        {
+            ProviderSpecifics prov_src = new SQLiteSpecifics();
+            prov_src.ExtendConnectionString("Data Source", @"c:\tests-src.db3");
+            prov_src.ExtendConnectionString("BinaryGUID", "FALSE");
+
+            RecordManager RM = new RecordManager(prov_src, new Type[] { typeof(tmpPPTInvLog) });
+
+            DateTime now = DateTime.Now;
+            for (int i = 0; i < 50000; i++)
+            {
+                tmpPPTInvLog tmp = new tmpPPTInvLog();
+                tmp.flgUploaded = 98797675L;
+                tmp.Qty = 10000000000000000007d;
+                tmp.Name = "\"<ADC>\"-'sdsd'" + Guid.NewGuid().ToString();
+                string ser = ReplicaManager.SerializeObject(RM, tmp);
+                tmpPPTInvLog tmp1 = ReplicaManager.DeserializeObjectAs<tmpPPTInvLog>(RM, ser);
+
+            }
+            TimeSpan prof = DateTime.Now - now ;
+            decimal sps=50000m/(decimal)prof.TotalSeconds;
+
+        }
+
         private static void TestSnapshoots()
         {
             File.Delete(@"c:\tests-src.db3");
@@ -488,7 +606,7 @@ namespace ActiveRecordTester
 
         }
 
-        //[InTable]
+        [InTable]
         public class tmpPPTNewDescrLog : IDObject
         {
             public new class Property
@@ -644,7 +762,8 @@ namespace ActiveRecordTester
                 SNAP.Connection.Close();
                 SNAP.Dispose();
          */
-        
+
+
                 //RecordManager rm = RecordManager.Default;
                 //RecordManager.Default = null;
                 //RecordManager.Default = rm;
