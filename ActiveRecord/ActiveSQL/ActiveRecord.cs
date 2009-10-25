@@ -23,17 +23,13 @@ namespace Softlynx.ActiveSQL
 
     internal class OrderBy : Condition
     {
-        internal string column = null;
+        internal string[] columns = null;
         internal Where.SortBy _order = Where.SortBy.Ascendant;
 
-        internal OrderBy(string Column)
-        {
-            column = Column;
-        }
 
-        internal OrderBy(string Column, Where.SortBy order)
+        internal OrderBy(string[] Columns, Where.SortBy order)
         {
-            column = Column;
+            columns = Columns;
             _order = order;
         }
     }
@@ -86,9 +82,14 @@ namespace Softlynx.ActiveSQL
                         RecordLimit = (cond as Limit)._RecordCount;
 
                     if (cond is OrderBy)
-                        OrderColumns.Add(
-                            rm.AsFieldName((cond as OrderBy).column) + " " +
-                            (((cond as OrderBy)._order) == Condition.Ascendant ? "ASC" : "DESC"));
+                    {
+                        foreach (string clmn in (cond as OrderBy).columns)
+                        {
+                            OrderColumns.Add(
+                                rm.AsFieldName(clmn) + " " +
+                                (((cond as OrderBy)._order) == Condition.Ascendant ? "ASC" : "DESC"));
+                        }
+                    }
 
                     if (cond is WhereCondition)
                         WhereConds.Add(BuildWhereCondExpr(cond as WhereCondition));
@@ -138,16 +139,26 @@ namespace Softlynx.ActiveSQL
             return new Limit(RecordCount);
         }
 
-        public static Condition OrderBy(string Column)
+        public static Condition OrderBy(params string[] Columns)
         {
-            return new OrderBy(Column);
+
+            return  OrderByAsc(Columns);
         }
 
+        public static Condition OrderByAsc(params string[] Columns)
+        {
+            return new OrderBy(Columns, Where.SortBy.Ascendant);
+        }
+
+        public static Condition OrderByDesc(params string[] Columns)
+        {
+
+            return new OrderBy(Columns, Where.SortBy.Descendant);
+        }
         public static Condition OrderBy(string Column, Where.SortBy order)
         {
-            return new OrderBy(Column, order);
+            return new OrderBy(new string[] { Column }, order);
         }
-
     }
 
     abstract public class WhereCondition : Condition {

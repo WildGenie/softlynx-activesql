@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading;
 using System.Text;
 using System.Xml;
+using System.Globalization;
 using System.Xml.Serialization;
 using System.Collections.Generic;
 using Softlynx.ActiveSQL;
@@ -144,6 +145,26 @@ namespace Softlynx.ActiveSQL
 
     public static class ValueFormatter
     {
+        static XmlWriterSettings _serializer_settings = null;
+
+        public static XmlWriterSettings SerializerSettings
+        {
+            get
+            {
+                if (_serializer_settings == null)
+                {
+                    _serializer_settings = new XmlWriterSettings();
+                    _serializer_settings.CloseOutput = false;
+                    _serializer_settings.NewLineChars = "";
+                    _serializer_settings.NewLineHandling = NewLineHandling.None;
+                    _serializer_settings.NewLineOnAttributes = false;
+                    _serializer_settings.OmitXmlDeclaration = true;
+                    _serializer_settings.Indent = false;
+                }
+                return _serializer_settings;
+            }
+        }
+
         internal static Hashtable serializers = new Hashtable();
 
         static private XmlSerializer GetSerializer(Type t)
@@ -158,27 +179,127 @@ namespace Softlynx.ActiveSQL
             return xr;
         }
 
+        static CultureInfo _FP = null;
+        static internal IFormatProvider SerializationFormat
+        {
+            get
+            {
+                if (_FP == null)
+                {
+                    _FP = new CultureInfo("");
+                    _FP.NumberFormat.CurrencyDecimalSeparator = ".";
+                    _FP.NumberFormat.NumberDecimalSeparator = ".";
+                    _FP.NumberFormat.PercentDecimalSeparator= ".";
+                    _FP.NumberFormat.CurrencyGroupSeparator = "";
+                    _FP.NumberFormat.NumberGroupSeparator = "";
+                    _FP.NumberFormat.PercentGroupSeparator = "";
+                }
+                return _FP;
+            }
+        }
         public static string Serialize(object o)
         {
             if (o == null) return null;
-            XmlSerializer xs = GetSerializer(o.GetType());
+            Type ot=o.GetType();
+
+            
+            if ((ot == typeof(Int16)) || (ot == typeof(Int32))|| (ot == typeof(Int64))) 
+                return o.ToString();
+
+            if (ot == typeof(string))
+            return (string)o;
+
+            if (ot == typeof(decimal))
+                return ((decimal)o).ToString(SerializationFormat);
+
+            if (ot == typeof(double))
+                return ((double)o).ToString(SerializationFormat);
+
+            if (ot == typeof(Single ))
+                return ((Single)o).ToString(SerializationFormat);
+
+            if (ot == typeof(float))
+                return ((float)o).ToString(SerializationFormat);
+
+            if (ot == typeof(Guid))
+                return ((Guid )o).ToString();
+
+            if (ot == typeof(DateTime))
+                return ((DateTime)o).ToString("s",SerializationFormat);
+
+            if (ot == typeof(TimeSpan))
+                return ((TimeSpan)o).ToString();
+
+            if (ot == typeof(bool))
+                return ((bool)o).ToString();
+
+            if (ot.IsEnum)
+                return o.ToString();
+
+            string r = string.Empty;
+            XmlSerializer xs = GetSerializer(ot);
             MemoryStream ms = new MemoryStream();
-            xs.Serialize(ms, o);
-            MemoryStream ms1 = new MemoryStream(ms.ToArray());
-            XmlReader r = XmlReader.Create(ms1);
-            return r.ReadElementString();
+            XmlWriter xw = XmlWriter.Create(ms, SerializerSettings);
+                xs.Serialize(xw, o);
+                xw.Close();
+            ms.Position = 0;
+            XmlReader xr = XmlReader.Create(ms);
+                xr.Read();
+                r = xr.ReadString();
+                xr.Close();
+            return r;
         }
 
         public static object Deserialize(Type t, string v)
         {
             if (v == null) return null;
+            
+            if (t == typeof(bool))
+                return bool.Parse(v);
+
+            if (t == typeof(string))
+                return v;
+
+            if (t == typeof(Int16))
+                return Int16.Parse(v,NumberStyles.Any,SerializationFormat);
+
+            if (t == typeof(Int32))
+                return Int32.Parse(v, NumberStyles.Any, SerializationFormat);
+
+            if (t == typeof(Int64))
+                return Int64.Parse(v, NumberStyles.Any, SerializationFormat);
+
+            if (t == typeof(decimal))
+                return decimal.Parse(v, NumberStyles.Any, SerializationFormat);
+
+            if (t == typeof(double))
+                return double.Parse(v, NumberStyles.Any, SerializationFormat);
+
+            if (t == typeof(Single))
+                return Single.Parse(v, NumberStyles.Any, SerializationFormat);
+
+            if (t == typeof(float))
+                return float.Parse(v, NumberStyles.Any, SerializationFormat);
+
+            if (t == typeof(Guid))
+                return new Guid(v);
+
+            if (t == typeof(DateTime))
+                return DateTime.Parse(v, SerializationFormat);
+
+            if (t == typeof(TimeSpan))
+                return TimeSpan.Parse(v);
+
+            if (t.IsEnum)
+                return Enum.Parse(t,v,true);
+            
             XmlSerializer xs = GetSerializer(t);
             MemoryStream ms = new MemoryStream();
             XmlWriter xw = XmlWriter.Create(ms);
             xw.WriteElementString("VALUE", v);
             xw.Close();
-            MemoryStream ms1 = new MemoryStream(ms.ToArray());
-            object ov = xs.Deserialize(ms1);
+            ms.Position = 0;
+            object ov = xs.Deserialize(ms);
             return ov;
         }
 
@@ -193,7 +314,6 @@ namespace Softlynx.ActiveSQL
         {
             return XmlStrFromBuffer(buf, 0);
         }
-
 
     }
 
