@@ -5,6 +5,7 @@ using System.Text;
 using System.Collections.Generic;
 using Softlynx.ActiveSQL;
 using Softlynx.RecordSet;
+using Softlynx.ActiveSQL.Replication;
 using System.Reflection;
 
 namespace Softlynx.ActiveSQL
@@ -335,7 +336,16 @@ namespace Softlynx.ActiveSQL
 
                 foreach (DictionaryEntry de in values)
                 {
-                    if (!de.Value.Equals(source.values[de.Key])) 
+                    object sv = source.values[de.Key];
+                    if (de.Value.GetType().IsArray)
+                    {
+                        if (
+                            ValueFormatter.Serialize(sv) != ValueFormatter.Serialize(de.Value))
+                            return false;
+                    continue;
+                    }
+                   
+                    if (!de.Value.Equals(sv)) 
                         return false;
                 }
                 return true;
