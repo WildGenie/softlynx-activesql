@@ -21,13 +21,17 @@ namespace Softlynx.ActiveSQL.Postgres
         protected override Hashtable CreateTypeMapping()
         {
             Hashtable res = new Hashtable();
+            res[typeof(char)] = new object[] { "char", DbType.String };
+            res[typeof(byte)] = new object[] { "smallint", DbType.Byte };
+            res[typeof(sbyte)] = new object[] { "smallint", DbType.SByte };
             res[typeof(string)] = new object[] { "Text", DbType.String };
             res[typeof(Int16)] = new object[] { "smallint", DbType.Int16 };
             res[typeof(Int32)] = new object[] { "integer", DbType.Int32 };
             res[typeof(Int64)] = new object[] { "bigint", DbType.Int64 };
             res[typeof(DateTime)] = new object[] { "Timestamptz", DbType.DateTime };
             res[typeof(decimal)] = new object[] { "numeric", DbType.Decimal };
-            res[typeof(double)] = new object[] { "double precision", DbType.Double };
+            res[typeof(float)] = new object[] { "numeric", DbType.Single };
+            res[typeof(double)] = new object[] { "numeric", DbType.Double };
             res[typeof(bool)] = new object[] { "boolean", DbType.Boolean };
             res[typeof(Guid)] = new object[] { "Uuid", DbType.Guid };
             res[typeof(Object)] = new object[] { "bytea", DbType.Binary};

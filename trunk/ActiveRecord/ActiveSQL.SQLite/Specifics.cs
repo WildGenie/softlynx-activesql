@@ -21,17 +21,21 @@ namespace Softlynx.ActiveSQL.SQLite
         protected override  Hashtable CreateTypeMapping()
         {
             Hashtable res = new Hashtable();
+            res[typeof(char)] = new object[] { "char", DbType.String };
+            res[typeof(byte)] = new object[] { "byte", DbType.Byte };
+            res[typeof(sbyte)] = new object[] { "sbyte", DbType.SByte };
             res[typeof(string)] = new object[] { "TEXT", DbType.String };
             res[typeof(Int16)] = new object[] { "smallint", DbType.Int16 };
             res[typeof(Int32)] = new object[] { "int", DbType.Int32 };
             res[typeof(Int64)] = new object[] { "bigint", DbType.Int64 };
             res[typeof(DateTime)] = new object[] { "TIMESTAMPTZ", DbType.DateTime };
-            res[typeof(Guid)] = new object[] { "GUID", DbType.Guid };
-            res[typeof(Object)] = new object[] { "BLOB", DbType.Binary};
-            res[typeof(bool)] = new object[] { "boolean", DbType.Boolean};
-            res[typeof(decimal)] = new object[] { "numeric", DbType.Decimal };
+            res[typeof(decimal)] = new object[] { "decimal", DbType.Decimal };
+            res[typeof(float)] = new object[] { "float", DbType.Single };
             res[typeof(double)] = new object[] { "double", DbType.Double };
-            res[typeof(byte[])] = new object[] { "BLOB", DbType.Binary};
+            res[typeof(bool)] = new object[] { "boolean", DbType.Boolean };
+            res[typeof(Guid)] = new object[] { "GUID", DbType.Guid };
+            res[typeof(Object)] = new object[] { "BLOB", DbType.Binary };
+            res[typeof(byte[])] = new object[] { "BLOB", DbType.Binary };
             return res;
         }
 

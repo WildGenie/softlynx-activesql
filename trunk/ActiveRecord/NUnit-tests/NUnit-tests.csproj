@@ -4,14 +4,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{E4987ABC-7D45-447A-A161-D3EBFF1B9043}</ProjectGuid>
+    <ProjectGuid>{0DFA2536-8AA9-443E-A39E-F58D9D366F70}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Softlynx.ActiveSQL.Postgres</RootNamespace>
-    <AssemblyName>Softlynx.ActiveSQL.Postgres</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\AlexeiVolkov.snk</AssemblyOriginatorKeyFile>
-    <ApplicationIcon>logo.ico</ApplicationIcon>
+    <RootNamespace>NUnit_tests</RootNamespace>
+    <AssemblyName>NUnit-tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -31,31 +28,31 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="npgsql, Version=2.0.3.0, Culture=neutral, PublicKeyToken=5d8b90d52f46fda7, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\..\Program Files\PostgreSQL\npgsql.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
+    <Reference Include="nunit.framework, Version=2.5.2.9222, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite, Version=1.0.60.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\SoftLynx\Softlynx.ActiveSQL\System.Data.SQLite.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestSet.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Specifics.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\AlexeiVolkov.snk">
-      <Link>AlexeiVolkov.snk</Link>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="logo.ico" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\ActiveSQL.Postgres\ActiveSQL.Postgres.csproj">
+      <Project>{E4987ABC-7D45-447A-A161-D3EBFF1B9043}</Project>
+      <Name>ActiveSQL.Postgres</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ActiveSQL.SQLite\ActiveSQL.SQLite.csproj">
+      <Project>{932E0E9A-AA89-48F9-A3F3-36FB1585ED1E}</Project>
+      <Name>ActiveSQL.SQLite</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ActiveSQL\ActiveSQL.csproj">
       <Project>{97168E99-75E4-4ACD-A2FC-3D95C7B8D74B}</Project>
       <Name>ActiveSQL</Name>
-      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
@@ -66,8 +63,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <PropertyGroup>
-    <PreBuildEvent>svnrevision $(ProjectDir)
-</PreBuildEvent>
-  </PropertyGroup>
 </Project>

@@ -193,6 +193,7 @@ namespace Softlynx.ActiveSQL
                     _FP.NumberFormat.CurrencyGroupSeparator = "";
                     _FP.NumberFormat.NumberGroupSeparator = "";
                     _FP.NumberFormat.PercentGroupSeparator = "";
+                    _FP.DateTimeFormat.FullDateTimePattern = "yyyy-MM-ddTHH:mm:ss.FFFFFFFzzz";
                 }
                 return _FP;
             }
@@ -225,7 +226,7 @@ namespace Softlynx.ActiveSQL
                 return ((Guid )o).ToString();
 
             if (ot == typeof(DateTime))
-                return ((DateTime)o).ToString("s",SerializationFormat);
+                return ((DateTime)o).ToString("F",SerializationFormat);
 
             if (ot == typeof(TimeSpan))
                 return ((TimeSpan)o).ToString();

@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--This file represents the results of running a test suite-->
+<test-results name="C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit" total="16" errors="0" failures="0" not-run="0" inconclusive="2" ignored="0" skipped="0" invalid="0" date="2009-11-05" time="00:57:43">
+  <environment nunit-version="2.5.2.9222" clr-version="2.0.50727.3053" os-version="Microsoft Windows NT 5.1.2600 Service Pack 2" platform="Win32NT" cwd="C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests" machine-name="VOLKOV_AV" user="kot" user-domain="VOLKOV_AV" />
+  <culture-info current-culture="ru-RU" current-uiculture="ru-RU" />
+  <test-suite name="C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit" executed="True" success="True" time="0.250" asserts="0">
+    <results>
+      <test-suite name="C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\bin\Debug\NUnit-tests.dll" executed="True" success="True" time="0.250" asserts="0">
+        <results>
+          <test-suite name="NUnit_tests" executed="True" success="True" time="0.234" asserts="0">
+            <results>
+              <test-suite name="Backends" executed="True" success="True" time="0.234" asserts="0">
+                <results>
+                  <test-suite name="Backend" executed="True" success="True" time="0.219" asserts="0">
+                    <results>
+                      <test-suite name="Backend(&quot;PGSQL&quot;,&quot;host=localhost;Database=test;User Id=test;Password=test&quot;)" executed="True" success="True" time="0.125" asserts="1">
+                        <results>
+                          <test-case name="NUnit_tests.Backends.Backend.T01_ConnectDB" description="Connects to database backend" executed="True" success="True" time="0.031" asserts="2" />
+                          <test-case name="NUnit_tests.Backends.Backend.T02_WriteObject" description="Write an object to database" executed="True" success="True" time="0.000" asserts="0" />
+                          <test-case name="NUnit_tests.Backends.Backend.T03_ReadObject" description="Read object back from DB" executed="True" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T04_WhereCondition" description="Select an object with where expression from DB" executed="True" success="True" time="0.016" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T05_WhereLikeCondition" description="Select an object with where LIKE expression from DB" executed="True" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T06_WhereLikeCaseInsensitive" description="Test is LIKE is case insensitive" executed="True" success="False" time="0.031" asserts="0" />
+                          <test-case name="NUnit_tests.Backends.Backend.T07_WhereILikeCondition" description="Select an object with where ILIKE expression from DB" executed="True" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T08_Serialization" description="Test serialization method" executed="True" success="True" time="0.000" asserts="1" />
+                        </results>
+                      </test-suite>
+                      <test-suite name="Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;)" executed="True" success="True" time="0.078" asserts="1">
+                        <results>
+                          <test-case name="NUnit_tests.Backends.Backend.T01_ConnectDB" description="Connects to database backend" executed="True" success="True" time="0.031" asserts="2" />
+                          <test-case name="NUnit_tests.Backends.Backend.T02_WriteObject" description="Write an object to database" executed="True" success="True" time="0.000" asserts="0" />
+                          <test-case name="NUnit_tests.Backends.Backend.T03_ReadObject" description="Read object back from DB" executed="True" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T04_WhereCondition" description="Select an object with where expression from DB" executed="True" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T05_WhereLikeCondition" description="Select an object with where LIKE expression from DB" executed="True" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T06_WhereLikeCaseInsensitive" description="Test is LIKE is case insensitive" executed="True" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend.T07_WhereILikeCondition" description="Select an object with where ILIKE expression from DB" executed="True" success="False" time="0.016" asserts="0" />
+                          <test-case name="NUnit_tests.Backends.Backend.T08_Serialization" description="Test serialization method" executed="True" success="True" time="0.000" asserts="1" />
+                        </results>
+                      </test-suite>
+                    </results>
+                  </test-suite>
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>
