@@ -200,44 +200,58 @@ namespace Softlynx.ActiveSQL
         }
         public static string Serialize(object o)
         {
+            string r = string.Empty;
+
             if (o == null) return null;
             Type ot=o.GetType();
 
             
-            if ((ot == typeof(Int16)) || (ot == typeof(Int32))|| (ot == typeof(Int64))) 
-                return o.ToString();
+            if (ot == typeof(Int16))
+                return XmlConvert.ToString((Int16)o);
+
+            if (ot == typeof(Int32))
+                return XmlConvert.ToString((Int32)o);
+            
+            if (ot == typeof(Int64)) 
+                return XmlConvert.ToString((Int64)o);
 
             if (ot == typeof(string))
             return (string)o;
 
             if (ot == typeof(decimal))
-                return ((decimal)o).ToString(SerializationFormat);
+                return XmlConvert.ToString((decimal)o);
 
             if (ot == typeof(double))
-                return ((double)o).ToString(SerializationFormat);
+                return XmlConvert.ToString((double)o);
 
             if (ot == typeof(Single ))
-                return ((Single)o).ToString(SerializationFormat);
+                return XmlConvert.ToString((Single)o);
 
             if (ot == typeof(float))
-                return ((float)o).ToString(SerializationFormat);
+                return XmlConvert.ToString((float)o);
 
             if (ot == typeof(Guid))
-                return ((Guid )o).ToString();
+                return XmlConvert.ToString((Guid)o);
 
             if (ot == typeof(DateTime))
-                return ((DateTime)o).ToString("F",SerializationFormat);
-
-            if (ot == typeof(TimeSpan))
-                return ((TimeSpan)o).ToString();
+                return XmlConvert.ToString((DateTime)o, XmlDateTimeSerializationMode.Local);
 
             if (ot == typeof(bool))
-                return ((bool)o).ToString();
+                return XmlConvert.ToString((bool)o);
+
+            if (ot == typeof(char))
+                return XmlConvert.ToString((int)(char)o);
+
+            if (ot == typeof(byte))
+              return XmlConvert.ToString((byte)o);
 
             if (ot.IsEnum)
                 return o.ToString();
 
-            string r = string.Empty;
+            if (ot == typeof(byte[]))
+                return  Convert.ToBase64String((byte[])o);
+
+            
             XmlSerializer xs = GetSerializer(ot);
             MemoryStream ms = new MemoryStream();
             XmlWriter xw = XmlWriter.Create(ms, SerializerSettings);
@@ -256,40 +270,43 @@ namespace Softlynx.ActiveSQL
             if (v == null) return null;
             
             if (t == typeof(bool))
-                return bool.Parse(v);
+                return XmlConvert.ToBoolean(v);
 
             if (t == typeof(string))
                 return v;
 
             if (t == typeof(Int16))
-                return Int16.Parse(v,NumberStyles.Any,SerializationFormat);
+                return XmlConvert.ToInt16(v);
 
             if (t == typeof(Int32))
-                return Int32.Parse(v, NumberStyles.Any, SerializationFormat);
+                return XmlConvert.ToInt32(v);
 
             if (t == typeof(Int64))
-                return Int64.Parse(v, NumberStyles.Any, SerializationFormat);
+                return XmlConvert.ToInt64(v);
 
             if (t == typeof(decimal))
-                return decimal.Parse(v, NumberStyles.Any, SerializationFormat);
+                return XmlConvert.ToDecimal(v);
 
             if (t == typeof(double))
-                return double.Parse(v, NumberStyles.Any, SerializationFormat);
+                return XmlConvert.ToDouble(v);
 
             if (t == typeof(Single))
-                return Single.Parse(v, NumberStyles.Any, SerializationFormat);
+                return XmlConvert.ToSingle(v);
 
-            if (t == typeof(float))
-                return float.Parse(v, NumberStyles.Any, SerializationFormat);
+            if (t == typeof(char))
+                return (char)XmlConvert.ToInt32(v);
+
+            if (t == typeof(byte))
+                return XmlConvert.ToByte(v);
 
             if (t == typeof(Guid))
-                return new Guid(v);
+                return XmlConvert.ToGuid(v);
 
             if (t == typeof(DateTime))
-                return DateTime.Parse(v, SerializationFormat);
+                return XmlConvert.ToDateTime(v,XmlDateTimeSerializationMode.Local);
 
-            if (t == typeof(TimeSpan))
-                return TimeSpan.Parse(v);
+            if (t == typeof(byte[]))
+                return Convert.FromBase64String(v);
 
             if (t.IsEnum)
                 return Enum.Parse(t,v,true);

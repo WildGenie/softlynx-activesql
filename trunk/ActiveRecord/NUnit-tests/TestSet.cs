@@ -25,12 +25,17 @@ namespace NUnit_tests
             public class Prop {
                 static public PropType Text=new PropType<string>("Text field");
                 static public PropType TimeStamp = new PropType<DateTime>("DateTime field");
+                static public PropType TimePiece = new PropType<TimeSpan>("TimeSpan field");
                 static public PropType Symbol = new PropType<char>("char field");
                 static public PropType NumberByte = new PropType<byte>("byte field");
                 static public PropType NumberShort = new PropType<short>("short field");
                 static public PropType Number16 = new PropType<Int16>("INT16 field");
                 static public PropType Number32 = new PropType<Int32>("INT32 field");
                 static public PropType Number64 = new PropType<Int64>("INT64 field");
+                static public PropType NumberU16 = new PropType<Int16>("UINT16 field");
+                static public PropType NumberU32 = new PropType<Int32>("UINT32 field");
+                static public PropType NumberU64 = new PropType<Int64>("UINT64 field");
+
                 static public PropType NumberMoney = new PropType<Decimal>("Decimal field");
                 static public PropType NumberSingle = new PropType<Single>("Single precision number");
                 static public PropType NumberDouble = new PropType<Double>("Double precision number");
@@ -51,7 +56,8 @@ namespace NUnit_tests
                 get { return GetValue<DateTime>(Prop.TimeStamp, DateTime.MinValue); }
                 set { SetValue<DateTime>(Prop.TimeStamp, value); }
             }
-            
+
+
             public char Symbol
             {
                 get { return GetValue<char>(Prop.Symbol, char.MinValue); }
@@ -87,22 +93,47 @@ namespace NUnit_tests
                 get { return GetValue<Int64>(Prop.Number64, Int64.MinValue); }
                 set { SetValue<Int64>(Prop.Number64, value); }
             }
-            
-            //[ExcludeFromTable]
+
+            /*
+
+            public UInt16 NumberU16
+            {
+                get { return GetValue<UInt16>(Prop.NumberU16, UInt16.MinValue); }
+                set { SetValue<UInt16>(Prop.NumberU16, value); }
+            }
+
+            public UInt32 NumberU32
+            {
+                get { return GetValue<UInt32>(Prop.NumberU32, UInt32.MinValue); }
+                set { SetValue<UInt32>(Prop.NumberU32, value); }
+            }
+
+            public UInt64 NumberU64
+            {
+                get { return GetValue<UInt64>(Prop.NumberU64, UInt64.MinValue); }
+                set { SetValue<UInt64>(Prop.NumberU64, value); }
+            }
+
+            public TimeSpan TimePiece
+            {  
+                get { return GetValue<TimeSpan>(Prop.TimePiece, TimeSpan.MinValue); }
+                set { SetValue<TimeSpan>(Prop.TimePiece, value); }
+            }
+              */
+
+
             public Decimal NumberMoney
             {
                 get { return GetValue<Decimal>(Prop.NumberMoney, Decimal.Zero); }
                 set { SetValue<Decimal>(Prop.NumberMoney, value); }
             }
             
-            //[ExcludeFromTable]
             public Single NumberSingle
             {
                 get { return GetValue<Single>(Prop.NumberSingle, Single.NaN); }
                 set { SetValue<Single>(Prop.NumberSingle, value); }
             }
 
-            //[ExcludeFromTable]
             public Double NumberDouble
             {
                 get { return GetValue<Double>(Prop.NumberDouble, Double.NaN); }
@@ -129,36 +160,44 @@ namespace NUnit_tests
 
             static internal BasicMapping _default=null;
 
-            public static BasicMapping Default {
-                get {
+            public static BasicMapping Default
+            {
+                get
+                {
                     if (_default == null)
-                    {
-                        Random r=new Random();
-                        _default = new BasicMapping();
-                        _default.ID = Guid.NewGuid();
-                        _default.Text = "Sample Text Value " + _default.ID.ToString();
-                        _default.TimeStamp = DateTime.Now;
-                        _default.Symbol = 'a';
-                        _default.NumberByte = (byte)r.Next(byte.MinValue,byte.MaxValue);
-                        _default.NumberShort = (short)r.Next(short.MinValue, short.MaxValue);
-
-                        _default.Number16 = (Int16)r.Next(Int16.MinValue, Int16.MaxValue);
-                        _default.Number32 = (Int32)r.Next(Int32.MinValue, Int32.MaxValue);
-                        _default.Number64 = (Int64)r.Next(Int32.MinValue, Int32.MaxValue);
-
-
-                        _default.NumberMoney =decimal.Round((r.Next(1, Int16.MaxValue) + 1m) / (r.Next(1, Int16.MaxValue) + 1m),14);
-                        _default.NumberSingle = (float)decimal.Round( (decimal)r.NextDouble(),6);
-                        _default.NumberDouble = (double)decimal.Round((decimal)r.NextDouble(), 14);
-                        _default.State = FileAccess.Write;
-                        _default.Checkbox = true;
-                        byte[] buf=new byte[40];
-                        r.NextBytes(buf);
-                        _default.BLOB = buf;
-
-                    }
+                        _default = RandomValue;
                     return _default;
                 }
+            }
+
+
+            public static BasicMapping RandomValue
+            {
+                get {
+                        Random r=new Random();
+                        BasicMapping _v = new BasicMapping();
+                        _v.ID = Guid.NewGuid();
+                        _v.Text = "Sample Text Value " + _v.ID.ToString() + " просто текст";
+                        _v.Symbol = _v.Text[r.Next(0, _v.Text.Length - 1)];
+                        _v.TimeStamp = DateTime.Now;
+                        _v.NumberByte = (byte)r.Next(byte.MinValue,byte.MaxValue);
+                        _v.NumberShort = (short)r.Next(short.MinValue, short.MaxValue);
+
+                        _v.Number16 = (Int16)r.Next(Int16.MinValue, Int16.MaxValue);
+                        _v.Number32 = (Int32)r.Next(Int32.MinValue, Int32.MaxValue);
+                        _v.Number64 = (Int64)r.Next(Int32.MinValue, Int32.MaxValue);
+
+
+                        _v.NumberMoney =decimal.Round((r.Next(1, Int16.MaxValue) + 1m) / (r.Next(1, Int16.MaxValue) + 1m),14);
+                        _v.NumberSingle = (float)decimal.Round( (decimal)r.NextDouble(),6);
+                        _v.NumberDouble = (double)decimal.Round((decimal)r.NextDouble(), 14);
+                        _v.State = FileAccess.Write;
+                        _v.Checkbox = true;
+                        byte[] buf=new byte[40];
+                        r.NextBytes(buf);
+                        _v.BLOB = buf;
+                        return _v;
+                    }
             }
         }
     }
@@ -171,6 +210,7 @@ namespace NUnit_tests
         {
             protected RecordManager RM = null;
             protected ProviderSpecifics prov = null;
+            long EnumCount = 0;
 
             public Backend(string ProviderName, string ConnectionString)
             {
@@ -216,16 +256,41 @@ namespace NUnit_tests
             }
 
 
-            [Test(Description = "Write an object to database")]
-            public void T02_WriteObject()
+            [Test(Description = "Write heap of objects to database")]
+            public void T02_WriteObjects()
             {
-                Models.BasicMapping obj = new NUnit_tests.Models.BasicMapping();
-                obj.CopyFrom(Models.BasicMapping.Default);
-                RM.Write(obj);
+                long pre_count = (long)RM.RunScalarCommand("select count(*) from " + RM.AsFieldName("BasicMapping"));
+                using (ManagerTransaction trans = RM.BeginTransaction())
+                {
+                    int i = 0;
+                    DateTime start = DateTime.Now;
+                    while (i++ < 100)
+                    {
+                        RM.Write(Models.BasicMapping.RandomValue);
+                        RM.Write(Models.BasicMapping.Default);
+                    }
+                    trans.Commit();
+                }
+                long post_count = (long)RM.RunScalarCommand("select count(*) from "+RM.AsFieldName("BasicMapping"));
+                Assert.AreEqual(post_count-pre_count,101);
             }
-            
+
+            [Test(Description = "Test transaction rollback properly")]
+            public void T03_TransactionRollBack()
+            {
+                Models.BasicMapping tobj = Models.BasicMapping.RandomValue;
+                using (ManagerTransaction trans = RM.BeginTransaction())
+                {
+                    RM.Write(tobj);
+                    trans.Rollback();
+                }
+                Models.BasicMapping robj = new Models.BasicMapping();
+                robj.ID = tobj.ID;
+                Assert.IsTrue(!RM.Read(robj));
+            }
+
             [Test(Description = "Read object back from DB")]
-            public void T03_ReadObject()
+            public void T04_ReadObject()
             {
                 Models.BasicMapping obj = new NUnit_tests.Models.BasicMapping();
                 obj.ID = Models.BasicMapping.Default.ID;
@@ -233,8 +298,26 @@ namespace NUnit_tests
                 Assert.AreEqual(obj,Models.BasicMapping.Default,"DB object does not same as default instance");
             }
 
+            [Test(Description = "Test nested select queries in separate connections")]
+            [Timeout(10000)]
+            public void T05_NestedEnumerator()
+            {
+                EnumCount = 0;
+                foreach (Models.BasicMapping l1 in RecordIterator.Enum<Models.BasicMapping>(RM))
+                {
+                    foreach (Models.BasicMapping l2 in RecordIterator.Enum<Models.BasicMapping>(RM, Where.EQ("ID", l1.ID)))
+                    {
+                        Models.BasicMapping o = new NUnit_tests.Models.BasicMapping();
+                        o.ID = l1.ID;
+                        RM.Read(o);
+                        Assert.AreEqual(o, l2);
+                    }
+                    EnumCount++;
+                }
+            }
+
             [Test(Description = "Select an object with where expression from DB")]
-            public void T04_WhereCondition()
+            public void T06_WhereCondition()
             {
                 ArrayList a=new ArrayList();
                 RecordIterator.Enum<Models.BasicMapping>(RM,Where.EQ("ID",Models.BasicMapping.Default.ID)).Fill(a);
@@ -242,7 +325,7 @@ namespace NUnit_tests
             }
 
             [Test(Description = "Select an object with where LIKE expression from DB")]
-            public void T05_WhereLikeCondition()
+            public void T07_WhereLikeCondition()
             {
                 ArrayList a = new ArrayList();
                 RecordIterator.Enum<Models.BasicMapping>(RM, Where.OP("Text","LIKE","%"+Models.BasicMapping.Default.ID.ToString()+"%")).Fill(a);
@@ -250,7 +333,7 @@ namespace NUnit_tests
             }
 
             [Test(Description = "Test is LIKE is case insensitive")]
-            public void T06_WhereLikeCaseInsensitive()
+            public void T08_WhereLikeCaseInsensitive()
             {
                 if (prov is PgSqlSpecifics)
                     Assert.Inconclusive("PGSQL LIKE statement is case sensitive");
@@ -262,7 +345,7 @@ namespace NUnit_tests
 
 
             [Test(Description = "Select an object with where ILIKE expression from DB")]
-            public void T07_WhereILikeCondition()
+            public void T09_WhereILikeCondition()
             {
                 if (prov is SQLiteSpecifics)
                     Assert.Inconclusive("SQLITE does not have ILIKE statement");
@@ -271,12 +354,26 @@ namespace NUnit_tests
                 Assert.Contains(Models.BasicMapping.Default, a,"Backend does not have ILIKE expression");
             }
 
-            [Test(Description = "Test serialization method")]
-            public void T08_Serialization()
+            public void SingleSerialization()
             {
-                string XML = ReplicaManager.SerializeObject(RM, Models.BasicMapping.Default, ReplicaManager.ReplicaLog.Operation.Write);
-                Models.BasicMapping obj = ReplicaManager.DeserializeObjectAs<Models.BasicMapping>(RM, XML);
-                Assert.AreEqual(obj, Models.BasicMapping.Default, "Serialization failed");
+                Models.BasicMapping sobj = Models.BasicMapping.RandomValue;
+                string XML = ReplicaManager.SerializeObject(RM, sobj, ReplicaManager.ReplicaLog.Operation.Write);
+                Models.BasicMapping dobj = ReplicaManager.DeserializeObjectAs<Models.BasicMapping>(RM, XML);
+                Assert.AreEqual(sobj, dobj, "Serialization failed");
+            }
+
+            [Test(Description = "Measure serialization speed")]
+            public void T10_Serialization()
+            {
+                int i = 0 ;
+                DateTime start = DateTime.Now;
+                while (i++ < 1000)
+                {
+                    SingleSerialization();
+                }
+                TimeSpan duration = DateTime.Now - start;
+                decimal rate = (i+1m) / (decimal)duration.TotalSeconds;
+                //Assert.Fail("Serialization rate is {0} object(s) per second.", rate);
             }
 
 
