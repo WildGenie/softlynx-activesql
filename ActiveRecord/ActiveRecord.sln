@@ -85,6 +85,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NUnit-tests", "NUnit-tests\
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActiveSQL.MSSQL", "ActiveSQL.MSSQL\ActiveSQL.MSSQL.csproj", "{0711345F-47AC-4FF5-8F9A-48D4E96A705C}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -151,6 +157,10 @@ Global
 		{0DFA2536-8AA9-443E-A39E-F58D9D366F70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DFA2536-8AA9-443E-A39E-F58D9D366F70}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DFA2536-8AA9-443E-A39E-F58D9D366F70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0711345F-47AC-4FF5-8F9A-48D4E96A705C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0711345F-47AC-4FF5-8F9A-48D4E96A705C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0711345F-47AC-4FF5-8F9A-48D4E96A705C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0711345F-47AC-4FF5-8F9A-48D4E96A705C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
