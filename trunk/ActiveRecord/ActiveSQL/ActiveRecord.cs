@@ -310,6 +310,11 @@ namespace Softlynx.ActiveSQL
         public abstract string AsFieldName(string s);
         public abstract string AsFieldParam(string s);
         public abstract string AutoincrementStatement(string ColumnName);
+
+        public virtual string DropTableIfExists(string TableName)
+        {
+            return String.Format("DROP TABLE IF EXISTS {0};", AsFieldName(TableName));
+        }
         
         public virtual DbConnection Connection
         {
@@ -726,7 +731,8 @@ namespace Softlynx.ActiveSQL
 
         internal String DropTableStatement()
         {
-            return String.Format("DROP TABLE IF EXISTS {0};", manager.AsFieldName(Name));
+            return manager.specifics.DropTableIfExists(Name);
+            
         }
 
         internal String CreateTableStatement()
@@ -1305,7 +1311,7 @@ namespace Softlynx.ActiveSQL
         }
 
 
-        ProviderSpecifics specifics;
+        internal ProviderSpecifics specifics;
         internal DbTransaction transaction = null;
         internal int TransactionLevel=0;
 
@@ -1392,7 +1398,7 @@ namespace Softlynx.ActiveSQL
             DbConnection conn = pooled ?  PooledConnection :  Connection;
             ReopenConnection(conn);
             DbCommand cmd = conn.CreateCommand();
-
+            cmd.Transaction = transaction;
             cmd.CommandText = command;
             int i = 0;
             while (i < parameters.Length)
@@ -1414,7 +1420,10 @@ namespace Softlynx.ActiveSQL
         public int RunCommand(string command, params object[] parameters)
         {
             using (DbCommand cmd = CreateCommand(command, parameters))
+            {
+                cmd.Transaction = transaction;
                 return cmd.ExecuteNonQuery();
+            }
         }
 
         public object RunScalarCommand(string command, params object[] parameters)

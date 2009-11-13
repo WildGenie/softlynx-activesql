@@ -12,6 +12,7 @@ using Softlynx.RecordSet;
 using Softlynx.ActiveSQL.Replication;
 using Softlynx.ActiveSQL.SQLite;
 using Softlynx.ActiveSQL.Postgres;
+using Softlynx.ActiveSQL.MSSQL;
 using NUnit.Framework;
 using System.Reflection;
 
@@ -179,7 +180,11 @@ namespace NUnit_tests
                         _v.ID = Guid.NewGuid();
                         _v.Text = "Sample Text Value " + _v.ID.ToString() + " просто текст";
                         _v.Symbol = _v.Text[r.Next(0, _v.Text.Length - 1)];
-                        _v.TimeStamp = DateTime.Now;
+                        //_v.TimeStamp = DateTime.Today.AddMilliseconds((double)decimal.Round((decimal)DateTime.Now.TimeOfDay.TotalMilliseconds,0));
+                        _v.TimeStamp = DateTime.Today.AddSeconds((double)decimal.Round((decimal)DateTime.Now.TimeOfDay.TotalSeconds,0));
+                        
+                        
+                        //_v.TimeStamp.Millisecond = _v.TimeStamp.Millisecond % 100;
                         _v.NumberByte = (byte)r.Next(byte.MinValue,byte.MaxValue);
                         _v.NumberShort = (short)r.Next(short.MinValue, short.MaxValue);
 
@@ -206,6 +211,7 @@ namespace NUnit_tests
 
         [TestFixture("SQLITE", @"Data Source = c:\temp\test.db3;BinaryGUID=FALSE;")]
         [TestFixture("PGSQL", "host=localhost;Database=test;User Id=test;Password=test")]
+        [TestFixture("MSSQL", @"Server=localhost\SQLEXPRESS;Database=test;User Id=test;Password=test;Trusted_Connection=true")]
         public class Backend
         {
             protected RecordManager RM = null;
@@ -220,6 +226,9 @@ namespace NUnit_tests
 
                 if (ProviderName == "PGSQL")
                     prov = new PgSqlSpecifics();
+
+                if (ProviderName == "MSSQL")
+                    prov = new MSSqlSpecifics();
 
                 Assert.NotNull(prov);
 
@@ -245,6 +254,15 @@ namespace NUnit_tests
                     cmd.ExecuteNonQuery();
                     prov.Connection.Close();
                 }
+
+                if (prov is MSSqlSpecifics)
+                {
+                    prov.Connection.Open();
+                    DbCommand cmd = prov.Connection.CreateCommand();
+                    cmd.CommandText = "exec sp_MSforeachtable \"DROP TABLE ? \";";
+                    cmd.ExecuteNonQuery();
+                    prov.Connection.Close();
+                }
             }
 
             [Test(Description="Connects to database backend")]
@@ -259,7 +277,8 @@ namespace NUnit_tests
             [Test(Description = "Write heap of objects to database")]
             public void T02_WriteObjects()
             {
-                long pre_count = (long)RM.RunScalarCommand("select count(*) from " + RM.AsFieldName("BasicMapping"));
+                object o = RM.RunScalarCommand("select count(*) from " + RM.AsFieldName("BasicMapping"));
+                long pre_count = o==null?0:Convert.ToInt64(o);
                 using (ManagerTransaction trans = RM.BeginTransaction())
                 {
                     int i = 0;
@@ -271,7 +290,8 @@ namespace NUnit_tests
                     }
                     trans.Commit();
                 }
-                long post_count = (long)RM.RunScalarCommand("select count(*) from "+RM.AsFieldName("BasicMapping"));
+                o = RM.RunScalarCommand("select count(*) from " + RM.AsFieldName("BasicMapping"));
+                long post_count = o == null ? 0 : Convert.ToInt64(o);
                 Assert.AreEqual(post_count-pre_count,101);
             }
 
@@ -349,6 +369,9 @@ namespace NUnit_tests
             {
                 if (prov is SQLiteSpecifics)
                     Assert.Inconclusive("SQLITE does not have ILIKE statement");
+                if (prov is MSSqlSpecifics)
+                    Assert.Inconclusive("MS SQL does not have ILIKE statement");
+
                 ArrayList a = new ArrayList();
                 RecordIterator.Enum<Models.BasicMapping>(RM, Where.OP("Text", "ILIKE", "%"+Models.BasicMapping.Default.ID.ToString().ToUpper()+"%")).Fill(a);
                 Assert.Contains(Models.BasicMapping.Default, a,"Backend does not have ILIKE expression");
