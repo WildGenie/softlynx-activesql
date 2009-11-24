@@ -19,12 +19,41 @@ using System.Reflection;
 namespace NUnit_tests
 {
     namespace Models
-    {
+    
+   {
+
+        [InTable]
+        public class AutoIncrementObj
+        {
+
+            private Guid _ID = Guid.NewGuid();
+
+            [PrimaryKey(false)]
+            [Indexed]
+            public Guid ID
+            {
+                get { return _ID; }
+                set { _ID = value; }
+            }
+
+            Int64 n = 0;
+
+            [Autoincrement]
+            public Int64 AutoInc64
+            {
+                get { return n; }
+                set { n=value; }
+            }
+
+        }
+
+
         [InTable]
         public class BasicMapping : IDObject
         {
             public class Prop {
                 static public PropType Text=new PropType<string>("Text field");
+                static public PropType LongText = new PropType<string>("Long text field");
                 static public PropType TimeStamp = new PropType<DateTime>("DateTime field");
                 static public PropType TimePiece = new PropType<TimeSpan>("TimeSpan field");
                 static public PropType Symbol = new PropType<char>("char field");
@@ -36,22 +65,25 @@ namespace NUnit_tests
                 static public PropType NumberU16 = new PropType<Int16>("UINT16 field");
                 static public PropType NumberU32 = new PropType<Int32>("UINT32 field");
                 static public PropType NumberU64 = new PropType<Int64>("UINT64 field");
-
                 static public PropType NumberMoney = new PropType<Decimal>("Decimal field");
                 static public PropType NumberSingle = new PropType<Single>("Single precision number");
                 static public PropType NumberDouble = new PropType<Double>("Double precision number");
                 static public PropType Checkbox = new PropType<bool>("flag value");
                 static public PropType State = new PropType<FileAccess>("Enumerable field");
                 static public PropType BLOB = new PropType<byte[]>("BLOB object");
-
-
             }
 
             public string Text {
                 get {return GetValue<string>(Prop.Text,string.Empty);}
                 set { SetValue<string>(Prop.Text, value); }
             }
-            
+
+            public string LongText
+            {
+                get { return GetValue<string>(Prop.LongText, string.Empty); }
+                set { SetValue<string>(Prop.LongText, value); }
+            }
+
             public DateTime TimeStamp
             {
                 get { return GetValue<DateTime>(Prop.TimeStamp, DateTime.MinValue); }
@@ -93,6 +125,20 @@ namespace NUnit_tests
             {
                 get { return GetValue<Int64>(Prop.Number64, Int64.MinValue); }
                 set { SetValue<Int64>(Prop.Number64, value); }
+            }
+
+            [RecordManagerPostRegistration]
+            public static void CheckPostAction(RecordManager manager)
+            {
+                /*
+                BasicMapping bm = new BasicMapping();
+                bm.ID = Guid.NewGuid();
+                manager.Read(bm);
+                foreach (BasicMapping bm1 in RecordIterator.Enum<BasicMapping>())
+                {
+                    break;
+                }
+                 */ 
             }
 
             /*
@@ -178,6 +224,11 @@ namespace NUnit_tests
                         Random r=new Random();
                         BasicMapping _v = new BasicMapping();
                         _v.ID = Guid.NewGuid();
+
+                        byte[] tbuf = new byte[4096];
+                        r.NextBytes(tbuf);
+                        _v.LongText = Convert.ToBase64String(tbuf);
+
                         _v.Text = "Sample Text Value " + _v.ID.ToString() + " просто текст";
                         _v.Symbol = _v.Text[r.Next(0, _v.Text.Length - 1)];
                         //_v.TimeStamp = DateTime.Today.AddMilliseconds((double)decimal.Round((decimal)DateTime.Now.TimeOfDay.TotalMilliseconds,0));
@@ -268,7 +319,7 @@ namespace NUnit_tests
             [Test(Description="Connects to database backend")]
             public void T01_ConnectDB()
             {
-                    RM = new RecordManager(prov, new Type[] { typeof(Models.BasicMapping) });
+                    RM = new RecordManager(prov, new Type[] { typeof(Models.BasicMapping),typeof(Models.AutoIncrementObj) });
                     Assert.NotNull(RM);
                     Assert.IsTrue(RM.Connection.State == ConnectionState.Open);
             }
@@ -336,8 +387,18 @@ namespace NUnit_tests
                 }
             }
 
+            [Test(Description = "Test nested select queries in separate connections")]
+            [Timeout(10000)]
+            public void T06_TransactionalNestedEnumerator()
+            {
+                using (ManagerTransaction t =RM.BeginTransaction()) {
+                    T05_NestedEnumerator();
+                }
+            }
+
+
             [Test(Description = "Select an object with where expression from DB")]
-            public void T06_WhereCondition()
+            public void T07_WhereCondition()
             {
                 ArrayList a=new ArrayList();
                 RecordIterator.Enum<Models.BasicMapping>(RM,Where.EQ("ID",Models.BasicMapping.Default.ID)).Fill(a);
@@ -345,7 +406,7 @@ namespace NUnit_tests
             }
 
             [Test(Description = "Select an object with where LIKE expression from DB")]
-            public void T07_WhereLikeCondition()
+            public void T08_WhereLikeCondition()
             {
                 ArrayList a = new ArrayList();
                 RecordIterator.Enum<Models.BasicMapping>(RM, Where.OP("Text","LIKE","%"+Models.BasicMapping.Default.ID.ToString()+"%")).Fill(a);
@@ -353,7 +414,7 @@ namespace NUnit_tests
             }
 
             [Test(Description = "Test is LIKE is case insensitive")]
-            public void T08_WhereLikeCaseInsensitive()
+            public void T09_WhereLikeCaseInsensitive()
             {
                 if (prov is PgSqlSpecifics)
                     Assert.Inconclusive("PGSQL LIKE statement is case sensitive");
@@ -365,7 +426,7 @@ namespace NUnit_tests
 
 
             [Test(Description = "Select an object with where ILIKE expression from DB")]
-            public void T09_WhereILikeCondition()
+            public void T10_WhereILikeCondition()
             {
                 if (prov is SQLiteSpecifics)
                     Assert.Inconclusive("SQLITE does not have ILIKE statement");
@@ -386,7 +447,7 @@ namespace NUnit_tests
             }
 
             [Test(Description = "Measure serialization speed")]
-            public void T10_Serialization()
+            public void T11_Serialization()
             {
                 int i = 0 ;
                 DateTime start = DateTime.Now;
@@ -399,6 +460,18 @@ namespace NUnit_tests
                 //Assert.Fail("Serialization rate is {0} object(s) per second.", rate);
             }
 
+            [Test(Description = "Autoincrement facility")]
+            public void T12_AutoIncrement()
+            {
+                Models.AutoIncrementObj o1=new NUnit_tests.Models.AutoIncrementObj();
+                Models.AutoIncrementObj o2=new NUnit_tests.Models.AutoIncrementObj();
+                RM.Write(o1);
+                RM.Write(o2);
+                Assert.AreEqual(o1.AutoInc64, o2.AutoInc64);
+                RM.Read(o1);
+                RM.Read(o2);
+                Assert.Less(o1.AutoInc64, o2.AutoInc64);
+            }
 
             [TestFixtureTearDown]
             public void Cleanup()

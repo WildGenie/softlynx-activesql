@@ -446,7 +446,7 @@ namespace Softlynx.ActiveSQL
                 DeleteProperty(Props.Value);
         }
 
-        [Indexed]
+        //[Indexed]
         public string ValueText
         {
             get { return GetValue<string>(Props.ValueText, (string)null); }

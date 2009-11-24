@@ -5,8 +5,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("NUnit-tests")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("ActiveSQL.NUnit-tests")]
+[assembly: AssemblyDescription("ActiveSQL NUnit test set")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
 [assembly: AssemblyProduct("NUnit-tests")]

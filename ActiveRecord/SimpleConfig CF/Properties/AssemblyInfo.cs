@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
 [assembly: AssemblyProduct("Softlynx.SimpleConfig")]
-[assembly: AssemblyCopyright("Copyright © SoftLynx  2008")]
+[assembly: AssemblyCopyright("Copyright © SoftLynx  2009")]
 [assembly: AssemblyTrademark("SoftLynx")]
 [assembly: AssemblyCulture("")]
 
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("1.2.87.0")]
+[assembly: AssemblyVersion("1.3.144.0")]
 

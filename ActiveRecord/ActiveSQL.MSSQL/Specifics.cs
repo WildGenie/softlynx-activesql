@@ -27,7 +27,7 @@ namespace Softlynx.ActiveSQL.MSSQL
             res[typeof(char)] = new object[] { "char", DbType.String };
             res[typeof(byte)] = new object[] { "smallint", DbType.Byte };
             res[typeof(sbyte)] = new object[] { "smallint", DbType.SByte };
-            res[typeof(string)] = new object[] { "nvarchar(1024)", DbType.String };
+            res[typeof(string)] = new object[] { "ntext", DbType.String };
             res[typeof(Int16)] = new object[] { "smallint", DbType.Int16 };
             res[typeof(Int32)] = new object[] { "integer", DbType.Int32 };
             res[typeof(Int64)] = new object[] { "bigint", DbType.Int64 };
@@ -40,6 +40,19 @@ namespace Softlynx.ActiveSQL.MSSQL
             res[typeof(Object)] = new object[] { "varbinary(max)", DbType.Binary};
             res[typeof(byte[])] = new object[] { "varbinary(max)", DbType.Binary};
             return res;
+        }
+
+        public override string GetSqlType(InField f)
+        {
+            if (
+                ((f.FieldType == typeof(string)) && (f.Size >0)  && (f.Size < int.MaxValue))
+                ||
+                (f.DBType == DbType.StringFixedLength)
+                )
+            {
+                return string.Format("nvarchar({0})", f.Size);
+            }
+            return base.GetSqlType(f);
         }
 
         public override DbParameter CreateParameter(string name, Type type)
@@ -121,7 +134,7 @@ namespace Softlynx.ActiveSQL.MSSQL
 
         public override string AutoincrementStatement(string ColumnName)
         {
-            return string.Format("{0} AUTOINCREMENT", AsFieldName(ColumnName));
+            return string.Format("{0} bigint IDENTITY(1,1)", AsFieldName(ColumnName));
         }
 
         public override void ExtendConnectionString(string key, string value)

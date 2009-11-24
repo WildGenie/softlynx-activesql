@@ -288,6 +288,10 @@ namespace Softlynx.ActiveSQL
             return param;
         }
 
+        public virtual string GetSqlType(InField f)
+        {
+            return GetSqlType(f.FieldType);
+        }
         public virtual string GetSqlType(Type t)
         {
             object[] o = (object[])TypeMappings[t];
@@ -531,9 +535,14 @@ namespace Softlynx.ActiveSQL
 
         private DbType? _DBType=null;
 
-        public DbType? DBType
+        public bool DBTypeDefined
         {
-            get { return _DBType; }
+            get { return _DBType.HasValue; }
+        }
+
+        public DbType DBType
+        {
+            get { return DBTypeDefined?_DBType.Value:DbType.Object;}
             set { _DBType = value; }
 
         }
@@ -889,7 +898,7 @@ namespace Softlynx.ActiveSQL
         }
         internal virtual bool Read(object Record)
         {
-            RecordManager.ReopenConnection(FillCmd);
+            manager.ReopenConnection(FillCmd);
             bool res = false;
             foreach (InField field in primary_fields)
             {
@@ -921,8 +930,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Update(object Record)
         {
-            UpdateCmd.Transaction = this.manager.transaction;
-            RecordManager.ReopenConnection(UpdateCmd);
+            manager.ReopenConnection(UpdateCmd);
             foreach (DbParameter prm in UpdateCmd.Parameters)
             {
                 InField field = Field(prm.ParameterName);
@@ -934,8 +942,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Insert(object Record)
         {
-            InsertCmd.Transaction = this.manager.transaction;
-            RecordManager.ReopenConnection(InsertCmd);
+            manager.ReopenConnection(InsertCmd);
 
             foreach (DbParameter prm in InsertCmd.Parameters)
             {
@@ -982,7 +989,7 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Delete(object Record)
         {
-            RecordManager.ReopenConnection(DeleteCmd);
+            manager.ReopenConnection(DeleteCmd);
             int res = 0;
             using (ManagerTransaction transaction = manager.BeginTransaction())
             {
@@ -1057,6 +1064,7 @@ namespace Softlynx.ActiveSQL
         private string _name;
 
         [PrimaryKey]
+        [InField(Size=512)]
         public string Name
         {
             get { return _name; }
@@ -1219,8 +1227,13 @@ namespace Softlynx.ActiveSQL
             ConnectionPool.Clear();
         }
 
-        internal static void ReopenConnection(DbCommand cmd)
+        internal void ReopenConnection(DbCommand cmd)
         {
+            
+            if ((transaction!=null) && (cmd.Connection == transaction.Connection))
+                cmd.Transaction = transaction;
+            else
+                cmd.Transaction = null;
             ReopenConnection(cmd.Connection);
         }
 
@@ -1396,9 +1409,10 @@ namespace Softlynx.ActiveSQL
         public DbCommand CreateCommand(bool pooled,string command, params object[] parameters )
         {
             DbConnection conn = pooled ?  PooledConnection :  Connection;
-            ReopenConnection(conn);
+            
             DbCommand cmd = conn.CreateCommand();
-            cmd.Transaction = transaction;
+            ReopenConnection(cmd);
+
             cmd.CommandText = command;
             int i = 0;
             while (i < parameters.Length)
@@ -1972,7 +1986,7 @@ namespace Softlynx.ActiveSQL
         }
  
         public string SqlType(InField f) {
-            return specifics.GetSqlType(f.FieldType);
+            return specifics.GetSqlType(f);
         }
 
         public bool IsObjectExists(Type type, string statement, params object[] prm)
@@ -1990,7 +2004,7 @@ namespace Softlynx.ActiveSQL
         public DbParameter CreateParameter(InField f)
         {
             DbParameter res=specifics.CreateParameter(f.Name, f.FieldType);
-            if (f.DBType!=null)
+            if (f.DBTypeDefined)
                 res.DbType = (DbType)f.DBType;
             return specifics.SetupParameter(res,f);
         }
