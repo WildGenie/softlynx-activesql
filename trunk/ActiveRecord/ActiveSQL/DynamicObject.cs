@@ -125,9 +125,9 @@ namespace Softlynx.ActiveSQL
         /// A would be dependent on B and DependsOn(B) will return array with A.
         /// 
         /// For proper dependency tracking DO NOT use the prototype 
-        /// GetValue<T>(PropType property, T DefaultValue) in your code, but use 
+        /// GetValue&lt;T&gt;(PropType property,&lt;T&gt;DefaultValue) in your code, but use 
         /// the delegate patterns like 
-        /// GetValue<T>(PropType property, DefaultValueDelegate<T> DefaultValue)
+        /// GetValue&lt;T&gt;(PropType property, DefaultValueDelegate&lt;T&gt;  DefaultValue)
         /// </summary>
         /// <param name="prop"></param>
         /// <returns></returns>

@@ -7,8 +7,9 @@
     <ProjectGuid>{0711345F-47AC-4FF5-8F9A-48D4E96A705C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ActiveSQL.MSSQL</RootNamespace>
-    <AssemblyName>ActiveSQL.MSSQL</AssemblyName>
+    <RootNamespace>Softlynx.ActiveSQL.MSSQL</RootNamespace>
+    <AssemblyName>Softlynx.ActiveSQL.MSSQL</AssemblyName>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -42,6 +43,9 @@
       <Name>ActiveSQL</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="logo.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -50,4 +54,8 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PreBuildEvent>svnrevision $(ProjectDir)
+</PreBuildEvent>
+  </PropertyGroup>
 </Project>
