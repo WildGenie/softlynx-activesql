@@ -36,6 +36,7 @@ namespace Softlynx.ActiveSQL
 
     public class ConditionDefs
     {
+        internal InTable _table = null;
         internal Condition[] conditions = null;
         internal RecordManager rm = null;
 
@@ -68,8 +69,17 @@ namespace Softlynx.ActiveSQL
         {
             get { return ParameterValues; }
         }
-
+        private ConditionDefs(InTable tbl, Condition[] _conditions)
+        {
+            _table=tbl;
+            InitInstance(tbl.manager,_conditions);
+        }
         private ConditionDefs(RecordManager _rm, Condition[] _conditions)
+        {
+            InitInstance(_rm,_conditions);
+        }
+
+        private void InitInstance(RecordManager _rm, Condition[] _conditions)
         {
             conditions = _conditions;
             rm = _rm;
@@ -85,8 +95,14 @@ namespace Softlynx.ActiveSQL
                     {
                         foreach (string clmn in (cond as OrderBy).columns)
                         {
+                            InField fld=null;
+                            if (_table != null)
+                            {
+                                fld = _table.Field(clmn);
+                            } 
                             OrderColumns.Add(
-                                rm.AsFieldName(clmn) + " " +
+                                ((fld!=null)?rm.AsFieldName(fld,ProviderSpecifics.StatementKind.OrderBy)
+                                           :rm.AsFieldName(clmn)) + " " +
                                 (((cond as OrderBy)._order) == Condition.Ascendant ? "ASC" : "DESC"));
                         }
                     }
@@ -106,8 +122,16 @@ namespace Softlynx.ActiveSQL
                 Where w=whereCondition as Where;
                 string pname = string.Format("PRM{0}", ParameterValues.Count);
                 ParameterValues.Add(pname,w.value);
+
+                InField fld = null;
+                if (_table != null)
+                {
+                    fld = _table.Field(w.field);
+                } 
+
                 return string.Format("({0} {1} {2})",
-                              rm.AsFieldName(w.field),
+                            ((fld != null) ? rm.AsFieldName(fld, ProviderSpecifics.StatementKind.Where)
+                                           : rm.AsFieldName(w.field)),
                               w.op,
                               rm.AsFieldParam(pname)
                               );
@@ -124,6 +148,11 @@ namespace Softlynx.ActiveSQL
         public static ConditionDefs Parse(RecordManager rm, params Condition[] conditions)
         {
             return new ConditionDefs(rm, conditions);
+        }
+
+        public static ConditionDefs Parse(InTable table, params Condition[] conditions)
+        {
+            return new ConditionDefs(table, conditions);
         }
 
     }
@@ -246,6 +275,8 @@ namespace Softlynx.ActiveSQL
 
     public abstract class ProviderSpecifics
     {
+        public enum StatementKind {Declaration,Where,OrderBy,Index};
+
         private Hashtable type_mappings = null;
         private DbConnection db_connection = null;
         
@@ -265,6 +296,21 @@ namespace Softlynx.ActiveSQL
         protected abstract Hashtable CreateTypeMapping();
         public abstract DbConnection CreateDbConnection();
 
+        public virtual string SQL_SELECT(string columns,string tables,string where,string order_columns,int limit)
+        {
+            string cmd = "SELECT "+columns+" FROM "+tables;
+           
+            if ((where!=null) && (where != string.Empty))
+            cmd+=" WHERE "+where;
+            
+            if ((order_columns!=null) && (order_columns != string.Empty))
+                cmd += " ORDER BY " + order_columns;
+
+            if (limit>0)
+                cmd += " LIMIT " + limit.ToString();
+
+            return cmd;
+        }
 
         protected Hashtable TypeMappings
         {
@@ -310,6 +356,12 @@ namespace Softlynx.ActiveSQL
             if (o == null) return DbType.Object;
             return (DbType)o[1];
         }
+
+        public virtual string AsFieldName(InField s,StatementKind sk)
+        {
+            return AsFieldName(s.Name);
+        }
+
 
         public abstract string AsFieldName(string s);
         public abstract string AsFieldParam(string s);
@@ -535,6 +587,16 @@ namespace Softlynx.ActiveSQL
 
         private DbType? _DBType=null;
 
+        public bool Indexed
+        {
+            get { return IsIndexed; }
+        }
+
+        public bool Autoincrement
+        {
+            get { return IsAutoincrement; }
+        }
+
         public bool DBTypeDefined
         {
             get { return _DBType.HasValue; }
@@ -659,16 +721,20 @@ namespace Softlynx.ActiveSQL
 
         private InField[] _fields;
         private Hashtable hf = new Hashtable();
+        internal void RehashFields()
+        {
+            hf.Clear();
+            foreach (InField f in _fields)
+            {
+                hf[f.Name] = f;
+            }
+        }
         internal InField[] fields
         {
             get { return _fields; }
             set { 
-                _fields = value; 
-                hf.Clear();
-                foreach (InField f in _fields)
-                {
-                    hf[f.Name] = f;
-                }
+                _fields = value;
+                RehashFields();
             }
         }
 
@@ -1807,7 +1873,7 @@ namespace Softlynx.ActiveSQL
                     table.InitSqlMethods();
                     tables[type] = table;
                     table_names[table.Name] = type;
-
+                    table.RehashFields();
                 }
             }
         }
@@ -1973,14 +2039,14 @@ namespace Softlynx.ActiveSQL
             return table.PKEYValue(Record);
         }
 
-        internal InTable ActiveRecordInfo(Type type, bool withexception)
+        public InTable ActiveRecordInfo(Type type, bool withexception)
         {
             InTable table = (InTable)tables[type];
             if ((table == null) && (withexception)) throw new NotActiveRecordException(string.Format("Can't use {0} as Acive Record object", type.Name));
             return table;
         }
 
-        internal InTable ActiveRecordInfo(Type type)
+        public InTable ActiveRecordInfo(Type type)
         {
             return ActiveRecordInfo(type, true);
         }
@@ -2014,8 +2080,14 @@ namespace Softlynx.ActiveSQL
             return specifics.CreateParameter(name, type);
         }
 
+        public string AsFieldName(InField f,ProviderSpecifics.StatementKind sf)
+        {
+            return specifics.AsFieldName(f,sf);
+        }
+
         public string AsFieldName(string s)
         {
+            
             return specifics.AsFieldName(s);
         }
 

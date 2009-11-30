@@ -24,7 +24,7 @@ namespace Softlynx.RecordSet
 
         internal RecordIterator(InTable _table, params Condition[] conditions)
         {
-            ConditionDefs defs=ConditionDefs.Parse(_table.manager, conditions);
+            ConditionDefs defs=ConditionDefs.Parse(_table, conditions);
             PrepareIterator(_table, defs);
         }
 
@@ -39,16 +39,13 @@ namespace Softlynx.RecordSet
             if (table.IsVirtual)
                 throw new Exception("Can't fill virual tables from database");
 
-            cmd += String.Format("SELECT {0} from {1}", table.ColumnsList(table.fields), table.manager.AsFieldName(table.Name));
+            cmd = _table.manager.specifics.SQL_SELECT(
+                table.ColumnsList(table.fields),
+                table.manager.AsFieldName(table.Name),
+                defs.WhereClause,
+                defs.OrderClause,
+                defs.RecordLimit);
 
-            if (defs.WhereClause != string.Empty)
-                cmd += String.Format(" WHERE ({0})", defs.WhereClause);
-
-            if (defs.OrderClause != string.Empty)
-                cmd += String.Format(" ORDER BY {0}", defs.OrderClause);
-
-            if (defs.RecordLimit > 0)
-                cmd += String.Format(" LIMIT {0}", defs.RecordLimit);
 
             filter_params = new object[defs.ParameterValues.Count * 2];
             int c = 0;

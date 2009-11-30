@@ -42,8 +42,32 @@ namespace Softlynx.ActiveSQL.MSSQL
             return res;
         }
 
+        public override string SQL_SELECT(string columns, string tables, string where, string order_columns, int limit)
+        {
+            string cmd = "SELECT ";
+
+            if (limit > 0)
+                cmd += "TOP " + limit.ToString()+" ";
+
+            cmd+= columns+" FROM " + tables;
+
+            if ((where != null) && (where != string.Empty))
+                cmd += " WHERE " + where;
+
+            if ((order_columns != null) && (order_columns != string.Empty))
+                cmd += " ORDER BY " + order_columns;
+
+
+            return cmd;
+        }
+
         public override string GetSqlType(InField f)
         {
+            if ((f.FieldType == typeof(string)) && (f.Indexed))
+            {
+                f.Size = 512;
+            }
+       
             if (
                 ((f.FieldType == typeof(string)) && (f.Size >0)  && (f.Size < int.MaxValue))
                 ||
@@ -114,7 +138,14 @@ namespace Softlynx.ActiveSQL.MSSQL
             return p;
         }
 
-        
+
+        public override string AsFieldName(InField fld, ProviderSpecifics.StatementKind sk)
+        {
+            if ((fld.FieldType == typeof(string)) && ((sk == StatementKind.OrderBy) || (sk == StatementKind.Where)))
+                return string.Format("CAST({0} as NVARCHAR(max))",base.AsFieldName(fld, sk));
+            return base.AsFieldName(fld, sk);
+        }
+
 
         public override string AsFieldName(string s)
         {
