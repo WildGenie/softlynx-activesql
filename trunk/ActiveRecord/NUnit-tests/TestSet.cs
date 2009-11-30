@@ -473,6 +473,39 @@ namespace NUnit_tests
                 Assert.Less(o1.AutoInc64, o2.AutoInc64);
             }
 
+            [Test(Description = "Select query with order by text field")]
+            public void T13_OrderByText()
+            {
+                foreach ( Models.BasicMapping bm in RecordIterator.Enum<Models.BasicMapping>(RM,Where.OrderBy("Text")))
+                {
+                    break;
+                }
+            }
+
+            [Test(Description = "Select query with where text field")]
+            public void T14_WhereTextField()
+            {
+                Models.BasicMapping ft = null;
+                foreach (Models.BasicMapping bm in RecordIterator.Enum<Models.BasicMapping>(RM, Where.EQ("Text", Models.BasicMapping.Default.Text)))
+                {
+                    ft = bm;
+                    break;
+                }
+                Assert.NotNull(ft);
+            }
+
+            [Test(Description = "Limited result set statement")]
+            public void T15_SelectLimit()
+            {
+                int cnt = 0;
+                foreach (Models.BasicMapping bm in RecordIterator.Enum<Models.BasicMapping>(RM, Where.Limit(1)))
+                {
+                    cnt++;
+
+                }
+                Assert.AreEqual(cnt,1);
+            }
+
             [TestFixtureTearDown]
             public void Cleanup()
             {

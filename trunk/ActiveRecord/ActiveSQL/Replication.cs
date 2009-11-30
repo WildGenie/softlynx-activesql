@@ -205,6 +205,7 @@ namespace Softlynx.ActiveSQL.Replication
 
         String _ObjectName = string.Empty;
         [Indexed]
+        [InField(Size=512)]
         public String ObjectName
         {
             get { return _ObjectName; }
@@ -457,6 +458,7 @@ namespace Softlynx.ActiveSQL.Replication
         private void DeleteLogOperations(RecordManager Manager, long MaxSeqNo)
         {
             DbCommand DeleteReplicaCmd = Commands(Manager).DeleteReplicaCmd;
+            DeleteReplicaCmd.Transaction = Manager.transaction;
             DeleteReplicaCmd.Parameters[0].Value = MaxSeqNo;
             DeleteReplicaCmd.ExecuteNonQuery();
         }
@@ -476,6 +478,7 @@ namespace Softlynx.ActiveSQL.Replication
             l.ObjectOperation = operation;
             l.Actual = true;
             DbCommand CleanReplicaCmd = Commands(Manager).CleanReplicaCmd;
+            CleanReplicaCmd.Transaction = Manager.transaction;
             CleanReplicaCmd.Parameters[0].Value = l.ObjectID;
             CleanReplicaCmd.ExecuteNonQuery();
             Manager.Write(l);
