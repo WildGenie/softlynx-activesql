@@ -1410,10 +1410,7 @@ namespace Softlynx.ActiveSQL
                 {
                     if (ConnectionPool.Count == 0)
                     {
-                        DbConnection NewConn = (DbConnection)Activator.CreateInstance(specifics.Connection.GetType());
-                        NewConn.ConnectionString = specifics.Connection.ConnectionString;
-                        NewConn.Open();
-                        res = NewConn;
+                        res = (Connection as ICloneable).Clone() as DbConnection;
                     }
                     else
                     {
