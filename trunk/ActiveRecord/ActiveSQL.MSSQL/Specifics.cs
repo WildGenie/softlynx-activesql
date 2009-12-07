@@ -32,7 +32,7 @@ namespace Softlynx.ActiveSQL.MSSQL
             res[typeof(Int32)] = new object[] { "integer", DbType.Int32 };
             res[typeof(Int64)] = new object[] { "bigint", DbType.Int64 };
             res[typeof(DateTime)] = new object[] { "datetime", DbType.DateTimeOffset };
-            res[typeof(decimal)] = new object[] { "decimal(38,15)", DbType.Decimal};
+            res[typeof(decimal)] = new object[] { "double precision", DbType.Decimal };
             res[typeof(float)] = new object[] { "real", DbType.Single };
             res[typeof(double)] = new object[] { "double precision", DbType.Double };
             res[typeof(bool)] = new object[] { "bit", DbType.Boolean };

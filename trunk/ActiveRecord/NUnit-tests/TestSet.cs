@@ -262,7 +262,7 @@ namespace NUnit_tests
 
         [TestFixture("SQLITE", @"Data Source = c:\temp\test.db3;BinaryGUID=FALSE;")]
         [TestFixture("PGSQL", "host=localhost;Database=test;User Id=test;Password=test")]
-        [TestFixture("MSSQL", @"Server=localhost\SQLEXPRESS;Database=test;User Id=test;Password=test;Trusted_Connection=true")]
+        [TestFixture("MSSQL", @"Server=localhost\SQLEXPRESS;Database=test;User Id=test;Password=test;Trusted_Connection=false")]
         public class Backend
         {
             protected RecordManager RM = null;
@@ -505,7 +505,38 @@ namespace NUnit_tests
                 }
                 Assert.AreEqual(cnt,1);
             }
+            [Test(Description = "Handle decimal numbers")]
+            public void T16_NumberHandling()
+            {
+                Models.BasicMapping o = Models.BasicMapping.RandomValue;
+                o.NumberMoney = 5m;
+                o.NumberDouble = 5d;
+                string sa1 = o.NumberMoney.ToString();
+                string sa2 = o.NumberDouble.ToString();
+                RM.Write(o);
+                Guid ID = o.ID;
+                o = new Models.BasicMapping();
+                o.ID = ID;
+                RM.Read(o);
+                string sb1 = o.NumberMoney.ToString();
+                string sb2 = o.NumberDouble.ToString();
+                Assert.AreEqual(sa1, sb1);
+                Assert.AreEqual(sa2, sb2);
+                o.NumberMoney = 5.1234m;
+                o.NumberDouble = 5.1234d;
+                sa1 = o.NumberMoney.ToString();
+                sa2 = o.NumberDouble.ToString();
 
+                RM.Write(o);
+                o = new Models.BasicMapping();
+                o.ID = ID;
+                RM.Read(o);
+
+                sb1 = o.NumberMoney.ToString();
+                sb2 = o.NumberDouble.ToString();
+                Assert.AreEqual(sa1, sb1);
+                Assert.AreEqual(sa2, sb2);
+            }
             [TestFixtureTearDown]
             public void Cleanup()
             {
