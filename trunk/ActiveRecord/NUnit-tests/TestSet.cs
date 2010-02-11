@@ -90,7 +90,6 @@ namespace NUnit_tests
                 set { SetValue<DateTime>(Prop.TimeStamp, value); }
             }
 
-
             public char Symbol
             {
                 get { return GetValue<char>(Prop.Symbol, char.MinValue); }
@@ -280,7 +279,6 @@ namespace NUnit_tests
 
                 if (ProviderName == "MSSQL")
                     prov = new MSSqlSpecifics();
-
                 Assert.NotNull(prov);
 
                 prov.Connection.ConnectionString = ConnectionString;
@@ -537,6 +535,37 @@ namespace NUnit_tests
                 Assert.AreEqual(sa1, sb1);
                 Assert.AreEqual(sa2, sb2);
             }
+
+            [Test(Description = "Handle DateTime values")]
+            public void T17_DateHandling()
+            {
+                DateTime t = DateTime.Today;
+                Models.BasicMapping o = Models.BasicMapping.RandomValue;
+                Guid ID = o.ID;
+                o.TimeStamp = t;
+                RM.Write(o);
+
+                bool found=false;
+                foreach (Models.BasicMapping oe in RecordIterator.Enum<Models.BasicMapping>(RM,Where.LE("TimeStamp",t)))
+                {
+                    if (oe.ID==o.ID)
+                        found=true;
+                }
+
+                Assert.IsTrue(found);
+
+                found = false;
+                foreach (Models.BasicMapping oe in RecordIterator.Enum<Models.BasicMapping>(RM, Where.LE("TimeStamp", t.AddSeconds(-1))))
+                {
+                    if (oe.ID == o.ID)
+                        found = true;
+                }
+
+                Assert.IsFalse(found);
+
+
+            }
+
             [TestFixtureTearDown]
             public void Cleanup()
             {
