@@ -306,7 +306,15 @@ namespace Softlynx.ActiveSQL
                 return XmlConvert.ToDateTime(v,XmlDateTimeSerializationMode.Local);
 
             if (t == typeof(byte[]))
-                return Convert.FromBase64String(v);
+            {
+                byte[] res ={ };
+                if (!v.Equals(string.Empty)) try
+                    {
+                        res=Convert.FromBase64String(v);
+                    }
+                    catch (FormatException) { };
+                return res;
+            }
 
             if (t.IsEnum)
                 return Enum.Parse(t,v,true);
