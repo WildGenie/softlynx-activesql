@@ -390,18 +390,24 @@ namespace Softlynx.ActiveSQL.Replication
             int cnt = 0;
             using (ManagerTransaction t = Manager.BeginTransaction())
             {
-                MemoryStream ms = new MemoryStream(buf);
-                XmlReader xr = XmlReader.Create(ms);
-                xr.ReadStartElement();
-                while (logserializer.CanDeserialize(xr))
+                try
                 {
-                    Object o = null;
-                    o=logserializer.Deserialize(xr);
-                    if (o is ReplicaLog)
+                    MemoryStream ms = new MemoryStream(buf);
+                    XmlReader xr = XmlReader.Create(ms);
+                    xr.ReadStartElement();
+                    while (logserializer.CanDeserialize(xr))
                     {
-                        cnt+=ApplyOperation(Manager, o as ReplicaLog);
-                    }
-                };
+                        Object o = null;
+                        o = logserializer.Deserialize(xr);
+                        if (o is ReplicaLog)
+                        {
+                            cnt += ApplyOperation(Manager, o as ReplicaLog);
+                        }
+                    };
+                } catch {
+                    t.Rollback();
+                    throw;
+                }
                 t.Commit();
             }
             return cnt;   
