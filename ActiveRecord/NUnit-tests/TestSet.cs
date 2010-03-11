@@ -23,6 +23,7 @@ namespace NUnit_tests
    {
 
         [InTable]
+        [WithReplica]
         public class AutoIncrementObj
         {
 
@@ -49,6 +50,7 @@ namespace NUnit_tests
 
 
         [InTable]
+        [WithReplica]
         public class BasicMapping : IDObject
         {
             public class Prop {
@@ -563,6 +565,89 @@ namespace NUnit_tests
 
                 Assert.IsFalse(found);
 
+
+            }
+
+            [Test(Description = "Handle replication with SQLITE")]
+            public void T20_ReplicationHandling()
+            {
+                using (ReplicaManager replicamgr1 = new ReplicaManager())
+                {
+                    replicamgr1.OnApplyReplica += new ReplicaManager.ApplyReplicaEvent(delegate(ReplicaManager.ReplicaLog log, RecordManager _manager)
+                    {
+                        log.SeqNO = 0;
+                        _manager.Write(log);
+                    });
+                    replicamgr1.RegisterWithRecordManager(RM);
+
+                    SQLiteSpecifics prov = new SQLiteSpecifics();
+                    string replicadb = @"C:\temp\replica.db3";
+                    File.Delete(replicadb);
+                    prov.ExtendConnectionString("Data Source", replicadb);
+                    prov.ExtendConnectionString("BinaryGUID", "FALSE");
+                    List<Type> types = new List<Type>();
+                    foreach (InTable t in RM.RegisteredTypes)   
+                        if (t.WithReplica) types.Add(t.BaseType);
+
+                    using (RecordManager RM2 = new RecordManager(prov, types.ToArray()))
+                    {
+
+                        using (ReplicaManager replicamgr2 = new ReplicaManager())
+                        {
+                            replicamgr2.RegisterWithRecordManager(RM2);
+                        
+
+                        List<Models.BasicMapping> replobjs = new List<Models.BasicMapping>();
+
+                        using (ManagerTransaction t = RM2.BeginTransaction())
+                        {
+                            while (replobjs.Count < 100)
+                            {
+                                Models.BasicMapping o = Models.BasicMapping.RandomValue;
+                                replobjs.Add(o);
+                                RM2.Write(o);
+                            }
+                            t.Commit();
+                        }
+
+                        using (ManagerTransaction t = RM.BeginTransaction())
+                        {
+
+                            foreach (Models.BasicMapping o in replobjs)
+                            {
+                                Models.BasicMapping n = new Models.BasicMapping();
+                                n.ID = o.ID;
+                                Assert.IsFalse(RM.Read(n));
+                            }
+                            t.Commit();
+                        }
+
+                            long rid = 0;
+                            while (true) {
+                            byte[] rbuf=replicamgr2.BuildReplicaBuffer(RM2,ref rid);
+                                if (rbuf==null) break;
+                            replicamgr1.ApplyReplicaBuffer(RM,rbuf);
+                            }
+
+                            using (ManagerTransaction t = RM.BeginTransaction())
+                            {
+
+                                foreach (Models.BasicMapping o in replobjs)
+                                {
+                                    Models.BasicMapping n = new Models.BasicMapping();
+                                    n.ID = o.ID;
+                                    Assert.IsTrue(RM.Read(n));
+                                }
+                                t.Commit();
+                            }
+
+                        }
+
+                        
+                        RM2.FlushConnectionPool();
+                        RM2.Connection.Close();
+                    }
+                }
 
             }
 

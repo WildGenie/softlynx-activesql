@@ -756,6 +756,16 @@ namespace Softlynx.ActiveSQL
         public event RecordManagerEvent TableVersionAsyncChanged = null;
         public event RecordSetEvent RecordSetInsert = null;
         public event RecordSetEvent RecordSetRemove = null;
+        
+        public Type BaseType
+        {
+            get { return basetype; }
+        }
+
+        public bool WithReplica
+        {
+            get { return with_replica;}
+        }
 
         public object Clone()
         {
@@ -1599,6 +1609,9 @@ namespace Softlynx.ActiveSQL
             return new PooledDataReader(cmd.ExecuteReader(),conn,this);
         }
 
+        /// <summary>
+        /// Enumerate over InTable objects
+        /// </summary>
         public IEnumerable RegisteredTypes
         {
             get { return tables.Values; }

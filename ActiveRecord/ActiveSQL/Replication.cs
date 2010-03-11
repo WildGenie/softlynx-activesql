@@ -89,10 +89,12 @@ namespace Softlynx.ActiveSQL.Replication
 
         public void Dispose()
         {
-            RecordManager m = RecordManager.Default;
-            CmdSet res = (CmdSet)CMDS[m];
-            if (res != null) res.Dispose();
-            CMDS.Remove(m);
+            foreach (RecordManager m in RecordManager.Managers)
+            {
+                CmdSet res = (CmdSet)CMDS[m];
+                if (res != null) res.Dispose();
+                CMDS.Remove(m);
+            }
         }
     
         public delegate void ApplyReplicaEvent(ReplicaManager.ReplicaLog log, RecordManager manager);
@@ -622,6 +624,7 @@ namespace Softlynx.ActiveSQL.Replication
         public bool IsReplicaExists(RecordManager Manager,Guid ReplicaGuid)
         {
             DbCommand TestReplicaCmd = Commands(Manager).ExistReplicaCmd;
+            Manager.ReopenConnection(TestReplicaCmd);
             TestReplicaCmd.Parameters[0].Value = ReplicaGuid;
             return (TestReplicaCmd.ExecuteScalar() != null) ;
         }
@@ -646,6 +649,7 @@ namespace Softlynx.ActiveSQL.Replication
                         DbCommand TestConflict = Commands(Manager).ConflictReplicaCmd;
                         TestConflict.Parameters[0].Value = log.ObjectID;
                         TestConflict.Parameters[1].Value = log.Created;
+                        Manager.ReopenConnection(TestConflict);
                         log.PotentialConflict = (TestConflict.ExecuteScalar() != null);
                         if (OnApplyReplica != null)
                             OnApplyReplica(log, Manager);
