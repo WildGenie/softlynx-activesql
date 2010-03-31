@@ -28,7 +28,7 @@ namespace Softlynx.ActiveSQL.SQLite
             res[typeof(Int16)] = new object[] { "smallint", DbType.Int16 };
             res[typeof(Int32)] = new object[] { "int", DbType.Int32 };
             res[typeof(Int64)] = new object[] { "bigint", DbType.Int64 };
-            res[typeof(DateTime)] = new object[] { "TIMESTAMPTZ", DbType.DateTime };
+            res[typeof(DateTime)] = new object[] { "TIMESTAMP", DbType.DateTime};
             res[typeof(decimal)] = new object[] { "decimal", DbType.Decimal };
             res[typeof(float)] = new object[] { "float", DbType.Single };
             res[typeof(double)] = new object[] { "double", DbType.Double };

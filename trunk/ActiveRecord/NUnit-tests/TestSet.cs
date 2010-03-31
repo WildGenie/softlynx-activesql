@@ -651,6 +651,31 @@ namespace NUnit_tests
 
             }
 
+            [Test(Description = "Handle timezones")]
+            public void T21_DateTimeTZ()
+            {
+                DateTime t = DateTime.Today.ToLocalTime();
+                Models.BasicMapping o = Models.BasicMapping.RandomValue;
+                Guid ID = o.ID;
+                o.TimeStamp = t;
+                RM.Write(o);
+
+                o = new NUnit_tests.Models.BasicMapping();
+                o.ID = ID;
+                RM.Read(o);
+
+                Assert.AreEqual(o.TimeStamp.ToUniversalTime(), t.ToUniversalTime());
+                t = DateTime.Today.ToUniversalTime();
+                RM.Write(o);
+                o = new NUnit_tests.Models.BasicMapping();
+                o.ID = ID;
+                RM.Read(o);
+
+                Assert.AreEqual(o.TimeStamp.ToUniversalTime(), t.ToUniversalTime());
+
+            }
+
+
             [TestFixtureTearDown]
             public void Cleanup()
             {
