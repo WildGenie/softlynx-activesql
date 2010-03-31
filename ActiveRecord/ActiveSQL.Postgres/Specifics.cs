@@ -28,7 +28,7 @@ namespace Softlynx.ActiveSQL.Postgres
             res[typeof(Int16)] = new object[] { "smallint", DbType.Int16 };
             res[typeof(Int32)] = new object[] { "integer", DbType.Int32 };
             res[typeof(Int64)] = new object[] { "bigint", DbType.Int64 };
-            res[typeof(DateTime)] = new object[] { "Timestamptz", DbType.DateTime };
+            res[typeof(DateTime)] = new object[] { "Timestamp", DbType.DateTime};
             res[typeof(decimal)] = new object[] { "numeric", DbType.Decimal };
             res[typeof(float)] = new object[] { "numeric", DbType.Single };
             res[typeof(double)] = new object[] { "numeric", DbType.Double };

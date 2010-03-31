@@ -12,6 +12,67 @@ using Softlynx.RecordCache;
 
 namespace Softlynx.ActiveSQL
 {
+    internal static class DateFilter
+    {
+
+        /// <summary>
+        /// Treats datetime object as local input date time from passed from UI
+        /// </summary>
+        /// <param name="o">any object</param>
+        /// <returns>changed date time kind to Local if unspecified</returns>
+        internal static object FromUI(object o)
+        {
+            if (o is DateTime)
+            {
+                DateTime dt = (DateTime)o;
+                if (dt.Kind == DateTimeKind.Unspecified)
+                    dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
+                return dt;
+            }
+            else
+                return o;
+        }
+
+        /// <summary>
+        /// Treats datetime object as local input date time passed from DB
+        /// </summary>
+        /// <param name="o">any object</param>
+        /// <returns>changed date time kind to UTC if unspecified</returns>
+        internal static object FromDB(object o)
+        {
+            if (o is DateTime)
+            {
+                DateTime dt = (DateTime)o;
+                if (dt.Kind == DateTimeKind.Unspecified)
+                    dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToLocalTime();
+                return dt;
+            }
+            else
+                return o;
+        }
+
+        internal static object UTC(object o)
+        {
+            if (o is DateTime)
+            {
+                return ((DateTime)o).ToUniversalTime();
+            }
+            else
+                return o;
+        }
+
+        internal static object LOCAL(object o)
+        {
+            if (o is DateTime)
+            {
+                return ((DateTime)o).ToLocalTime();
+            }
+            else
+                return o;
+        }
+
+    }
+
     internal class Limit : Condition
     {
         internal int _RecordCount = -1;
@@ -678,10 +739,11 @@ namespace Softlynx.ActiveSQL
         internal object PrepareValueType(object v)
         {
             if (v == null) return v;
+            v = DateFilter.FromDB(v);
             if (prop.PropertyType.IsInstanceOfType(v)) return v;
             if (prop.PropertyType.IsEnum) 
                 return Enum.ToObject(prop.PropertyType,v);
-            return Convert.ChangeType(v, prop.PropertyType,null);
+            return Convert.ChangeType(v, prop.PropertyType, null);
         }
     }
 
@@ -1011,7 +1073,9 @@ namespace Softlynx.ActiveSQL
             {
                 InField field = Field(prm.ParameterName);
                 if (field != null)
-                   prm.Value = field.prop.GetValue(Record, null);
+                {
+                    prm.Value = DateFilter.UTC(field.prop.GetValue(Record, null));
+                }
             }
             return UpdateCmd.ExecuteNonQuery();
         }
@@ -1024,7 +1088,9 @@ namespace Softlynx.ActiveSQL
             {
                 InField field = Field(prm.ParameterName);
                 if (field != null)
-                    prm.Value = field.prop.GetValue(Record, null);
+                {
+                    prm.Value = DateFilter.UTC(field.prop.GetValue(Record, null));
+                }
             }
 
             return InsertCmd.ExecuteNonQuery();
