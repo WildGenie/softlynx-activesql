@@ -14,62 +14,51 @@ namespace Softlynx.ActiveSQL
 {
     internal static class DateFilter
     {
+        /// <summary>
+        /// Determine default DateTime represenation an all DB related DateTime fields
+        /// </summary>
+        public static DateTimeKind DBDefaultDateTimeKind=DateTimeKind.Local;
 
         /// <summary>
-        /// Treats datetime object as local input date time from passed from UI
+        /// Ajust input datetime object to DBDefaultDateTimeKind if its kind unspecified
+        /// and return actial DateTime in Local kind
         /// </summary>
         /// <param name="o">any object</param>
-        /// <returns>changed date time kind to Local if unspecified</returns>
-        internal static object FromUI(object o)
-        {
-            if (o is DateTime)
-            {
-                DateTime dt = (DateTime)o;
-                if (dt.Kind == DateTimeKind.Unspecified)
-                    dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
-                return dt;
-            }
-            else
-                return o;
-        }
-
-        /// <summary>
-        /// Treats datetime object as local input date time passed from DB
-        /// </summary>
-        /// <param name="o">any object</param>
-        /// <returns>changed date time kind to UTC if unspecified</returns>
+        /// <returns>changed date time kind to DBDefaultDateTimeKind if unspecified and convert to Local DateTime</returns>
         internal static object FromDB(object o)
         {
             if (o is DateTime)
             {
                 DateTime dt = (DateTime)o;
                 if (dt.Kind == DateTimeKind.Unspecified)
-                    dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToLocalTime();
-                return dt;
+                    dt = DateTime.SpecifyKind(dt, DBDefaultDateTimeKind);
+                return dt.ToLocalTime();
             }
             else
                 return o;
         }
-
-        internal static object UTC(object o)
+        
+        /// <summary>
+        /// Ajust DateTime value to DBDefaultDateTimeKind passed to DB backend
+        /// </summary>
+        /// <param name="o">any object</param>
+        /// <returns>Ajust date time kind to be DBDefaultDateTimeKind</returns>
+        internal static object ToDB(object o)
         {
             if (o is DateTime)
             {
-                return ((DateTime)o).ToUniversalTime();
+                DateTime dt = (DateTime)o;
+                if (dt.Kind != DBDefaultDateTimeKind)
+                {
+                    if (DBDefaultDateTimeKind == DateTimeKind.Local)
+                        return dt.ToLocalTime();
+                    else
+                        return dt.ToUniversalTime();
+                }
             }
-            else
-                return o;
+            return o;
         }
 
-        internal static object LOCAL(object o)
-        {
-            if (o is DateTime)
-            {
-                return ((DateTime)o).ToLocalTime();
-            }
-            else
-                return o;
-        }
 
     }
 
@@ -1074,7 +1063,7 @@ namespace Softlynx.ActiveSQL
                 InField field = Field(prm.ParameterName);
                 if (field != null)
                 {
-                    prm.Value = DateFilter.UTC(field.prop.GetValue(Record, null));
+                    prm.Value = DateFilter.ToDB(field.prop.GetValue(Record, null));
                 }
             }
             return UpdateCmd.ExecuteNonQuery();
@@ -1089,7 +1078,7 @@ namespace Softlynx.ActiveSQL
                 InField field = Field(prm.ParameterName);
                 if (field != null)
                 {
-                    prm.Value = DateFilter.UTC(field.prop.GetValue(Record, null));
+                    prm.Value = DateFilter.ToDB(field.prop.GetValue(Record, null));
                 }
             }
 

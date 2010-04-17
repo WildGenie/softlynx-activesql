@@ -100,6 +100,7 @@ namespace Softlynx.ActiveSQL.Replication
         public delegate void ApplyReplicaEvent(ReplicaManager.ReplicaLog log, RecordManager manager);
 
     public event ApplyReplicaEvent OnApplyReplica=null;
+    public event ApplyReplicaEvent OnReplicaApplied = null;
 
     [InTable]
     public class ReplicaPeer:IDObject
@@ -156,6 +157,19 @@ namespace Softlynx.ActiveSQL.Replication
         public class ReplicaLog : IIDObject
     {
         public enum Operation {Write,Delete};
+        internal object _instance = null;
+
+        /// <summary>
+        /// Deserialized instance object
+        /// </summary>
+        public object Instance
+        {
+            get
+            {
+                return _instance;
+            }
+        }
+
 
         private Guid _ID;
         [PrimaryKey(false)]
@@ -466,7 +480,7 @@ namespace Softlynx.ActiveSQL.Replication
         private void DeleteLogOperations(RecordManager Manager, long MaxSeqNo)
         {
             DbCommand DeleteReplicaCmd = Commands(Manager).DeleteReplicaCmd;
-            DeleteReplicaCmd.Transaction = Manager.transaction;
+            Manager.ReopenConnection(DeleteReplicaCmd);
             DeleteReplicaCmd.Parameters[0].Value = MaxSeqNo;
             DeleteReplicaCmd.ExecuteNonQuery();
         }
@@ -486,7 +500,7 @@ namespace Softlynx.ActiveSQL.Replication
             l.ObjectOperation = operation;
             l.Actual = true;
             DbCommand CleanReplicaCmd = Commands(Manager).CleanReplicaCmd;
-            CleanReplicaCmd.Transaction = Manager.transaction;
+            Manager.ReopenConnection(CleanReplicaCmd);
             CleanReplicaCmd.Parameters[0].Value = l.ObjectID;
             CleanReplicaCmd.ExecuteNonQuery();
             Manager.Write(l);
@@ -643,20 +657,23 @@ namespace Softlynx.ActiveSQL.Replication
             InTable it = rt==null?null:Manager.ActiveRecordInfo(rt,false);
             if (it!=null)
             {
-                 Object instance =  DeserializeObject(Manager,it, log.ObjectValue);
+                log._instance = DeserializeObject(Manager, it, log.ObjectValue);
                     using (DisableLogger)
                     {
                         DbCommand TestConflict = Commands(Manager).ConflictReplicaCmd;
                         TestConflict.Parameters[0].Value = log.ObjectID;
-                        TestConflict.Parameters[1].Value = log.Created;
+                        TestConflict.Parameters[1].Value = DateFilter.ToDB(log.Created);
                         Manager.ReopenConnection(TestConflict);
                         log.PotentialConflict = (TestConflict.ExecuteScalar() != null);
                         if (OnApplyReplica != null)
                             OnApplyReplica(log, Manager);
                         if (log.PotentialConflict) return 0;
-                        return (log.ObjectOperation == ReplicaLog.Operation.Delete)
-                            ? Manager.Delete(instance)
-                            : Manager.Write(instance,true);
+                        int r=(log.ObjectOperation == ReplicaLog.Operation.Delete)
+                            ? Manager.Delete(log.Instance)
+                            : Manager.Write(log.Instance, true);
+                        if (OnReplicaApplied != null)
+                            OnReplicaApplied(log, Manager);
+                        return r;
                     }
             }
             return 0;
