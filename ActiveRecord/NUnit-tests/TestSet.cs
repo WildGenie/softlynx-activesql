@@ -286,6 +286,18 @@ namespace NUnit_tests
                 prov.Connection.ConnectionString = ConnectionString;
             }
 
+            [TestFixtureSetUp]
+            public void InitTest()
+            {
+                Softlynx.ActiveSQL.DateTimeFilter.DBDefaultDateTimeKind = DateTimeKind.Utc;
+            }
+
+            [Test(Description = "Rest database to empty initial state"), Explicit]
+            public void T00_AjustDateTimeTOLocal()
+            {
+                Softlynx.ActiveSQL.DateTimeFilter.DBDefaultDateTimeKind = DateTimeKind.Local;
+            }
+
             [Test(Description="Rest database to empty initial state"),Explicit]
             public void T00_EmptyDB()
             {
