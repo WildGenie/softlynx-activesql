@@ -52,7 +52,7 @@ namespace Softlynx.RecordSet
             foreach (DictionaryEntry de in defs.ParameterValues)
             {
                 filter_params[c++] = de.Key;
-                filter_params[c++] = DateFilter.UTC(de.Value);
+                filter_params[c++] = DateFilter.ToDB(de.Value);
             }
 
             cparams = new object[] { table.manager };

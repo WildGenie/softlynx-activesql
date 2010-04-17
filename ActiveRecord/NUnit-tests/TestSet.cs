@@ -641,6 +641,38 @@ namespace NUnit_tests
                                 t.Commit();
                             }
 
+                            using (ManagerTransaction t = RM2.BeginTransaction())
+                            {
+                                foreach (Models.BasicMapping o in replobjs)
+                                {
+                                    o.Number32 = -o.Number32;
+                                    RM2.Write(o);
+                                    RM2.Delete(o);
+                                }
+                                t.Commit();
+                            }
+
+                            while (true)
+                            {
+                                byte[] rbuf = replicamgr2.BuildReplicaBuffer(RM2, ref rid);
+                                if (rbuf == null) break;
+                                replicamgr1.ApplyReplicaBuffer(RM, rbuf);
+                            }
+
+                            using (ManagerTransaction t = RM.BeginTransaction())
+                            {
+
+                                foreach (Models.BasicMapping o in replobjs)
+                                {
+                                    Models.BasicMapping n = new Models.BasicMapping();
+                                    n.ID = o.ID;
+                                    Assert.IsFalse(RM.Read(n));
+                                }
+                                t.Commit();
+                            }
+
+
+
                         }
 
                         
