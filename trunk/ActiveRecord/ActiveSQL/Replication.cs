@@ -662,7 +662,7 @@ namespace Softlynx.ActiveSQL.Replication
                     {
                         DbCommand TestConflict = Commands(Manager).ConflictReplicaCmd;
                         TestConflict.Parameters[0].Value = log.ObjectID;
-                        TestConflict.Parameters[1].Value = DateFilter.ToDB(log.Created);
+                        TestConflict.Parameters[1].Value = DateTimeFilter.ToDB(log.Created);
                         Manager.ReopenConnection(TestConflict);
                         log.PotentialConflict = (TestConflict.ExecuteScalar() != null);
                         if (OnApplyReplica != null)

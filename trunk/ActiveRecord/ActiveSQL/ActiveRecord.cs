@@ -12,7 +12,7 @@ using Softlynx.RecordCache;
 
 namespace Softlynx.ActiveSQL
 {
-    internal static class DateFilter
+    public static class DateTimeFilter
     {
         /// <summary>
         /// Determine default DateTime represenation an all DB related DateTime fields
@@ -29,6 +29,8 @@ namespace Softlynx.ActiveSQL
         {
             if (o is DateTime)
             {
+                if (DBDefaultDateTimeKind == DateTimeKind.Unspecified)
+                    return o;
                 DateTime dt = (DateTime)o;
                 if (dt.Kind == DateTimeKind.Unspecified)
                     dt = DateTime.SpecifyKind(dt, DBDefaultDateTimeKind);
@@ -47,6 +49,9 @@ namespace Softlynx.ActiveSQL
         {
             if (o is DateTime)
             {
+                if (DBDefaultDateTimeKind == DateTimeKind.Unspecified)
+                    return o;
+
                 DateTime dt = (DateTime)o;
                 if (dt.Kind != DBDefaultDateTimeKind)
                 {
@@ -728,7 +733,7 @@ namespace Softlynx.ActiveSQL
         internal object PrepareValueType(object v)
         {
             if (v == null) return v;
-            v = DateFilter.FromDB(v);
+            v = DateTimeFilter.FromDB(v);
             if (prop.PropertyType.IsInstanceOfType(v)) return v;
             if (prop.PropertyType.IsEnum) 
                 return Enum.ToObject(prop.PropertyType,v);
@@ -1063,7 +1068,7 @@ namespace Softlynx.ActiveSQL
                 InField field = Field(prm.ParameterName);
                 if (field != null)
                 {
-                    prm.Value = DateFilter.ToDB(field.prop.GetValue(Record, null));
+                    prm.Value = DateTimeFilter.ToDB(field.prop.GetValue(Record, null));
                 }
             }
             return UpdateCmd.ExecuteNonQuery();
@@ -1078,7 +1083,7 @@ namespace Softlynx.ActiveSQL
                 InField field = Field(prm.ParameterName);
                 if (field != null)
                 {
-                    prm.Value = DateFilter.ToDB(field.prop.GetValue(Record, null));
+                    prm.Value = DateTimeFilter.ToDB(field.prop.GetValue(Record, null));
                 }
             }
 

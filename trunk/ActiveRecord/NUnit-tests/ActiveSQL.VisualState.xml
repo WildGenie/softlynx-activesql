@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <VisualState xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ShowCheckBoxes="true">
-  <TopNode>[0-1055]NUnit_tests.Backends.Backend.T10_WhereILikeCondition</TopNode>
-  <SelectedNode>[0-1063]NUnit_tests.Backends.Backend.T20_ReplicationHandling</SelectedNode>
+  <TopNode>[0-1000]C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit</TopNode>
+  <SelectedNode>[0-1000]C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit</SelectedNode>
   <ExcludeCategories>false</ExcludeCategories>
   <Nodes>
     <Node UniqueName="[0-1000]C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit" Expanded="true" />
-    <Node UniqueName="[0-1065]C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\bin\Debug\NUnit-tests.dll" Expanded="true" />
-    <Node UniqueName="[0-1066]NUnit_tests" Expanded="true" />
-    <Node UniqueName="[0-1067]NUnit_tests.Backends" Expanded="true" />
-    <Node UniqueName="[0-1001]NUnit_tests.Backends.Backend" Expanded="true" />
-    <Node UniqueName="[0-1044]NUnit_tests.Backends.Backend(&quot;MSSQL&quot;,&quot;Server=localhost\SQLEXPRESS;Database=test;User Id=test;Password=test;Trusted_Connection=false&quot;)" Expanded="true" Checked="true" />
-    <Node UniqueName="[0-1045]NUnit_tests.Backends.Backend.T00_EmptyDB" Checked="true" />
-    <Node UniqueName="[0-1023]NUnit_tests.Backends.Backend(&quot;PGSQL&quot;,&quot;host=localhost;Database=test;User Id=test;Password=test&quot;)" Expanded="true" Checked="true" />
-    <Node UniqueName="[0-1024]NUnit_tests.Backends.Backend.T00_EmptyDB" Checked="true" />
-    <Node UniqueName="[0-1002]NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;)" Expanded="true" Checked="true" />
-    <Node UniqueName="[0-1003]NUnit_tests.Backends.Backend.T00_EmptyDB" Checked="true" />
+    <Node UniqueName="[0-1068]C:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\bin\Debug\NUnit-tests.dll" Expanded="true" />
+    <Node UniqueName="[0-1069]NUnit_tests" Expanded="true" />
+    <Node UniqueName="[0-1070]NUnit_tests.Backends" Expanded="true" Checked="true" />
+    <Node UniqueName="[0-1001]NUnit_tests.Backends.Backend" Expanded="true" Checked="true" />
+    <Node UniqueName="[0-1002]NUnit_tests.Backends.Backend(&quot;MSSQL&quot;,&quot;Server=localhost\SQLEXPRESS;Database=test;User Id=test;Password=test;Trusted_Connection=false&quot;)" Expanded="true" Checked="true" />
+    <Node UniqueName="[0-1003]NUnit_tests.Backends.Backend.T00_AjustDateTimeTOLocal" Checked="true" />
+    <Node UniqueName="[0-1004]NUnit_tests.Backends.Backend.T00_EmptyDB" Checked="true" />
+    <Node UniqueName="[0-1024]NUnit_tests.Backends.Backend(&quot;PGSQL&quot;,&quot;host=localhost;Database=test;User Id=test;Password=test&quot;)" Expanded="true" Checked="true" />
+    <Node UniqueName="[0-1026]NUnit_tests.Backends.Backend.T00_EmptyDB" Checked="true" />
+    <Node UniqueName="[0-1046]NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;)" Expanded="true" Checked="true" />
   </Nodes>
 </VisualState>
