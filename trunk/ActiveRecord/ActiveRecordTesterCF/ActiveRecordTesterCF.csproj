@@ -85,9 +85,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\..\..\..\..\Program Files\SQLite.NET\bin\CompactFramework\SQLite.Interop.060.DLL">
-      <Link>SQLite.Interop.060.DLL</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="..\..\..\..\..\..\Program Files\SQLite.NET\bin\CompactFramework\SQLite.Interop.066.DLL">
+      <Link>SQLite.Interop.066.DLL</Link>
     </Content>
   </ItemGroup>
   <Import Condition="'$(TargetFrameworkVersion)' == 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.v1.targets" />
