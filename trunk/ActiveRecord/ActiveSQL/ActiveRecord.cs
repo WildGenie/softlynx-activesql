@@ -1105,7 +1105,8 @@ namespace Softlynx.ActiveSQL
                     r = Update(Record);
                     if (r == 0) r = Insert(Record);
                 };
-                if ((AfterRecordManagerWrite != null)  && (r>0)) AfterRecordManagerWrite(Record);
+                if ((AfterRecordManagerWrite != null)  && (r>0))  AfterRecordManagerWrite(Record);
+                if (r>0) manager.DoRecordWritten(Record);
                 t.Commit();
                 return r;
             }
@@ -1125,7 +1126,6 @@ namespace Softlynx.ActiveSQL
 
         internal virtual int Delete(object Record)
         {
-            manager.ReopenConnection(DeleteCmd);
             int res = 0;
             using (ManagerTransaction transaction = manager.BeginTransaction())
             {
@@ -1134,12 +1134,14 @@ namespace Softlynx.ActiveSQL
 
                 if (BeforeRecordManagerDelete != null) BeforeRecordManagerDelete(Record);
                 int i = 0;
+                manager.ReopenConnection(DeleteCmd);
                 foreach (InField field in primary_fields)
                 {
                     DeleteCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
                 }
                 res = DeleteCmd.ExecuteNonQuery();
                 if ((AfterRecordManagerDelete != null) && (res>0)) AfterRecordManagerDelete(Record);
+                if (res > 0) manager.DoRecordDeleted(Record);
                 transaction.Commit();
             }
             return res;
@@ -1979,7 +1981,14 @@ namespace Softlynx.ActiveSQL
                 }
                 pos++;
             }
+            try
+            {
                 m.Invoke(o, prm);
+            }
+            catch (Exception E)
+            {
+                throw E.InnerException??E;
+            }
 
                 foreach (DictionaryEntry de in backref)
                     prms[(int)de.Value]=prm[(int)de.Key];
@@ -2023,8 +2032,7 @@ namespace Softlynx.ActiveSQL
         /// <returns>Was it actualy found and readed</returns>
         public bool Read(Object Record)
         {
-            InTable table = ActiveRecordInfo(Record.GetType());
-            return table.Read(Record);
+            return ActiveRecordInfo(Record.GetType()).Read(Record);
         }
 
         /// <summary>
@@ -2045,16 +2053,19 @@ namespace Softlynx.ActiveSQL
         /// <returns>Number of write operations was made.</returns>
         public int Write(Object Record, bool IgnoreHandledStatus)
         {
-            int res = 0;
-            InTable table = ActiveRecordInfo(Record.GetType());
-            using (ManagerTransaction t = BeginTransaction())
-            {
-                res = table.Write(Record, IgnoreHandledStatus);
-                if ((OnRecordWritten != null) && (res>0))
-                     OnRecordWritten(this, Record);
-                t.Commit();
-            }
-            return res;
+            return ActiveRecordInfo(Record.GetType()).Write(Record, IgnoreHandledStatus);
+        }
+
+        internal void DoRecordWritten(object Record)
+        {
+            if (OnRecordWritten != null)
+                OnRecordWritten(this, Record);
+        }
+
+        internal void DoRecordDeleted(object Record)
+        {
+            if (OnRecordDeleted != null) 
+                OnRecordDeleted(this, Record);
         }
 
         /// <summary>
@@ -2064,15 +2075,7 @@ namespace Softlynx.ActiveSQL
         /// <returns>Number of deleted records</returns>
         public int Delete(Object Record)
         {
-            InTable table = ActiveRecordInfo(Record.GetType());
-            int res=0;
-            using (ManagerTransaction t = BeginTransaction())
-            {
-            res=table.Delete(Record);
-            if (OnRecordDeleted != null) OnRecordDeleted(this, Record);
-            t.Commit();
-            };
-            return res;
+            return ActiveRecordInfo(Record.GetType()).Delete(Record);
         }
         /// <summary>
         /// Сравнивает два объекта на равенства по полям отражаемым в ActiveRecord

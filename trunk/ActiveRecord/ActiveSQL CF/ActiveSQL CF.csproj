@@ -59,6 +59,15 @@
     <Compile Include="..\ActiveSQL\DynamicObject.cs">
       <Link>DynamicObject.cs</Link>
     </Compile>
+    <Compile Include="..\ActiveSQL\ExtentDataClass.cs">
+      <Link>ExtentDataClass.cs</Link>
+    </Compile>
+    <Compile Include="..\ActiveSQL\IDObject.cs">
+      <Link>IDObject.cs</Link>
+    </Compile>
+    <Compile Include="..\ActiveSQL\PropertySet.cs">
+      <Link>PropertySet.cs</Link>
+    </Compile>
     <Compile Include="..\ActiveSQL\RecordCache.cs">
       <Link>RecordCache.cs</Link>
     </Compile>

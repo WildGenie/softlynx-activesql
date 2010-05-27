@@ -88,7 +88,7 @@ namespace NUnit_tests
 
             public DateTime TimeStamp
             {
-                get { return GetValue<DateTime>(Prop.TimeStamp, DateTime.MinValue); }
+                get { return GetValue<DateTime>(Prop.TimeStamp, DateTime.Today); }
                 set { SetValue<DateTime>(Prop.TimeStamp, value); }
             }
 
@@ -218,12 +218,15 @@ namespace NUnit_tests
                 }
             }
 
-
             public static BasicMapping RandomValue
             {
-                get {
+                get { return GetRandomValue<BasicMapping>(); }
+            }
+
+            protected static T GetRandomValue<T>() where T:BasicMapping
+            {
                         Random r=new Random();
-                        BasicMapping _v = new BasicMapping();
+                        T _v = Activator.CreateInstance<T>();
                         _v.ID = Guid.NewGuid();
 
                         byte[] tbuf = new byte[4096];
@@ -254,9 +257,81 @@ namespace NUnit_tests
                         r.NextBytes(buf);
                         _v.BLOB = buf;
                         return _v;
-                    }
             }
         }
+
+        [InTable]
+        public class BasicExtent : ExtentDataClass
+        {
+            public new class Property
+            {
+                static public PropType Field1 = new PropType<string>("Text field");
+            }
+
+            public string Field1
+            {
+                get { return GetValue<string>(Property.Field1, string.Empty); }
+                set { SetValue<string>(Property.Field1, value); }
+            }
+
+        }
+
+        [InTable]
+        public class BasicExtent2 : ExtentDataClass
+        {
+            public new class Property
+            {
+                static public PropType Field2 = new PropType<string>("Text field 2");
+            }
+
+            public string Field2
+            {
+                get { return GetValue<string>(Property.Field2, string.Empty); }
+                set { SetValue<string>(Property.Field2, value); }
+            }
+
+        }
+        
+
+        [InTable]
+        public class SmartMapping : BasicMapping, ISmartActiveRecord
+        {
+            public new class Property
+            {
+                static public PropType Extent1 = new PropType<BasicExtent>("Extent1 data field");
+            }
+
+            public BasicExtent Extent1
+            {
+                get { return GetValue<BasicExtent>(Property.Extent1); }
+            }
+
+            public new static SmartMapping RandomValue
+            {
+                get { return GetRandomValue<SmartMapping>(); }
+            }
+        }
+
+        [InTable]
+        public class SmartMapping2 : BasicMapping, ISmartActiveRecord
+        {
+            public new class Property
+            {
+                static public PropType Extent2 = new PropType<BasicExtent2>("Extent2 data field");
+            }
+
+            public BasicExtent2 Extent2
+            {
+                get { return GetValue<BasicExtent2>(Property.Extent2); }
+            }
+
+            public new static SmartMapping2 RandomValue
+            {
+                get { return GetRandomValue<SmartMapping2>(); }
+            }
+        }
+
+
     }
     namespace Backends
     {
@@ -331,7 +406,14 @@ namespace NUnit_tests
             [Test(Description="Connects to database backend")]
             public void T01_ConnectDB()
             {
-                    RM = new RecordManager(prov, new Type[] { typeof(Models.BasicMapping),typeof(Models.AutoIncrementObj) });
+                    RM = new RecordManager(prov, new Type[] { 
+                        typeof(Models.BasicMapping),
+                        typeof(Models.AutoIncrementObj), 
+                        typeof(Models.SmartMapping),
+                        typeof(Models.SmartMapping2),
+                        typeof(Models.BasicExtent),
+                        typeof(Models.BasicExtent2),
+                    });
                     Assert.NotNull(RM);
                     Assert.IsTrue(RM.Connection.State == ConnectionState.Open);
             }
@@ -719,6 +801,54 @@ namespace NUnit_tests
 
             }
 
+            [Test(Description = "Test exception for undefined ID operations")]
+            [ExpectedException(typeof(EIDObjectWithoutIDException))]
+            public void T28_IDObjectWithoutIDException()
+            {
+                Models.BasicMapping bm = new NUnit_tests.Models.BasicMapping();
+                bm.LongText = "1245";
+                RM.Write(bm);
+            }
+
+
+            [Test(Description = "Test exception for assigned extended data class for undefined ID object")]
+            [ExpectedException(typeof(EIDObjectWithoutIDException))]
+            public void T29_IDObjectExtendWithoutIDException()
+            {
+                Models.SmartMapping sm = new NUnit_tests.Models.SmartMapping();
+                Assert.IsNotNull(sm.Extent1);
+            }
+
+
+            [Test(Description = "Handle smart object writes")]
+            public void T30_SmartObjectWrites()
+            {
+                Models.SmartMapping sm = new NUnit_tests.Models.SmartMapping();
+                Models.SmartMapping2 sm2 = new NUnit_tests.Models.SmartMapping2();
+                Assert.AreEqual(0,RM.Write(sm));
+                sm = Models.SmartMapping.RandomValue;
+                Assert.AreEqual(1,RM.Write(sm));
+                Assert.AreEqual(0,RM.Write(sm));
+                Assert.AreEqual(true,RM.Read(sm));
+                Assert.AreEqual(0,RM.Write(sm));
+                Assert.IsNotNull(sm.Extent1);
+                Assert.AreEqual(0,RM.Write(sm));
+                Assert.AreEqual(false,RM.Read(sm.Extent1));
+                sm.Extent1.Field1 = "1234";
+                Assert.AreEqual(1,sm.ChangedProperties.Length);
+                Assert.Contains(NUnit_tests.Models.SmartMapping.Property.Extent1,sm.ChangedProperties);
+                Assert.AreEqual(0,RM.Write(sm));
+                Assert.AreEqual(true,RM.Read(sm.Extent1));
+                Assert.AreEqual(1,RM.Delete(sm));
+                Assert.AreEqual(false,RM.Read(sm.Extent1));
+
+                sm2 = NUnit_tests.Models.SmartMapping2.RandomValue;
+                sm2.RecordManager = RM;
+                sm2.Extent2.Field2 = "1234";
+                Assert.AreEqual(1,RM.Write(sm2));
+                Assert.AreEqual(1,RM.Delete(sm2));
+                Assert.AreEqual(false,RM.Read(sm2.Extent2));
+            }
 
             [TestFixtureTearDown]
             public void Cleanup()
