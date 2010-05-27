@@ -38,6 +38,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActiveRecord.cs" />
+    <Compile Include="ExtentDataClass.cs" />
+    <Compile Include="IDObject.cs" />
+    <Compile Include="PropertySet.cs" />
     <Compile Include="RecordCache.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="Replication.cs" />
