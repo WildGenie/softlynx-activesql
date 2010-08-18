@@ -116,6 +116,7 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
         DateTime _LastUpdate = DateTime.Now;
+        [InField(DateKind=DateTimeKind.Utc)]
         public DateTime LastUpdate
         {
             get { return _LastUpdate; }
@@ -196,6 +197,7 @@ namespace Softlynx.ActiveSQL.Replication
         }
 
         DateTime _Created = DateTime.Now;
+        [InField(DateKind=DateTimeKind.Utc)]
         public DateTime Created
         {
             get { return _Created; }
@@ -662,7 +664,7 @@ namespace Softlynx.ActiveSQL.Replication
                     {
                         DbCommand TestConflict = Commands(Manager).ConflictReplicaCmd;
                         TestConflict.Parameters[0].Value = log.ObjectID;
-                        TestConflict.Parameters[1].Value = DateTimeFilter.ToDB(log.Created);
+                        TestConflict.Parameters[1].Value = log.Created.ToUniversalTime();
                         Manager.ReopenConnection(TestConflict);
                         log.PotentialConflict = (TestConflict.ExecuteScalar() != null);
                         if (OnApplyReplica != null)
@@ -706,7 +708,7 @@ namespace Softlynx.ActiveSQL.Replication
         /// Any request to ReplicaManager with value less than 
         /// SnapshotSeqNO will produce an SnapshotRequiredException.
         /// </summary>
-        /// <param name="RM">Soirce record manager</param>
+        /// <param name="RM">Source record manager</param>
         /// <param name="rplprov">Destination provider</param>
         /// <param name="SnapshotID">Guid identity for a new created snapshot</param>
         public void BuildSnapshot(RecordManager RM, ProviderSpecifics rplprov,Guid SnapshotID)
