@@ -19,43 +19,60 @@ namespace Softlynx.ActiveSQL
         /// </summary>
         public static DateTimeKind DBDefaultDateTimeKind=DateTimeKind.Local;
 
+        internal static object FromDB(object o)
+        {
+            return FromDB(o, DateTimeKind.Unspecified);
+        }
+
         /// <summary>
         /// Ajust input datetime object to DBDefaultDateTimeKind if its kind unspecified
         /// and return actial DateTime in Local kind
         /// </summary>
         /// <param name="o">any object</param>
         /// <returns>changed date time kind to DBDefaultDateTimeKind if unspecified and convert to Local DateTime</returns>
-        internal static object FromDB(object o)
+        internal static object FromDB(object o,DateTimeKind ForceTimeKind)
         {
             if (o is DateTime)
             {
-                if (DBDefaultDateTimeKind == DateTimeKind.Unspecified)
+                if (ForceTimeKind == DateTimeKind.Unspecified)
+                    ForceTimeKind = DBDefaultDateTimeKind;
+
+                if (ForceTimeKind == DateTimeKind.Unspecified)
                     return o;
                 DateTime dt = (DateTime)o;
                 if (dt.Kind == DateTimeKind.Unspecified)
-                    dt = DateTime.SpecifyKind(dt, DBDefaultDateTimeKind);
+                    dt = DateTime.SpecifyKind(dt, ForceTimeKind);
                 return dt.ToLocalTime();
             }
             else
                 return o;
         }
-        
+
+        internal static object ToDB(object o)
+        {
+            return ToDB(o, DateTimeKind.Unspecified);
+        }
+
         /// <summary>
         /// Ajust DateTime value to DBDefaultDateTimeKind passed to DB backend
         /// </summary>
         /// <param name="o">any object</param>
         /// <returns>Ajust date time kind to be DBDefaultDateTimeKind</returns>
-        internal static object ToDB(object o)
+        internal static object ToDB(object o,DateTimeKind ForceTimeKind)
         {
             if (o is DateTime)
             {
-                if (DBDefaultDateTimeKind == DateTimeKind.Unspecified)
+                if (ForceTimeKind == DateTimeKind.Unspecified)
+                    ForceTimeKind = DBDefaultDateTimeKind;
+
+
+                if (ForceTimeKind == DateTimeKind.Unspecified)
                     return o;
 
                 DateTime dt = (DateTime)o;
-                if (dt.Kind != DBDefaultDateTimeKind)
+                if (dt.Kind != ForceTimeKind)
                 {
-                    if (DBDefaultDateTimeKind == DateTimeKind.Local)
+                    if (ForceTimeKind == DateTimeKind.Local)
                         return dt.ToLocalTime();
                     else
                         return dt.ToUniversalTime();
@@ -641,6 +658,7 @@ namespace Softlynx.ActiveSQL
         internal PropertyInfo _prop = null;
 
         private DbType? _DBType=null;
+        private DateTimeKind _DateKind = DateTimeKind.Unspecified;
 
         public bool Indexed
         {
@@ -650,6 +668,12 @@ namespace Softlynx.ActiveSQL
         public bool Autoincrement
         {
             get { return IsAutoincrement; }
+        }
+
+        public DateTimeKind DateKind
+        {
+            get { return _DateKind; }
+            set { _DateKind=value; }
         }
 
         public bool DBTypeDefined
@@ -733,7 +757,7 @@ namespace Softlynx.ActiveSQL
         internal object PrepareValueType(object v)
         {
             if (v == null) return v;
-            v = DateTimeFilter.FromDB(v);
+            v = DateTimeFilter.FromDB(v,DateKind);
             if (prop.PropertyType.IsInstanceOfType(v)) return v;
             if (prop.PropertyType.IsEnum) 
                 return Enum.ToObject(prop.PropertyType,v);
@@ -1068,7 +1092,7 @@ namespace Softlynx.ActiveSQL
                 InField field = Field(prm.ParameterName);
                 if (field != null)
                 {
-                    prm.Value = DateTimeFilter.ToDB(field.prop.GetValue(Record, null));
+                    prm.Value = DateTimeFilter.ToDB(field.prop.GetValue(Record, null),field.DateKind);
                 }
             }
             return UpdateCmd.ExecuteNonQuery();
@@ -1083,7 +1107,7 @@ namespace Softlynx.ActiveSQL
                 InField field = Field(prm.ParameterName);
                 if (field != null)
                 {
-                    prm.Value = DateTimeFilter.ToDB(field.prop.GetValue(Record, null));
+                    prm.Value = DateTimeFilter.ToDB(field.prop.GetValue(Record, null),field.DateKind);
                 }
             }
 
