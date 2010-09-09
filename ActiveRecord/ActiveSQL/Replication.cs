@@ -694,6 +694,18 @@ namespace Softlynx.ActiveSQL.Replication
             BuildSnapshot(RM, rplprov, Guid.NewGuid());
         }
 
+        public void BuildSnapshot(RecordManager RM, ProviderSpecifics rplprov, Guid SnapshotID)
+        {
+            BuildSnapshot(RM, rplprov, SnapshotID,null);
+        }
+
+        /// <summary>
+        /// Check an object is let to snapshot include
+        /// </summary>
+        /// <param name="o"></param>
+        /// <returns></returns>
+        public delegate bool SnapshotIncludePredicate(Object o);
+
         /// <summary>
         /// Creates a snapshot for source record manager
         /// and writes all replicated objects into destination provider.
@@ -711,8 +723,12 @@ namespace Softlynx.ActiveSQL.Replication
         /// <param name="RM">Source record manager</param>
         /// <param name="rplprov">Destination provider</param>
         /// <param name="SnapshotID">Guid identity for a new created snapshot</param>
-        public void BuildSnapshot(RecordManager RM, ProviderSpecifics rplprov,Guid SnapshotID)
+        /// <param name="CheckInclude">Test function returns true for an object to pass into the generated snapshot</param>
+        public void BuildSnapshot(RecordManager RM, ProviderSpecifics rplprov, Guid SnapshotID, SnapshotIncludePredicate CheckInclude)
         {
+            if (CheckInclude == null)
+                CheckInclude = new SnapshotIncludePredicate(delegate { return true; });
+
             List<Type> dsttypes = new List<Type>();
             foreach (InTable t in RM.RegisteredTypes)
                 if (t.with_replica) dsttypes.Add(t.basetype);
@@ -762,7 +778,8 @@ namespace Softlynx.ActiveSQL.Replication
                         {
                             foreach (Type t in dsttypes)
                                 foreach (Object o in RecordIterator.Enum(t, RM))
-                                    snapshot.Write(o,true);
+                                    if (CheckInclude(o))
+                                        snapshot.Write(o,true);
                             DeleteLogOperations(RM, maxfoundseqno);
                             trans.Commit();
                         }
