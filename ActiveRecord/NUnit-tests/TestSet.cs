@@ -48,6 +48,32 @@ namespace NUnit_tests
 
         }
 
+        [InTable]
+        [TableVersion(1, ColumnAction.ChangeType, "AlteredField")]
+        [TableVersion(2, ColumnAction.Insert, "NewField")]
+        public class AlteredMappings : IDObject
+        {
+            [InField(Size = 64)]
+            public string AlteredField
+            {
+                get
+                {
+                    //return 0; 
+                    return string.Empty;
+                }
+                set { }
+            }
+
+            public string NewField
+            {
+                get
+                {
+                    return string.Empty;
+                }
+                set { }
+            }
+
+        }
 
         [InTable]
         [WithReplica]
@@ -127,7 +153,7 @@ namespace NUnit_tests
                 get { return GetValue<Int64>(Prop.Number64, Int64.MinValue); }
                 set { SetValue<Int64>(Prop.Number64, value); }
             }
-
+            
             [RecordManagerPostRegistration]
             public static void CheckPostAction(RecordManager manager)
             {
@@ -413,6 +439,7 @@ namespace NUnit_tests
                         typeof(Models.SmartMapping2),
                         typeof(Models.BasicExtent),
                         typeof(Models.BasicExtent2),
+                        typeof(Models.AlteredMappings)
                     });
                     Assert.NotNull(RM);
                     Assert.IsTrue(RM.Connection.State == ConnectionState.Open);
