@@ -174,5 +174,40 @@ namespace Softlynx.ActiveSQL.MSSQL
             Connection.ConnectionString = sb.ConnectionString;
         }
 
+        /// <summary>
+        /// Generate SQL code to alter table
+        /// </summary>
+        /// <param name="table">Table object</param>
+        /// <param name="columnAction">Alteration kind</param>
+        /// <param name="field">Field object</param>
+        /// <returns>SQL code</returns>
+        public override string AlterTableColumnSQL(InTable table, ColumnAction columnAction, InField field)
+        {
+
+            string code = "ALTER TABLE " + AsFieldName(table.Name);
+            switch (columnAction)
+            {
+                case ColumnAction.Remove:
+                    code += " DROP COLUMN " + AsFieldName(field.Name) + ";";
+                    break;
+
+                case ColumnAction.Recreate:
+                    code += " DROP COLUMN " + AsFieldName(field.Name);
+                    code += ", ";
+                    code += " ADD COLUMN " + AsFieldName(field.Name) + " " + GetSqlType(field) + ";"; break;
+
+                case ColumnAction.Insert:
+                    code += " ADD " + AsFieldName(field.Name) + " " + GetSqlType(field) + ";"; 
+                    break;
+
+                case ColumnAction.ChangeType:
+                    code += " ALTER COLUMN " + AsFieldName(field.Name) + " " + GetSqlType(field) + ";";
+                    break;
+
+                default: code = null;
+                    break;
+            }
+            return code;
+        }
     }
 }

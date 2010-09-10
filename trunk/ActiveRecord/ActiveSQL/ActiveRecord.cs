@@ -420,6 +420,21 @@ namespace Softlynx.ActiveSQL
         }
 
 
+        /// <summary>
+        /// Generate SQL code to alter table
+        /// </summary>
+        /// <param name="table">Table object</param>
+        /// <param name="columnAction">Alteration kind</param>
+        /// <param name="field">Field object</param>
+        /// <returns>SQL code</returns>
+        public virtual string AlterTableColumnSQL(InTable table, ColumnAction columnAction, InField field)
+        {
+            throw new NotSupportedException(
+                "Can't alter table "+table.Name
+                +" with action "+columnAction.ToString()
+                +" on column "+field.Name);
+        }
+
         public virtual DbType GetDbType(Type t)
         {
             object[] o = (object[])TypeMappings[t];
@@ -1187,6 +1202,8 @@ namespace Softlynx.ActiveSQL
                     TableVersionAsyncChanged(version);
                 }));
         }
+
+       
     }
 
     public class InVirtualTable : InTable
@@ -1905,30 +1922,18 @@ namespace Softlynx.ActiveSQL
                                         InField colf = table.Field(update.ColumnName);
                                         if ((colf == null) && (update.ColumnAction != ColumnAction.Remove))
                                             throw new ApplicationException("Update reference not existing column " + update.ColumnName);
-                                        string code = "ALTER TABLE " + AsFieldName(table.Name);
-                                        switch (update.ColumnAction)
-                                        {
-                                            case ColumnAction.Remove:
-                                                code += " DROP COLUMN " + AsFieldName(update.ColumnName);
-                                                break;
+                                        
+                                        InField AlteredField=colf;
+                                        if (AlteredField==null) {
+                                            AlteredField=new InField();
+                                            AlteredField.Name = update.ColumnName;
+                                            };
 
-                                            case ColumnAction.Recreate:
-                                                code += " DROP COLUMN " + AsFieldName(colf.Name);
-                                                code += ", ";
-                                                code += " ADD COLUMN " + AsFieldName(colf.Name) + SqlType(colf);
-                                                break;
+                                            string code = specifics.AlterTableColumnSQL(
+                                                table, 
+                                                update.ColumnAction,
+                                                AlteredField);
 
-                                            case ColumnAction.Insert:
-                                                code += " ADD COLUMN " + AsFieldName(colf.Name) + SqlType(colf);
-                                                break;
-
-                                            case ColumnAction.ChangeType:
-                                                code += " ALTER COLUMN " + AsFieldName(colf.Name) + " TYPE " + SqlType(colf);
-                                                break;
-
-                                            default: code = null;
-                                                break;
-                                        }
                                         if (code != null)
                                         {
                                             string s = update.SQLCode;

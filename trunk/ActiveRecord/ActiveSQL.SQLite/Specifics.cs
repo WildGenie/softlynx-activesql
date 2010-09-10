@@ -79,5 +79,36 @@ namespace Softlynx.ActiveSQL.SQLite
             Connection.ConnectionString = s;
         }
 
+        /// <summary>
+        /// Generate SQL code to alter table
+        /// </summary>
+        /// <param name="table">Table object</param>
+        /// <param name="columnAction">Alteration kind</param>
+        /// <param name="field">Field object</param>
+        /// <returns>SQL code</returns>
+        public override string AlterTableColumnSQL(InTable table, ColumnAction columnAction, InField field)
+        {
+            string code = "ALTER TABLE " + AsFieldName(table.Name);
+            switch (columnAction)
+            {
+                case ColumnAction.Remove:
+                    return base.AlterTableColumnSQL(table, columnAction, field);
+
+                case ColumnAction.Recreate:
+                    return base.AlterTableColumnSQL(table, columnAction, field); 
+
+                case ColumnAction.Insert:
+                    code += " ADD COLUMN " + AsFieldName(field.Name) + GetSqlType(field);
+                    break;
+
+                case ColumnAction.ChangeType:
+                    code = null;
+                    break;
+
+                default: code = null;
+                    break;
+            }
+            return code;
+        }
     }
 }
