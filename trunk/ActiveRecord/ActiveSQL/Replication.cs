@@ -671,7 +671,7 @@ namespace Softlynx.ActiveSQL.Replication
                             OnApplyReplica(log, Manager);
                         if (log.PotentialConflict) return 0;
                         int r=(log.ObjectOperation == ReplicaLog.Operation.Delete)
-                            ? Manager.Delete(log.Instance)
+                            ? Manager.Delete(log.Instance, true)
                             : Manager.Write(log.Instance, true);
                         if (OnReplicaApplied != null)
                             OnReplicaApplied(log, Manager);

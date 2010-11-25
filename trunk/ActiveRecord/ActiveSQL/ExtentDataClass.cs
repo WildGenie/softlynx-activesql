@@ -115,7 +115,7 @@ namespace Softlynx.ActiveSQL
                     {
                         if (reader.IsDBNull(0)) continue;
                         (o as IIDObject).ID = reader.GetGuid(0);
-                        table.Delete(o);
+                        table.Delete(o,false);
                     }
                 }
             }

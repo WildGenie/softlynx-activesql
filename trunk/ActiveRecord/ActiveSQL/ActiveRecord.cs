@@ -784,7 +784,7 @@ namespace Softlynx.ActiveSQL
     #endregion
     
     public delegate void RecordManagerEvent(object o);
-    public delegate void RecordManagerWriteEvent(object o, ref bool Handled);
+    public delegate void RecordManagerInterruptableEvent(object o, ref bool Handled);
     public delegate void RecordSetEvent(object o, object recordset);
 
 
@@ -841,9 +841,9 @@ namespace Softlynx.ActiveSQL
         internal InField[] primary_fields;
         internal Type basetype = default(Type);
         internal Hashtable foreign_keys = new Hashtable();
-        public event RecordManagerEvent BeforeRecordManagerDelete = null;
+        public event RecordManagerInterruptableEvent BeforeRecordManagerDelete = null;
         public event RecordManagerEvent AfterRecordManagerDelete = null;
-        public event RecordManagerWriteEvent BeforeRecordManagerWrite = null;
+        public event RecordManagerInterruptableEvent BeforeRecordManagerWrite = null;
         public event RecordManagerEvent AfterRecordManagerWrite = null;
         public event RecordManagerEvent AfterRecordManagerRead = null;
         public event RecordManagerEvent RecordManagerPostRegistration = null;
@@ -1162,23 +1162,28 @@ namespace Softlynx.ActiveSQL
             if (RecordSetRemove!=null)
                 RecordSetRemove(o, RecordSet);
         }
-
-        internal virtual int Delete(object Record)
+        
+        internal virtual int Delete(object Record, bool IgnoreHandledStatus)
         {
             int res = 0;
+            bool delete_handled = false;
             using (ManagerTransaction transaction = manager.BeginTransaction())
             {
                 if (Record is IRecordManagerDriven)
                     (Record as IRecordManagerDriven).RecordManager = manager;
 
-                if (BeforeRecordManagerDelete != null) BeforeRecordManagerDelete(Record);
-                int i = 0;
-                manager.ReopenConnection(DeleteCmd);
-                foreach (InField field in primary_fields)
+                if (BeforeRecordManagerDelete != null) BeforeRecordManagerDelete(Record, ref delete_handled);
+                if (!delete_handled || IgnoreHandledStatus)
                 {
-                    DeleteCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
+
+                    int i = 0;
+                    manager.ReopenConnection(DeleteCmd);
+                    foreach (InField field in primary_fields)
+                    {
+                        DeleteCmd.Parameters[i++].Value = field.prop.GetValue(Record, null);
+                    }
+                    res = DeleteCmd.ExecuteNonQuery();
                 }
-                res = DeleteCmd.ExecuteNonQuery();
                 if ((AfterRecordManagerDelete != null) && (res>0)) AfterRecordManagerDelete(Record);
                 if (res > 0) manager.DoRecordDeleted(Record);
                 transaction.Commit();
@@ -1219,7 +1224,7 @@ namespace Softlynx.ActiveSQL
             return false;
         }
 
-        internal override int Delete(object Record)
+        internal override int Delete(object Record, bool IgnoreHandledStatus)
         {
             return 0;
         }
@@ -1750,7 +1755,11 @@ namespace Softlynx.ActiveSQL
                         if ((mattr.GetType() == typeof(BeforeRecordManagerDelete)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.BeforeRecordManagerDelete += new RecordManagerEvent(delegate(object o) { CallMethod(m, o); });
+                            table.BeforeRecordManagerDelete += new RecordManagerInterruptableEvent(delegate(object o, ref bool handled) {
+                                object[] prm = new object[] { handled };
+                                CallMethod(m, o, prm);
+                                handled = (bool)prm[0];
+                            });
                         }
 
                         if ((mattr.GetType() == typeof(AfterRecordManagerDelete)) && (!method.IsStatic))
@@ -1762,7 +1771,7 @@ namespace Softlynx.ActiveSQL
                         if ((mattr.GetType() == typeof(BeforeRecordManagerWrite)) && (!method.IsStatic))
                         {
                             MethodInfo m = method;
-                            table.BeforeRecordManagerWrite += new RecordManagerWriteEvent(delegate(object o, ref bool handled)
+                            table.BeforeRecordManagerWrite += new RecordManagerInterruptableEvent(delegate(object o, ref bool handled)
                             {
                                 object[] prm = new object[] { handled };
                                 CallMethod(m, o,  prm);
@@ -2104,7 +2113,18 @@ namespace Softlynx.ActiveSQL
         /// <returns>Number of deleted records</returns>
         public int Delete(Object Record)
         {
-            return ActiveRecordInfo(Record.GetType()).Delete(Record);
+            return Delete(Record, false);
+        }
+
+        /// <summary>
+        /// Deletes the object form database
+        /// </summary>
+        /// <param name="Record">ActiveRecord object instance</param>
+        /// <param name="IgnoreHandledStatus">Instructs the kernel to ignore the object information about it's delete requirement state in force delete it any way</param>
+        /// <returns>Number of deleted records</returns>
+        public int Delete(Object Record, bool IgnoreHandledStatus)
+        {
+            return ActiveRecordInfo(Record.GetType()).Delete(Record,IgnoreHandledStatus);
         }
         /// <summary>
         /// Сравнивает два объекта на равенства по полям отражаемым в ActiveRecord
