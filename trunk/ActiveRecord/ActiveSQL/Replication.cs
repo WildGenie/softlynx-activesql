@@ -448,8 +448,19 @@ namespace Softlynx.ActiveSQL.Replication
 
 
         public Hashtable ExcludeAuthor = new Hashtable();
-        public byte[] BuildReplicaBuffer(RecordManager Manager,ref long lastknownid)
+
+        public delegate bool ReplicaIncludePredicate(RecordManager Manager, ReplicaManager Replicator, ReplicaLog Log);
+        //public delegate ReplicaIncludePredicate bool Log
+
+        public byte[] BuildReplicaBuffer(RecordManager Manager, ref long lastknownid)
         {
+            return BuildReplicaBuffer(Manager, ref lastknownid, null);
+        }
+
+
+        public byte[] BuildReplicaBuffer(RecordManager Manager,ref long lastknownid, ReplicaIncludePredicate predicate )
+        {
+            
             if (lastknownid < SnapshotSeqNO(Manager))
                 throw new SnapshotRequiredException("Fresh snapshot required to proceed");
             long logcnt = 0;
@@ -461,6 +472,7 @@ namespace Softlynx.ActiveSQL.Replication
                 Where.EQ("Actual",true)))
             {
                 lastknownid = l.SeqNO;
+                if ((predicate!=null) && (!predicate(Manager,this,l))) continue;
                 if (!ExcludeAuthor.ContainsKey(l.AutorID))
                 {
                     logserializer.Serialize(xw,l,serializer_ns);
