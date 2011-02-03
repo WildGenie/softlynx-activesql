@@ -234,7 +234,7 @@ namespace Softlynx.ActiveSQL
                 return XmlConvert.ToString((Guid)o);
 
             if (ot == typeof(DateTime))
-                return XmlConvert.ToString((DateTime)o, XmlDateTimeSerializationMode.Local);
+                return XmlConvert.ToString((DateTime)o, XmlDateTimeSerializationMode.Unspecified);
 
             if (ot == typeof(bool))
                 return XmlConvert.ToString((bool)o);
@@ -303,7 +303,7 @@ namespace Softlynx.ActiveSQL
                 return XmlConvert.ToGuid(v);
 
             if (t == typeof(DateTime))
-                return XmlConvert.ToDateTime(v,XmlDateTimeSerializationMode.Local);
+                return XmlConvert.ToDateTime(v,XmlDateTimeSerializationMode.Unspecified);
 
             if (t == typeof(byte[]))
             {
