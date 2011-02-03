@@ -744,12 +744,13 @@ namespace Softlynx.ActiveSQL
 
         internal string GetValue(object obj)
         {
-            return ValueFormatter.Serialize(prop.GetValue(obj, null));
+            return ValueFormatter.Serialize(DateTimeFilter.ToDB(prop.GetValue(obj, null),DateKind));
         }
 
         internal void SetValue(object obj,string v)
         {
             object ov=ValueFormatter.Deserialize(field_type,v);
+            ov = DateTimeFilter.FromDB(ov, DateKind);
             prop.SetValue(obj, ov, null);
         }
         

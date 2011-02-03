@@ -1,67 +1,58 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!--This file represents the results of running a test suite-->
-<test-results name="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit" total="25" errors="0" failures="0" not-run="0" inconclusive="1" ignored="0" skipped="0" invalid="0" date="2010-11-26" time="00:40:38">
-  <environment nunit-version="2.5.8.10295" clr-version="2.0.50727.3615" os-version="Microsoft Windows NT 5.1.2600 Service Pack 3" platform="Win32NT" cwd="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests" machine-name="VOLKOVAV" user="kot" user-domain="VOLKOVAV" />
+<test-results name="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit" total="24" errors="0" failures="0" not-run="0" inconclusive="1" ignored="0" skipped="0" invalid="0" date="2011-02-03" time="05:03:59">
+  <environment nunit-version="2.5.8.10295" clr-version="2.0.50727.3615" os-version="Microsoft Windows NT 5.1.2600 Service Pack 3" platform="Win32NT" cwd="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests" machine-name="DEVELOPMENT" user="developer" user-domain="DEVELOPMENT" />
   <culture-info current-culture="ru-RU" current-uiculture="ru-RU" />
-  <test-suite type="Project" name="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit" executed="True" result="Success" success="True" time="3.594" asserts="0">
+  <test-suite type="Project" name="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\activesql.nunit" executed="True" result="Success" success="True" time="3.766" asserts="0">
     <results>
-      <test-suite type="Assembly" name="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\bin\Debug\NUnit-tests.dll" executed="True" result="Success" success="True" time="3.563" asserts="0">
+      <test-suite type="Assembly" name="D:\WORKS\SoftLynx\google\trunk\ActiveRecord\NUnit-tests\bin\Debug\NUnit-tests.dll" executed="True" result="Success" success="True" time="3.750" asserts="0">
         <results>
-          <test-suite type="Namespace" name="NUnit_tests" executed="True" result="Success" success="True" time="3.563" asserts="0">
+          <test-suite type="Namespace" name="NUnit_tests" executed="True" result="Success" success="True" time="3.734" asserts="0">
             <results>
-              <test-suite type="Namespace" name="Backends" executed="True" result="Success" success="True" time="3.547" asserts="0">
+              <test-suite type="Namespace" name="Backends" executed="True" result="Success" success="True" time="3.734" asserts="0">
                 <results>
-                  <test-suite type="ParameterizedFixture" name="Backend" executed="True" result="Success" success="True" time="3.547" asserts="0">
+                  <test-suite type="ParameterizedFixture" name="Backend" executed="True" result="Success" success="True" time="3.734" asserts="0">
                     <results>
-                      <test-suite type="TestFixture" name="Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;)" executed="True" result="Success" success="True" time="3.547" asserts="1">
+                      <test-suite type="TestFixture" name="Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;)" executed="True" result="Success" success="True" time="3.734" asserts="1">
                         <results>
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T00_AjustDateTimeTOLocal" description="Rest database to empty initial state" executed="True" result="Success" success="True" time="0.000" asserts="0" />
                           <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T00_EmptyDB" description="Rest database to empty initial state" executed="True" result="Success" success="True" time="0.000" asserts="0" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T01_ConnectDB" description="Connects to database backend" executed="True" result="Success" success="True" time="0.219" asserts="2" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T02_WriteObjects" description="Write heap of objects to database" executed="True" result="Success" success="True" time="0.078" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T01_ConnectDB" description="Connects to database backend" executed="True" result="Success" success="True" time="0.141" asserts="2" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T02_WriteObjects" description="Write heap of objects to database" executed="True" result="Success" success="True" time="0.156" asserts="1" />
                           <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T03_TransactionRollBack" description="Test transaction rollback properly" executed="True" result="Success" success="True" time="0.016" asserts="1" />
                           <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T04_ReadObject" description="Read object back from DB" executed="True" result="Success" success="True" time="0.000" asserts="1" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T05_NestedEnumerator" description="Test nested select queries in separate connections" executed="True" result="Success" success="True" time="0.141" asserts="0">
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T05_NestedEnumerator" description="Test nested select queries in separate connections" executed="True" result="Success" success="True" time="0.250" asserts="0">
                             <properties>
                               <property name="Timeout" value="10000" />
                             </properties>
                           </test-case>
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T06_TransactionalNestedEnumerator" description="Test nested select queries in separate connections" executed="True" result="Success" success="True" time="0.125" asserts="0">
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T06_TransactionalNestedEnumerator" description="Test nested select queries in separate connections" executed="True" result="Success" success="True" time="0.219" asserts="0">
                             <properties>
                               <property name="Timeout" value="10000" />
                             </properties>
                           </test-case>
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T07_WhereCondition" description="Select an object with where expression from DB" executed="True" result="Success" success="True" time="0.016" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T07_WhereCondition" description="Select an object with where expression from DB" executed="True" result="Success" success="True" time="0.000" asserts="1" />
                           <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T08_WhereLikeCondition" description="Select an object with where LIKE expression from DB" executed="True" result="Success" success="True" time="0.000" asserts="1" />
                           <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T09_WhereLikeCaseInsensitive" description="Test is LIKE is case insensitive" executed="True" result="Success" success="True" time="0.000" asserts="1" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T10_WhereILikeCondition" description="Select an object with where ILIKE expression from DB" executed="True" result="Inconclusive" success="False" time="0.063" asserts="0">
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T10_WhereILikeCondition" description="Select an object with where ILIKE expression from DB" executed="True" result="Inconclusive" success="False" time="0.094" asserts="0">
                             <reason>
                               <message><![CDATA[SQLITE does not have ILIKE statement]]></message>
                             </reason>
                           </test-case>
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T11_Serialization" description="Measure serialization speed" executed="True" result="Success" success="True" time="0.406" asserts="1000" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T12_AutoIncrement" description="Autoincrement facility" executed="True" result="Success" success="True" time="0.031" asserts="2" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T13_OrderByText" description="Select query with order by text field" executed="True" result="Success" success="True" time="0.125" asserts="0" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T14_WhereTextField" description="Select query with where text field" executed="True" result="Success" success="True" time="0.000" asserts="1" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T15_SelectLimit" description="Limited result set statement" executed="True" result="Success" success="True" time="0.016" asserts="1" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T16_NumberHandling" description="Handle decimal numbers" executed="True" result="Success" success="True" time="0.063" asserts="4" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T11_Serialization" description="Measure serialization speed" executed="True" result="Success" success="True" time="0.922" asserts="1000" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T12_AutoIncrement" description="Autoincrement facility" executed="True" result="Success" success="True" time="0.016" asserts="2" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T13_OrderByText" description="Select query with order by text field" executed="True" result="Success" success="True" time="0.078" asserts="0" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T14_WhereTextField" description="Select query with where text field" executed="True" result="Success" success="True" time="0.016" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T15_SelectLimit" description="Limited result set statement" executed="True" result="Success" success="True" time="0.000" asserts="1" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T16_NumberHandling" description="Handle decimal numbers" executed="True" result="Success" success="True" time="0.016" asserts="4" />
                           <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T17_DateHandling" description="Handle DateTime values" executed="True" result="Success" success="True" time="0.016" asserts="2" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T20_ReplicationHandling" description="Handle replication with SQLITE" executed="True" result="Success" success="True" time="1.781" asserts="300" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T21_DateTimeTZ" description="Handle timezones" executed="True" result="Success" success="True" time="0.109" asserts="2" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T28_IDObjectWithoutIDException" description="Test exception for undefined ID operations" executed="True" result="Success" success="True" time="0.141" asserts="0" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T29_IDObjectExtendWithoutIDException" description="Test exception for assigned extended data class for undefined ID object" executed="True" result="Success" success="True" time="0.063" asserts="0" />
-                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T30_SmartObjectWrites" description="Handle smart object writes" executed="True" result="Success" success="True" time="0.109" asserts="17" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T20_ReplicationHandling" description="Handle replication with SQLITE" executed="True" result="Success" success="True" time="1.500" asserts="300" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T21_DateTimeTZ" description="Handle timezones" executed="True" result="Success" success="True" time="0.047" asserts="2" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T28_IDObjectWithoutIDException" description="Test exception for undefined ID operations" executed="True" result="Success" success="True" time="0.109" asserts="0" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T29_IDObjectExtendWithoutIDException" description="Test exception for assigned extended data class for undefined ID object" executed="True" result="Success" success="True" time="0.047" asserts="0" />
+                          <test-case name="NUnit_tests.Backends.Backend(&quot;SQLITE&quot;,&quot;Data Source = c:\temp\test.db3;BinaryGUID=FALSE;&quot;).T30_SmartObjectWrites" description="Handle smart object writes" executed="True" result="Success" success="True" time="0.047" asserts="17" />
                         </results>
                       </test-suite>
-                    </results>
-                  </test-suite>
-                </results>
-              </test-suite>
-              <test-suite type="Namespace" name="FrameWorkClasses" executed="True" result="Success" success="True" time="0.016" asserts="0">
-                <results>
-                  <test-suite type="TestFixture" name="Helpers" executed="True" result="Success" success="True" time="0.000" asserts="0">
-                    <results>
-                      <test-case name="NUnit_tests.FrameWorkClasses.Helpers.T00_PropertySetSimpleChanges" description="Check PropertySet simple property changes logic" executed="True" result="Success" success="True" time="0.000" asserts="8" />
-                      <test-case name="NUnit_tests.FrameWorkClasses.Helpers.T10_PropertySetSimpleChanges" description="Check PropertySet sub properties changes tracing" executed="True" result="Success" success="True" time="0.000" asserts="3" />
                     </results>
                   </test-suite>
                 </results>

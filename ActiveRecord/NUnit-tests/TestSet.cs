@@ -83,6 +83,8 @@ namespace NUnit_tests
                 static public PropType Text=new PropType<string>("Text field");
                 static public PropType LongText = new PropType<string>("Long text field");
                 static public PropType TimeStamp = new PropType<DateTime>("DateTime field");
+                static public PropType TimeStampLocal = new PropType<DateTime>("DateTime field");
+                static public PropType TimeStampUTC = new PropType<DateTime>("DateTime field");
                 static public PropType TimePiece = new PropType<TimeSpan>("TimeSpan field");
                 static public PropType Symbol = new PropType<char>("char field");
                 static public PropType NumberByte = new PropType<byte>("byte field");
@@ -116,6 +118,20 @@ namespace NUnit_tests
             {
                 get { return GetValue<DateTime>(Prop.TimeStamp, DateTime.Today); }
                 set { SetValue<DateTime>(Prop.TimeStamp, value); }
+            }
+
+            [InField(DateKind = DateTimeKind.Local)]
+            public DateTime TimeStampLocal
+            {
+                get { return GetValue<DateTime>(Prop.TimeStampLocal, DateTime.Today); }
+                set { SetValue<DateTime>(Prop.TimeStampLocal, value); }
+            }
+
+            [InField(DateKind=DateTimeKind.Utc)]
+            public DateTime TimeStampUTC
+            {
+                get { return GetValue<DateTime>(Prop.TimeStampUTC, DateTime.Today); }
+                set { SetValue<DateTime>(Prop.TimeStampUTC, value); }
             }
 
             public char Symbol
@@ -263,6 +279,8 @@ namespace NUnit_tests
                         _v.Symbol = _v.Text[r.Next(0, _v.Text.Length - 1)];
                         //_v.TimeStamp = DateTime.Today.AddMilliseconds((double)decimal.Round((decimal)DateTime.Now.TimeOfDay.TotalMilliseconds,0));
                         _v.TimeStamp = DateTime.Today.AddSeconds((double)decimal.Round((decimal)DateTime.Now.TimeOfDay.TotalSeconds,0));
+                        _v.TimeStampLocal = _v.TimeStamp;
+                        _v.TimeStampUTC = _v.TimeStamp;
                         
                         
                         //_v.TimeStamp.Millisecond = _v.TimeStamp.Millisecond % 100;
