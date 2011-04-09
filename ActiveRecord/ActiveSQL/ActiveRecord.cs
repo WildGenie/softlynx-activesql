@@ -1326,6 +1326,17 @@ namespace Softlynx.ActiveSQL
 
     public class RecordManager:IDisposable
     {
+        
+        /// <summary>
+        /// Framework wide DBCommand.CommandTimeout
+        /// </summary>
+        public static int? DefaultCommandTimeout = null;
+
+        /// <summary>
+        /// RecordManager instance default DBCommand.CommandTimeout 
+        /// </summary>
+        public int? CommandTimeout = DefaultCommandTimeout;
+
         /// <summary>
         /// Event handler called on RecordManager instance disposed
         /// </summary>
@@ -1593,6 +1604,7 @@ namespace Softlynx.ActiveSQL
             DbConnection conn = pooled ?  PooledConnection :  Connection;
             
             DbCommand cmd = conn.CreateCommand();
+            if (CommandTimeout.HasValue) cmd.CommandTimeout = CommandTimeout.Value;
             ReopenConnection(cmd);
 
             cmd.CommandText = command;

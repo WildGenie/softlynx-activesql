@@ -408,6 +408,7 @@ namespace NUnit_tests
             [TestFixtureSetUp]
             public void InitTest()
             {
+                Softlynx.ActiveSQL.RecordManager.DefaultCommandTimeout = 1;
                 Softlynx.ActiveSQL.DateTimeFilter.DBDefaultDateTimeKind = DateTimeKind.Utc;
             }
 
@@ -776,6 +777,7 @@ namespace NUnit_tests
                                     Models.BasicMapping n = new Models.BasicMapping();
                                     n.ID = o.ID;
                                     Assert.IsTrue(RM.Read(n));
+                                    Assert.AreEqual(o,n);
                                 }
                                 t.Commit();
                             }
