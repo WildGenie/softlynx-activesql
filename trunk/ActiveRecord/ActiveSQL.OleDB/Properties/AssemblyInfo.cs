@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
 [assembly: AssemblyProduct("Softlynx.ActiveSQL.OleDB")]
-[assembly: AssemblyCopyright("Copyright © SoftLynx 2009")]
+[assembly: AssemblyCopyright("Copyright © SoftLynx 2011")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 // Setting ComVisible to false makes the types in this assembly not visible 
@@ -30,5 +30,5 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("1.3.163.0")]
-[assembly: AssemblyFileVersion("1.3.163.0")]
+[assembly: AssemblyVersion("1.3.165.0")]
+[assembly: AssemblyFileVersion("1.3.165.0")]
