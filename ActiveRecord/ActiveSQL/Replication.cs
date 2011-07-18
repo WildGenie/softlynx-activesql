@@ -469,7 +469,8 @@ namespace Softlynx.ActiveSQL.Replication
             xw.WriteStartElement("ReplicaBuffer");
             foreach (ReplicaLog l in RecordIterator.Enum<ReplicaLog>(Manager,
                 Where.GT("SeqNO",lastknownid),
-                Where.EQ("Actual",true)))
+                Where.EQ("Actual",true),
+                Where.OrderBy("SeqNO",OrderBy.Ascendant)))
             {
                 lastknownid = l.SeqNO;
                 if ((predicate!=null) && (!predicate(Manager,this,l))) continue;
