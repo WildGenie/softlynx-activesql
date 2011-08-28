@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BSDiffTools", "BSDiffTools\BSDiffTools.vcproj", "{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BSDiffTest", "BSDiffTest\BSDiffTest.csproj", "{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Debug|Win32.Build.0 = Debug|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Release|Any CPU.ActiveCfg = Release|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Release|Win32.ActiveCfg = Release|Win32
+		{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}.Release|Win32.Build.0 = Release|Win32
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Win32.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
