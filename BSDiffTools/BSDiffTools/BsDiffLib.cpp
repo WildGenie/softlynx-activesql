@@ -71,6 +71,8 @@ char * charstr(System::String^ s)
 extern int bsdiff(wchar_t *argv[]);
 extern int bspatch(wchar_t *argv[]);
 
+namespace Softlynx 
+{
 namespace BSDiffTools
 {
 
@@ -84,8 +86,6 @@ static  void Create(System::String^ oldfile,System::String^ newfile, System::Str
 	wchar_t * _patchfile=wcharstr(patchfile);
 	wchar_t * params[]={L"",_oldfile,_newfile,_patchfile};
 	bsdiff(params);
-	//wcout << _oldfile;
-	//CreatePatch(_oldfile,_newfile,_patchfile);
 	delete _oldfile;
 	delete _newfile;
 	delete _patchfile;
@@ -104,5 +104,5 @@ static  void Apply(System::String^ oldfile,System::String^ newfile, System::Stri
 };
 
 };
-
+}
 }

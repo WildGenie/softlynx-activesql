@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="BSDiffTools"
+	Name="SoftLynx.BSDiffTools"
 	ProjectGUID="{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}"
-	RootNamespace="BSDiffTools"
+	RootNamespace="SoftLynx.BSDiffTools"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -21,7 +21,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
+			ATLMinimizesCRunTimeLibraryUsage="true"
 			CharacterSet="1"
 			ManagedExtensions="1"
 			>
@@ -42,11 +42,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
+				Optimization="2"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;BSDIFFINTEROP_EXPORTS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -63,17 +64,22 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				Version="1.0.0.0"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				SubSystem="2"
 				TargetMachine="1"
+				KeyFile="$(SolutionDir)..\ActiveRecord\AlexeiVolkov.snk"
+				KeyContainer="$(SolutionDir)..\ActiveRecord\AlexeiVolkov.snk"
+				DelaySign="false"
 			/>
 			<Tool
 				Name="VCALinkTool"
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AssemblyIdentity=""
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -96,10 +102,12 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			ATLMinimizesCRunTimeLibraryUsage="true"
 			CharacterSet="1"
+			ManagedExtensions="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -119,8 +127,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;BSDIFFINTEROP_EXPORTS"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -137,18 +147,24 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				Version="1.0.0.0"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
+				KeyFile="$(SolutionDir)..\ActiveRecord\AlexeiVolkov.snk"
+				KeyContainer="$(SolutionDir)..\ActiveRecord\AlexeiVolkov.snk"
+				DelaySign="false"
 			/>
 			<Tool
 				Name="VCALinkTool"
 			/>
 			<Tool
 				Name="VCManifestTool"
+				VerboseOutput="true"
+				AssemblyIdentity=""
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -238,6 +254,14 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+		</Filter>
+		<Filter
+			Name="Properties"
+			>
+			<File
+				RelativePath=".\AssemblyInfo.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

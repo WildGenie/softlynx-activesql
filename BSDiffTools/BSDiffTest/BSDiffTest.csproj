@@ -47,7 +47,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BSDiffTools\BSDiffTools.vcproj">
       <Project>{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}</Project>
-      <Name>BSDiffTools</Name>
+      <Name>SoftLynx.BSDiffTools</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -227,7 +227,7 @@ int bsdiff(wchar_t *argv[])
 
 	if(((fd=_wfopen(argv[1],L"rb"))==NULL) ||
 		(fseek(fd,0,SEEK_END)!=0) ||
-		((oldsize=ftell(fd))== 0) ||
+		//((oldsize=ftell(fd))== 0) ||
 		((old=(u_char*)malloc(oldsize+1))==NULL) ||
 		(fseek(fd,0,SEEK_SET)!=0) ||
 		(fread(old,1, oldsize, fd)!=oldsize) ||

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using BSDiffTools;
+using Softlynx.BSDiffTools;
 
 namespace BSDiffTest
 {
@@ -10,13 +10,13 @@ namespace BSDiffTest
 
         static void Main(string[] args)
         {
-            BSDiffTools.Patch.Create(
-               @"C:\temp\snapshot-f384bab0-328c-40c8-8ea7-adf571146189.db3",
-               @"C:\temp\snapshot-fec0afa7-fcc1-4788-9fdd-0cd8f6ad4c20.db3",
+            Softlynx.BSDiffTools.Patch.Create(
+               @"C:\temp\snapshot-24bd9d47-0201-4a1f-a028-7be40f86c296-pc.db3",
+               @"C:\temp\snapshot-2f7a30a8-be99-43b7-b00f-6e09381ea845-pc.db3",
                @"C:\temp\patch");
-            BSDiffTools.Patch.Apply(
-               @"C:\temp\snapshot-f384bab0-328c-40c8-8ea7-adf571146189.db3",
-	           @"C:\temp\snapshot-fec0afa7-fcc1-4788-9fdd-0cd8f6ad4c20.db3-new",
+            Softlynx.BSDiffTools.Patch.Apply(
+               @"C:\temp\snapshot-24bd9d47-0201-4a1f-a028-7be40f86c296-pc.db3",
+               @"C:\temp\snapshot-2f7a30a8-be99-43b7-b00f-6e09381ea845-pc.db3-new",
     	       @"C:\temp\patch");
         }
     }
