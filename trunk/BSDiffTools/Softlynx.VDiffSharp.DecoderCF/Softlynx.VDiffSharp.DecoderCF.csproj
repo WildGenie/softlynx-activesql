@@ -1,0 +1,146 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Softlynx.VDiffSharp.DecoderCF</RootNamespace>
+    <AssemblyName>Softlynx.VDiffSharp.DecoderCF</AssemblyName>
+    <ProjectTypeGuids>{4D628B5B-2FBC-4AA6-8C16-197242AEB884};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <PlatformFamilyName>PocketPC</PlatformFamilyName>
+    <PlatformID>3C41C503-53EF-4c2a-8DD4-A8217CAD115E</PlatformID>
+    <OSVersion>4.20</OSVersion>
+    <DeployDirSuffix>Softlynx.VDiffSharp.DecoderCF</DeployDirSuffix>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FormFactorID>
+    </FormFactorID>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;PocketPC NETCF_2_0</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <FileAlignment>512</FileAlignment>
+    <WarningLevel>4</WarningLevel>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;$(PlatformFamilyName)</DefineConstants>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <ErrorReport>prompt</ErrorReport>
+    <FileAlignment>512</FileAlignment>
+    <WarningLevel>4</WarningLevel>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\BZip2\BZip2.cs">
+      <Link>BZip2\BZip2.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\BZip2\BZip2Constants.cs">
+      <Link>BZip2\BZip2Constants.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\BZip2\BZip2Exception.cs">
+      <Link>BZip2\BZip2Exception.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\BZip2\BZip2InputStream.cs">
+      <Link>BZip2\BZip2InputStream.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\BZip2\BZip2OutputStream.cs">
+      <Link>BZip2\BZip2OutputStream.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Checksums\Adler32.cs">
+      <Link>Checksums\Adler32.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Checksums\CRC32.cs">
+      <Link>Checksums\CRC32.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Checksums\IChecksum.cs">
+      <Link>Checksums\IChecksum.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Checksums\StrangeCRC.cs">
+      <Link>Checksums\StrangeCRC.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Core\FileSystemScanner.cs">
+      <Link>Core\FileSystemScanner.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Core\INameTransform.cs">
+      <Link>Core\INameTransform.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Core\IScanFilter.cs">
+      <Link>Core\IScanFilter.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Core\NameFilter.cs">
+      <Link>Core\NameFilter.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Core\PathFilter.cs">
+      <Link>Core\PathFilter.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Core\StreamUtils.cs">
+      <Link>Core\StreamUtils.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\Core\WindowsPathUtils.cs">
+      <Link>Core\WindowsPathUtils.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\SharpZipBaseException.cs">
+      <Link>SharpZipBaseException.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\AddressCache.cs">
+      <Link>VCDIFF\AddressCache.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\Adler32.cs">
+      <Link>VCDIFF\Adler32.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\CodeTable.cs">
+      <Link>VCDIFF\CodeTable.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\Instruction.cs">
+      <Link>VCDIFF\Instruction.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\InstructionType.cs">
+      <Link>VCDIFF\InstructionType.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\IOHelper.cs">
+      <Link>VCDIFF\IOHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\VcdiffDecoder.cs">
+      <Link>VCDIFF\VcdiffDecoder.cs</Link>
+    </Compile>
+    <Compile Include="..\SoftLynx.VDiffSharp.Decoder\VCDIFF\VcdiffFormatException.cs">
+      <Link>VCDIFF\VcdiffFormatException.cs</Link>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Condition="'$(TargetFrameworkVersion)' == 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.v1.targets" />
+  <Import Condition="'$(TargetFrameworkVersion)' == 'v2.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}">
+        <HostingProcess disable="1" />
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
