@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BSDiffTools", "BSDiffTools\BSDiffTools.vcproj", "{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SoftLynx.BSDiffTools", "BSDiffTools\BSDiffTools.vcproj", "{A7849F9C-6094-45CE-9319-D5D67FA8F0A2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BSDiffTest", "BSDiffTest\BSDiffTest.csproj", "{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.VDiffSharp.Decoder", "SoftLynx.VDiffSharp.Decoder\Softlynx.VDiffSharp.Decoder.csproj", "{32C1AC09-B078-458C-8367-253C0AB07EF6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.VDiffSharp.Encoder", "SoftLynx.VDiffSharp.Encoder\Softlynx.VDiffSharp.Encoder.csproj", "{4C43C949-6D04-49A6-B370-4EF8B2AB7545}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.VDiffSharp.DecoderCF", "Softlynx.VDiffSharp.DecoderCF\Softlynx.VDiffSharp.DecoderCF.csproj", "{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +41,36 @@ Global
 		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}.Release|Win32.ActiveCfg = Release|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{32C1AC09-B078-458C-8367-253C0AB07EF6}.Release|Win32.ActiveCfg = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Win32.ActiveCfg = Release|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

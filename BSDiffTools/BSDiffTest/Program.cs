@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using Softlynx.BSDiffTools;
+using SoftLynx.VDiffSharp;
+
 
 namespace BSDiffTest
 {
@@ -10,14 +12,32 @@ namespace BSDiffTest
 
         static void Main(string[] args)
         {
+            VDiffEncoder.BzipEncode(
+                        @"C:\temp\test\src",
+                        @"C:\temp\test\dst",
+                        @"C:\temp\test\patch1");
+
+            VDiffDecoder.BzipDecode(
+            @"C:\temp\test\src",
+            @"C:\temp\test\patch1",
+            @"C:\temp\test\dst.new");
+
+            return;
+            /*
             Softlynx.BSDiffTools.Patch.Create(
-               @"C:\temp\snapshot-24bd9d47-0201-4a1f-a028-7be40f86c296-pc.db3",
-               @"C:\temp\snapshot-2f7a30a8-be99-43b7-b00f-6e09381ea845-pc.db3",
-               @"C:\temp\patch");
+               @"C:\temp\test\src",
+               @"C:\temp\test\dst",
+               @"C:\temp\test\patch");
             Softlynx.BSDiffTools.Patch.Apply(
-               @"C:\temp\snapshot-24bd9d47-0201-4a1f-a028-7be40f86c296-pc.db3",
-               @"C:\temp\snapshot-2f7a30a8-be99-43b7-b00f-6e09381ea845-pc.db3-new",
-    	       @"C:\temp\patch");
+               @"C:\temp\test\src",
+               @"C:\temp\test\dst.newa",
+               @"C:\temp\test\patch");
+            SoftLynx.BSDiffSharp.BSPatch.Apply(
+               @"C:\temp\test\src",
+               @"C:\temp\test\dst.newb",
+               @"C:\temp\test\patch");
+                     */
         }
+             
     }
 }

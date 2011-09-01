@@ -21,9 +21,11 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
+			UseOfATL="0"
 			ATLMinimizesCRunTimeLibraryUsage="true"
 			CharacterSet="1"
 			ManagedExtensions="1"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -64,7 +66,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				Version="1.0.0.0"
+				Version=""
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
