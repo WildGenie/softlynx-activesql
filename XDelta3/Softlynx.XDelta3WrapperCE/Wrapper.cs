@@ -4,13 +4,15 @@ using System.Text;
 using System.IO;
 using System.Diagnostics;
 using System.Threading;
+
 /*
 namespace WrapperTest
 {
-    class CEWrapper
+    class WrapperTestClass
     {
         static void Main(string[] args)
         {
+            Softlynx.XDelta3.Wrapper.TempPath = Path.GetTempPath();
             Softlynx.XDelta3.Wrapper.Decode(@"\Temp\src",@"\Temp\patch",@"\Temp\dst.wce");
         }
     }
@@ -21,9 +23,11 @@ namespace Softlynx.XDelta3
 {
     public class Wrapper
     {
+        public static string TempPath = Path.GetTempPath();
+
         static string RunXDelta(params string[] args)
         {
-            string fn = Path.GetTempFileName();
+            string fn = Path.Combine(TempPath,Guid.NewGuid().ToString().GetHashCode().ToString("X8")+".exe");
 
             using (Stream exe = File.Open(fn, FileMode.Create, FileAccess.ReadWrite,  FileShare.ReadWrite))
             {
