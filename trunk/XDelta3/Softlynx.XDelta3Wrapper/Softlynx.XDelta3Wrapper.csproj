@@ -5,7 +5,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4C43C949-6D04-49A6-B370-4EF8B2AB7545}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Softlynx.XDelta3</RootNamespace>
     <AssemblyName>Softlynx.XDelta3</AssemblyName>
