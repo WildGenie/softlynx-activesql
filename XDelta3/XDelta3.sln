@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XDelta3", "XDelta3\XDelta3.vcproj", "{74856831-19C5-4649-9EF8-B1DA232287BD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.XDelta3Wrapper", "Softlynx.XDelta3Wrapper\Softlynx.XDelta3Wrapper.csproj", "{4C43C949-6D04-49A6-B370-4EF8B2AB7545}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.XDelta3WrapperCE", "Softlynx.XDelta3WrapperCE\Softlynx.XDelta3WrapperCE.csproj", "{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Pocket PC 2003 (ARMV4) = Debug|Pocket PC 2003 (ARMV4)
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Pocket PC 2003 (ARMV4) = Release|Pocket PC 2003 (ARMV4)
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Debug|Any CPU.ActiveCfg = Debug|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Debug|Mixed Platforms.ActiveCfg = Debug|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Debug|Mixed Platforms.Build.0 = Debug|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Debug|Mixed Platforms.Deploy.0 = Debug|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Debug|Pocket PC 2003 (ARMV4).ActiveCfg = Debug|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Debug|Pocket PC 2003 (ARMV4).Build.0 = Debug|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Debug|Pocket PC 2003 (ARMV4).Deploy.0 = Debug|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Release|Any CPU.ActiveCfg = Release|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Release|Mixed Platforms.ActiveCfg = Release|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Release|Mixed Platforms.Build.0 = Release|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Release|Mixed Platforms.Deploy.0 = Release|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Release|Pocket PC 2003 (ARMV4).ActiveCfg = Release|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Release|Pocket PC 2003 (ARMV4).Build.0 = Release|Pocket PC 2003 (ARMV4)
+		{74856831-19C5-4649-9EF8-B1DA232287BD}.Release|Pocket PC 2003 (ARMV4).Deploy.0 = Release|Pocket PC 2003 (ARMV4)
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Debug|Pocket PC 2003 (ARMV4).ActiveCfg = Debug|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{4C43C949-6D04-49A6-B370-4EF8B2AB7545}.Release|Pocket PC 2003 (ARMV4).ActiveCfg = Release|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Debug|Pocket PC 2003 (ARMV4).ActiveCfg = Debug|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{7442BDD0-7AFF-4F0E-92BD-182C6F6913A7}.Release|Pocket PC 2003 (ARMV4).ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

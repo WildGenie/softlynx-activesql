@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BSDiffTest", "BSDiffTest\BS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.VDiffSharp.Decoder", "SoftLynx.VDiffSharp.Decoder\Softlynx.VDiffSharp.Decoder.csproj", "{32C1AC09-B078-458C-8367-253C0AB07EF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.VDiffSharp.Encoder", "SoftLynx.VDiffSharp.Encoder\Softlynx.VDiffSharp.Encoder.csproj", "{4C43C949-6D04-49A6-B370-4EF8B2AB7545}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.XDelta3", "SoftLynx.VDiffSharp.Encoder\Softlynx.XDelta3.csproj", "{4C43C949-6D04-49A6-B370-4EF8B2AB7545}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Softlynx.VDiffSharp.DecoderCF", "Softlynx.VDiffSharp.DecoderCF\Softlynx.VDiffSharp.DecoderCF.csproj", "{5E393177-7850-4FB1-BCC1-D6EEECD4FB33}"
 EndProject

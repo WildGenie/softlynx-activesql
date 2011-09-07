@@ -3,7 +3,7 @@ using System.IO;
 using MiscUtil.Checksum;
 using MiscUtil.Compression;
 using MiscUtil.Compression.Vcdiff;
-namespace SoftLynx.VDiffSharp
+namespace Softlynx.VDiffSharp
 {
 	/// <summary>
 	/// Decoder for VCDIFF (RFC 3284) streams.

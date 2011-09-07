@@ -5,10 +5,12 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4C43C949-6D04-49A6-B370-4EF8B2AB7545}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Softlynx.VDiffSharp.Endoder</RootNamespace>
-    <AssemblyName>Softlynx.VDiffSharp.Encoder</AssemblyName>
+    <RootNamespace>Softlynx.XDelta3</RootNamespace>
+    <AssemblyName>Softlynx.XDelta3</AssemblyName>
+    <StartupObject>
+    </StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,12 +35,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Wrapper.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="EncoderWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -49,13 +51,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\xdelta3.0z.x86-32.exe" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SoftLynx.VDiffSharp.Decoder\Softlynx.VDiffSharp.Decoder.csproj">
-      <Project>{32C1AC09-B078-458C-8367-253C0AB07EF6}</Project>
-      <Name>Softlynx.VDiffSharp.Decoder</Name>
-    </ProjectReference>
+    <None Include="Resources\XDelta3.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

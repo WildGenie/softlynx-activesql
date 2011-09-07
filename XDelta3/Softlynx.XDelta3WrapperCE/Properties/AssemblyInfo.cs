@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SoftLynx.VDiffSharp.Enсoder")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Softlynx.XDelta3WrapperCE")]
+[assembly: AssemblyDescription("XDelta3 decoder")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("SoftLynx")]
-[assembly: AssemblyProduct("SoftLynx.VDiffSharp.Enсoder")]
+[assembly: AssemblyProduct("Softlynx.XDelta3WrapperCE")]
 [assembly: AssemblyCopyright("Copyright © SoftLynx 2011")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("ffe3d86e-2bda-4add-8c1c-4988711731a3")]
+[assembly: Guid("34f93f36-0909-4f3a-a1b0-0d4c266933f8")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -29,7 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-// You can specify all the values or you can default the Revision and Build Numbers 
-// by using the '*' as shown below:
-[assembly: AssemblyVersion("1.0.171.0")]
-[assembly: AssemblyFileVersion("1.0.171.0")]
+[assembly: AssemblyVersion("1.0.172.0")]
+

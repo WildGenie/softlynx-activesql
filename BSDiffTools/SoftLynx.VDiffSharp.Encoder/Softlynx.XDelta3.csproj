@@ -4,15 +4,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{FBB3746D-23CF-4C22-B4E1-3F6B7224048D}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{4C43C949-6D04-49A6-B370-4EF8B2AB7545}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BSDiffTest</RootNamespace>
-    <AssemblyName>BSDiffTest</AssemblyName>
-    <StartupObject>
-    </StartupObject>
-    <TargetZone>LocalIntranet</TargetZone>
-    <GenerateManifests>false</GenerateManifests>
+    <RootNamespace>Softlynx.VDiffSharp.Endoder</RootNamespace>
+    <AssemblyName>Softlynx.XDelta</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +18,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -33,34 +28,28 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LzmaSharp, Version=4.12.4264.28254, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Temp\CS\7zip\Compress\LzmaAlone\bin\Debug\LzmaSharp.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="zlib.net, Version=1.0.3.0, Culture=neutral, PublicKeyToken=47d7877cb3620160">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\zlib.net.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="XDeltaWrapper.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <BaseApplicationManifest Include="Properties\app.manifest" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SoftLynx.VDiffSharp.Decoder\Softlynx.VDiffSharp.Decoder.csproj">
-      <Project>{32C1AC09-B078-458C-8367-253C0AB07EF6}</Project>
-      <Name>Softlynx.VDiffSharp.Decoder</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SoftLynx.VDiffSharp.Encoder\Softlynx.XDelta3.csproj">
-      <Project>{4C43C949-6D04-49A6-B370-4EF8B2AB7545}</Project>
-      <Name>Softlynx.XDelta3</Name>
-    </ProjectReference>
+    <None Include="Resources\xdelta3.0z.x86-32.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
