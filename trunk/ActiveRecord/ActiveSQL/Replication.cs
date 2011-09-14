@@ -743,6 +743,7 @@ namespace Softlynx.ActiveSQL.Replication
                 CheckInclude = new SnapshotIncludePredicate(delegate { return true; });
 
             List<Type> dsttypes = new List<Type>();
+            
             foreach (InTable t in RM.RegisteredTypes)
                 if (t.with_replica) dsttypes.Add(t.basetype);
 
@@ -790,9 +791,19 @@ namespace Softlynx.ActiveSQL.Replication
                         using (ReplicaContext context = snapshotreplica.DisableLogger)
                         {
                             foreach (Type t in dsttypes)
-                                foreach (Object o in RecordIterator.Enum(t, RM))
+                            {
+                                InTable ari = snapshot.ActiveRecordInfo(t);
+                                foreach (Object o in RecordIterator.Enum(t, RM, Where.OrderByAsc(ari.primary_fields[0].Name)))
                                     if (CheckInclude(o))
-                                        snapshot.Write(o,true);
+                                        try
+                                        {
+                                            ari.Insert(o);
+                                        }
+                                        catch
+                                        {
+                                            ari.Update(o);
+                                        }
+                            }
                             DeleteLogOperations(RM, maxfoundseqno);
                             trans.Commit();
                         }

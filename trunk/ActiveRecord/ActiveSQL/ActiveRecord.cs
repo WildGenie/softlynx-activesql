@@ -1425,9 +1425,12 @@ namespace Softlynx.ActiveSQL
 
         internal void ReopenConnection(DbCommand cmd)
         {
-            
-            if ((transaction!=null) && (cmd.Connection == transaction.Connection))
-                cmd.Transaction = transaction;
+
+            if ((transaction != null) && (cmd.Connection == transaction.Connection))
+            {
+             if (cmd.Transaction != transaction)   
+                 cmd.Transaction = transaction;
+            }
             else
                 cmd.Transaction = null;
             ReopenConnection(cmd.Connection);
