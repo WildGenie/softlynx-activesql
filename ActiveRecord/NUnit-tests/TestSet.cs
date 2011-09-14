@@ -708,6 +708,23 @@ namespace NUnit_tests
 
             }
 
+            [Test(Description = "Snapshot creation")]
+            public void T19_SnapshotCreation()
+            {
+                SQLiteSpecifics prov = new SQLiteSpecifics(); 
+                    string snapshotdb = @"C:\temp\snapshot.db3";
+                    File.Delete(snapshotdb);
+                    prov.ExtendConnectionString("Data Source", snapshotdb);
+                    prov.ExtendConnectionString("BinaryGUID", "FALSE");
+                    using (ReplicaManager replicamgr = new ReplicaManager())
+                    {
+                        replicamgr.RegisterWithRecordManager(RM);
+                        replicamgr.BuildSnapshot(RM, prov);
+                    }
+                    prov.Connection.Close();
+            }
+
+
             [Test(Description = "Handle replication with SQLITE")]
             public void T20_ReplicationHandling()
             {
